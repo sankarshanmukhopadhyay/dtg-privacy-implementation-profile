@@ -1,0 +1,50 @@
+version: "0.1"
+dependencies:
+  - id: DEP-001
+    repository: trustoverip/dtgwg-cred-spec
+    area: credential and relationship semantics
+    impact_types: [semantics, interface, lifecycle]
+    affects:
+      interactions: [C1, C2, C3, C5]
+      requirements: [C3-R1, C3-R6, C5-R1, C5-R2, C5-R3]
+      tests: [C3-T5, C5-T2, C5-T4]
+      claims: [C3-PC-3, C5-PC-1, C5-PC-3, C5-PC-4]
+      flows: [RF-001, RF-003]
+    revalidation: required
+    reason: Changes to claim, relationship or lifecycle semantics can alter what is being proven and how current effect is determined in composed DPIP interactions.
+
+  - id: DEP-002
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    area: Trust Task exchange, binding and lifecycle semantics
+    impact_types: [semantics, interface, lifecycle, observer-model]
+    affects:
+      interactions: [C1, C2, C3, C5]
+      requirements: [C3-R2, C5-R1, C5-R2, C5-R3, C5-R5]
+      tests: [C3-T4, C5-T3, C5-T6]
+      claims: [C3-PC-2, C3-PC-4, C5-PC-2, C5-PC-3]
+      flows: [RF-001, RF-003]
+    revalidation: required
+    reason: Binding, task/thread identifiers, freshness, cancellation or supersession changes can alter both proof composition and protocol-envelope correlation.
+
+  - id: DEP-003
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    area: ZKP and selective-disclosure construction evidence
+    impact_types: [construction, evidence]
+    affects:
+      interactions: [C1, C2, C3]
+      requirements: [C3-R2, C3-R4]
+      tests: [C3-T1, C3-T4, C3-T6]
+      claims: [C3-PC-1, C3-PC-2, C3-PC-4]
+      flows: [RF-001]
+    revalidation: evidence-refresh
+    reason: Construction or evidence changes may strengthen, weaken or replace the evidence supporting private-half, identifier and presentation privacy without changing DPIP's end-to-end semantics.
+
+  - id: DEP-004
+    repository: trustoverip/dtgwg-general
+    area: portfolio architecture and cross-specification boundaries
+    impact_types: [semantics, interface]
+    affects:
+      interactions: [C1, C2, C3, C4, C5]
+      flows: [RF-001, RF-002, RF-003]
+    revalidation: review-required
+    reason: Architecture-level changes may alter component responsibility boundaries or the assumptions under which DPIP composes independently evolving DTG specifications.
