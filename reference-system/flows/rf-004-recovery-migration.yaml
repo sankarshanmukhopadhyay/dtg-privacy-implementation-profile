@@ -1,0 +1,101 @@
+dpip_version: "0.1-draft"
+reference_flow:
+  id: RF-004
+  version: "0.1"
+  title: Recovery and migration composed flow
+  purpose: >-
+    Exercise privacy-preserving recovery or migration across wallet/VTA control,
+    credential or relationship continuity, lifecycle state, recovery services,
+    privileged infrastructure, and post-migration verification.
+  interaction_ids: [C6]
+  invariants: [P1, P2, P4, P5, P6, P7, P8]
+
+actors:
+  - holder
+  - old_wallet
+  - new_wallet
+  - recovery_service
+  - verifier
+  - operator
+
+preconditions:
+  - Holder has at least two unrelated relationship contexts established before recovery or migration.
+  - The deployment declares recovery, backup, migration, re-binding, and lifecycle mechanisms in use.
+  - Privileged observers and telemetry processors are included in the observable deployment model.
+
+steps:
+  - id: RF004-S1
+    actor: holder
+    action: initiate recovery or migration
+    privacy_focus: expose only the minimum continuity material required for the selected recovery path
+    surfaces: [recovery_account_or_ticket]
+  - id: RF004-S2
+    actor: recovery_service
+    action: authenticate recovery authority and obtain continuity material
+    privacy_focus: avoid requiring unrelated credential or relationship inventory
+    surfaces: [recovery_account_or_ticket, backup_relationship_inventory]
+  - id: RF004-S3
+    actor: old_wallet
+    action: supply scoped old-to-new continuity bindings where available
+    privacy_focus: keep mappings context-specific and bounded in retention
+    surfaces: [old_to_new_identifier_mapping]
+  - id: RF004-S4
+    actor: new_wallet
+    action: establish replacement keys, identifiers, credentials, or relationship bindings
+    privacy_focus: do not reuse one durable identifier across otherwise independent contexts
+    surfaces: [old_to_new_identifier_mapping, migration_telemetry_or_device_identifier]
+  - id: RF004-S5
+    actor: operator
+    action: process infrastructure, telemetry, audit, or support events associated with migration
+    privacy_focus: assess whether privileged infrastructure can join pre- and post-migration contexts
+    surfaces: [migration_telemetry_or_device_identifier, recovery_account_or_ticket]
+  - id: RF004-S6
+    actor: verifier
+    action: verify post-migration continuity or relationship evidence
+    privacy_focus: do not infer presentation unlinkability solely from successful continuity
+    surfaces: [old_to_new_identifier_mapping]
+  - id: RF004-S7
+    actor: recovery_service
+    action: expire or delete temporary mappings and recovery state
+    privacy_focus: ensure effective scope contracts after justified continuity processing completes
+    surfaces: [old_to_new_identifier_mapping, recovery_account_or_ticket, backup_relationship_inventory]
+
+observer_expectations:
+  ordinary_verifier:
+    expected_scope: relationship-context-only
+    prohibited_inference: successful continuity implies global identity or cross-context linkability
+  recovery_service:
+    expected_scope: minimum recovery material needed for selected contexts
+    risk: central provider may become a relationship-graph observer
+  operator:
+    expected_scope: deployment-specific infrastructure metadata
+    risk: telemetry or support systems may create a master pre/post-migration join surface
+
+adversarial_cases:
+  - id: RF004-A1
+    scenario: One stable recovery account is reused across unrelated relationship contexts.
+    expected_outcome: FAIL
+    affected_claims: [C6-PC-1, C6-PC-2]
+  - id: RF004-A2
+    scenario: Pairwise identifiers rotate, but telemetry joins old and new contexts through device or migration identifiers.
+    expected_outcome: CONSTRAINED
+    affected_claims: [C6-PC-3]
+  - id: RF004-A3
+    scenario: Recovery of one relationship requires export of the complete relationship graph.
+    expected_outcome: FAIL
+    affected_claims: [C6-PC-2]
+  - id: RF004-A4
+    scenario: Temporary old-to-new mappings persist indefinitely after migration completes.
+    expected_outcome: CONSTRAINED
+    affected_claims: [C6-PC-1, C6-PC-3]
+  - id: RF004-A5
+    scenario: Verifier treats successful re-binding as proof of unlinkability across pre- and post-migration presentations.
+    expected_outcome: FAIL
+    affected_claims: [C6-PC-3]
+
+result_policy:
+  success_condition: >-
+    Continuity is restored without creating an unjustified durable cross-context binder,
+    recovery observers are explicitly scoped, temporary mappings are bounded, and
+    residual privileged-observer correlation is reflected in the conformance result.
+  allowed_statuses: [PASS, FAIL, CONSTRAINED, INDETERMINATE]
