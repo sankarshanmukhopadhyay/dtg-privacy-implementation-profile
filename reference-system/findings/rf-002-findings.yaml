@@ -1,0 +1,45 @@
+flow_id: RF-002
+findings:
+  - id: RF-002-F001
+    type: upstream-dependency
+    title: Minimum pre-flight policy disclosure semantics are deployment-owned and not yet evidenced
+    owner: deployment / VTN / verifier policy
+    status: candidate
+    severity: high
+    dpip_impact: [C4-R1, C4-T1, C4-PC-1]
+    assumptions: [A-1]
+    evidence:
+      - RF-002 S-03 assumes an admissibility answer can be returned from minimum policy facts
+    disposition: Keep C4 policy-minimisation evidence deployment-specific until an owning policy interface defines the admissibility inputs and response semantics.
+  - id: RF-002-F002
+    type: upstream-dependency
+    title: Discovery handle scope is not yet guaranteed by an owning DTG discovery interface
+    owner: DTG discovery/routing layer
+    status: candidate
+    severity: high
+    dpip_impact: [C4-R2, C4-R4, C4-T2, C4-PC-2]
+    assumptions: [A-2]
+    evidence:
+      - RF-002 S-02 models a target-scoped requester handle
+    disposition: Treat requester cross-context unlinkability as INDETERMINATE until the deployed discovery interface demonstrates non-reuse across unrelated targets.
+  - id: RF-002-F003
+    type: implementation-assumption
+    title: Rejection logging can reconstruct relationship intent
+    owner: deployment operator
+    status: open
+    severity: high
+    dpip_impact: [C4-R3, C4-R4, C4-T3, C4-PC-3]
+    assumptions: [A-3]
+    evidence:
+      - RF-002 S-04 identifies requester, target and timing as joinable privileged observables
+    disposition: Require a retention-purpose inventory and minimise, aggregate or delete rejection metadata that is not operationally necessary.
+  - id: RF-002-F004
+    type: privacy-overclaim
+    title: Pre-flight privacy cannot be inherited by the subsequent DTG interaction
+    owner: DPIP composition assessment
+    status: resolved
+    severity: medium
+    dpip_impact: [C4-R5, C4-T4]
+    evidence:
+      - C4-T4 explicitly separates policy-discovery privacy from downstream Trust Task/proof privacy
+    disposition: Retain C4-T4 as a regression case preventing policy-discovery PASS from being promoted to end-to-end interaction privacy.
