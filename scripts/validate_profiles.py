@@ -18,19 +18,50 @@ EXAMPLES = ROOT / "examples"
 
 def semantic_errors(profile: dict) -> list[str]:
     errors: list[str] = []
-    req_ids = {r["id"] for r in profile.get("requirements", [])}
-    claim_ids = {c["id"] for c in profile.get("privacy_claims", [])}
-    test_req_ids = set()
+    interaction_invariants = set(profile.get("interaction", {}).get("invariants", []))
+    reqs = {r["id"]: r for r in profile.get("requirements", [])}
+    claims = {c["id"]: c for c in profile.get("privacy_claims", [])}
+    covered_requirements: set[str] = set()
+    covered_claims: set[str] = set()
+
+    for requirement in reqs.values():
+        outside = set(requirement.get("invariants", [])) - interaction_invariants
+        if outside:
+            errors.append(
+                f"{requirement['id']}: invariants outside interaction scope: {', '.join(sorted(outside))}"
+            )
+
+    for claim in claims.values():
+        outside = set(claim.get("invariants", [])) - interaction_invariants
+        if outside:
+            errors.append(
+                f"{claim['id']}: invariants outside interaction scope: {', '.join(sorted(outside))}"
+            )
+
     for test in profile.get("tests", []):
+        test_id = test["id"]
+        outside = set(test.get("invariants", [])) - interaction_invariants
+        if outside:
+            errors.append(
+                f"{test_id}: invariants outside interaction scope: {', '.join(sorted(outside))}"
+            )
+
         for rid in test.get("requirements", []):
-            test_req_ids.add(rid)
-            if rid not in req_ids:
-                errors.append(f"{test['id']}: unknown requirement {rid}")
+            covered_requirements.add(rid)
+            if rid not in reqs:
+                errors.append(f"{test_id}: unknown requirement {rid}")
+
         for cid in test.get("claims", []):
-            if cid not in claim_ids:
-                errors.append(f"{test['id']}: unknown privacy claim {cid}")
-    for rid in sorted(req_ids - test_req_ids):
+            covered_claims.add(cid)
+            if cid not in claims:
+                errors.append(f"{test_id}: unknown privacy claim {cid}")
+
+    for rid in sorted(set(reqs) - covered_requirements):
         errors.append(f"requirement {rid} has no test coverage")
+
+    for cid in sorted(set(claims) - covered_claims):
+        errors.append(f"privacy claim {cid} has no test coverage")
+
     return errors
 
 
@@ -42,6 +73,7 @@ def main() -> int:
     if not profiles:
         print("No DPIP profiles found", file=sys.stderr)
         return 1
+
     for path in profiles:
         profile = yaml.safe_load(path.read_text())
         problems = [e.message for e in validator.iter_errors(profile)]
@@ -53,6 +85,7 @@ def main() -> int:
                 print(f"  - {problem}")
         else:
             print(f"PASS {path.relative_to(ROOT)}")
+
     return 1 if failed else 0
 
 
