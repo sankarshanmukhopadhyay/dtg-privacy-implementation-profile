@@ -1,0 +1,56 @@
+dpip_version: "0.1-draft"
+interaction_id: C5
+interaction_version: "0.1"
+implementation:
+  name: reference-lifecycle-baseline
+  version: "0.1"
+  deployment: illustrative
+
+test_results:
+  - test_id: C5-T1
+    status: PASS
+    evidence: [E-C5-1]
+  - test_id: C5-T2
+    status: PASS
+    evidence: [E-C5-2]
+  - test_id: C5-T3
+    status: INDETERMINATE
+    notes: Concrete status-query correlation depends on deployment mechanism and logging.
+  - test_id: C5-T4
+    status: PASS
+    evidence: [E-C5-4]
+  - test_id: C5-T5
+    status: INDETERMINATE
+    notes: Historical linkage evidence is deployment-specific.
+  - test_id: C5-T6
+    status: INDETERMINATE
+    notes: Trust Task lifecycle semantics remain externally owned.
+
+claim_results:
+  - claim_id: C5-PC-1
+    status: PASS
+    evidence: [E-C5-1]
+  - claim_id: C5-PC-2
+    status: INDETERMINATE
+    evidence: [E-C5-3]
+    residual_correlation: Status sources may correlate repeated checks through reusable handles, timing or retained logs.
+  - claim_id: C5-PC-3
+    status: INDETERMINATE
+    evidence: [E-C5-2, E-C5-4]
+    notes: Composed decision correctness depends on evidenced cross-artifact precedence semantics.
+  - claim_id: C5-PC-4
+    status: CONSTRAINED
+    evidence: [E-C5-5]
+    residual_correlation: Supersession and replacement chains may expose bounded historical linkage to privileged observers.
+
+evidence_provenance:
+  - id: E-C5-1
+    source: DPIP C5 minimal lifecycle evidence positive vector
+  - id: E-C5-2
+    source: DPIP C5 cryptographic-validity versus supersession negative vector
+  - id: E-C5-3
+    source: RF-003 status-query correlation analysis
+  - id: E-C5-4
+    source: DPIP C5 missing-precedence negative vector
+  - id: E-C5-5
+    source: RF-003 supersession/replacement history analysis
