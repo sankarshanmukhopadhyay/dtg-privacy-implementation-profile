@@ -1,0 +1,179 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C4
+  version: "0.1"
+  title: Privacy-preserving policy discovery
+  purpose: >-
+    Determine whether a proposed DTG relationship or trust interaction is admissible
+    before disclosing unnecessary relationship intent, durable identity, or cross-context identifiers.
+  target_profile: PP-2
+  invariants: [P1, P2, P4, P5, P6, P8]
+  construction_neutral: true
+
+actors:
+  - id: requester
+    role: party or wallet seeking policy eligibility information
+  - id: discovery_service
+    role: service exposing admissibility or policy information
+  - id: target_context
+    role: community, VTN, verifier or relationship context whose policy is queried
+  - id: operator
+    role: privileged operator able to observe logs or telemetry
+
+components:
+  - area: Discovery/routing
+    specification: Deployment-selected DTG naming, discovery, R-Card or service interface
+    responsibility: Expose only the policy/routing information needed for pre-flight evaluation.
+  - area: Trust context/policy
+    specification: Deployment or VTN policy layer
+    responsibility: Define admissibility semantics and which facts may be disclosed before interaction establishment.
+  - area: Wallet/VTA
+    specification: Implementation-selected
+    responsibility: Minimise requester identity, intent, retained query state and telemetry.
+
+privacy_claims:
+  - id: C4-PC-1
+    property: data-minimised-policy-discovery
+    subject: presentation
+    scope: pre-flight policy query and response
+    expected_status: PASS
+    rationale: Eligibility should be determined from the minimum facts necessary for the policy decision.
+    invariants: [P1, P4, P5]
+  - id: C4-PC-2
+    property: cross-context-unlinkability
+    subject: identifier
+    scope: requester discovery handle across unrelated target contexts
+    expected_status: PASS
+    rationale: Discovery must not require a durable requester identifier reusable across target contexts.
+    invariants: [P2, P5]
+  - id: C4-PC-3
+    property: intent-confidentiality
+    subject: contextual-graph
+    scope: proposed relationship or trust intent before establishment
+    expected_status: CONSTRAINED
+    rationale: Some target context may necessarily learn that a policy query occurred, but the interaction should not expose more relationship intent than required.
+    invariants: [P1, P4, P5, P6]
+
+requirements:
+  - id: C4-R1
+    normative_strength: MUST
+    statement: A policy-discovery interaction discloses no more requester, target, relationship or trust-purpose information than is required to answer the admissibility question.
+    invariants: [P1, P4]
+  - id: C4-R2
+    normative_strength: MUST NOT
+    statement: Policy discovery requires a stable requester or relationship identifier to be reused across unrelated target contexts unless that reuse is an explicit policy requirement.
+    invariants: [P2, P5]
+  - id: C4-R3
+    normative_strength: MUST
+    statement: Rejection or negative policy responses are handled without retaining unnecessary durable relationship-intent records.
+    invariants: [P5, P6]
+  - id: C4-R4
+    normative_strength: MUST
+    statement: Discovery endpoints, routing handles, query identifiers and timestamps are analysed as correlation surfaces rather than assumed privacy-neutral metadata.
+    invariants: [P2, P5]
+  - id: C4-R5
+    normative_strength: MUST NOT
+    statement: A successful privacy-preserving policy-discovery result is treated as evidence that a subsequent relationship proof, Trust Task or credential presentation is privacy-preserving.
+    invariants: [P4]
+  - id: C4-R6
+    normative_strength: SHOULD
+    statement: Material privacy consequences of the pre-flight query are available to the requester before authorization where the interaction can expose target-specific intent.
+    invariants: [P8]
+
+correlation_surfaces:
+  - id: C4-CS-1
+    class: identity
+    value: requester_discovery_handle
+    observers: [discovery_service, target_context]
+    scope: target-context
+    declared_scope: target-context
+    observable_scope: target-context
+    effective_scope: target-context
+    scope_basis: Handle is expected to be scoped to one discovery target and not reused elsewhere.
+    stability: short-lived
+    joinability: direct if reused
+    necessity: may be needed for request/response correlation within one transaction
+    mitigation: rotate or derive per target/session
+    residual_risk: target can correlate retries within the allowed window
+    invariants: [P2, P5]
+  - id: C4-CS-2
+    class: protocol-envelope
+    value: policy_query_identifier
+    observers: [discovery_service, operator]
+    scope: session
+    declared_scope: session
+    observable_scope: deployment
+    effective_scope: deployment-if-retained
+    scope_basis: Operator logs may make a nominally session-scoped value durable and searchable.
+    stability: ephemeral unless logged
+    joinability: direct through logs
+    necessity: operational request correlation
+    mitigation: minimise retention and avoid embedding subject/relationship identifiers
+    residual_risk: privileged correlation remains if logs persist
+    invariants: [P5, P6]
+  - id: C4-CS-3
+    class: contextual-graph
+    value: proposed_relationship_intent
+    observers: [target_context]
+    scope: target-context
+    declared_scope: requester-private-before-query
+    observable_scope: target-context-if-query-is-specific
+    effective_scope: target-context
+    scope_basis: A target-specific admissibility query can reveal intent even without a durable identifier.
+    stability: event
+    joinability: probabilistic with timing or later relationship establishment
+    necessity: may be partly unavoidable for target-specific policy checks
+    mitigation: use coarse policy classes, cached policy, or privacy-preserving query patterns where feasible
+    residual_risk: target may infer that a relationship was contemplated
+    invariants: [P1, P4, P5]
+  - id: C4-CS-4
+    class: temporal
+    value: rejection_timestamp
+    observers: [target_context, operator]
+    scope: deployment
+    stability: retained-event
+    joinability: can correlate a later establishment attempt or external event
+    necessity: may be needed for operational/security purposes
+    mitigation: coarsen, aggregate or bound retention where possible
+    residual_risk: timing inference may remain
+    invariants: [P5, P6]
+
+tests:
+  - id: C4-T1
+    type: positive
+    description: Requester obtains an admissibility answer using only the minimum policy facts and a target-scoped or session-scoped request handle.
+    requirements: [C4-R1, C4-R2, C4-R4]
+    invariants: [P1, P2, P4, P5]
+    claims: [C4-PC-1, C4-PC-2]
+    expected: PASS when the query reveals no durable cross-context requester identifier and only necessary policy facts.
+  - id: C4-T2
+    type: negative
+    description: The same requester discovery identifier is required or logged across unrelated target communities.
+    requirements: [C4-R2, C4-R4]
+    invariants: [P2, P5]
+    claims: [C4-PC-2]
+    expected: FAIL for cross-context unlinkability.
+  - id: C4-T3
+    type: adversarial
+    description: A rejected policy query is retained with requester identity, target and proposed relationship purpose, permitting later reconstruction of relationship intent.
+    requirements: [C4-R1, C4-R3, C4-R4]
+    invariants: [P1, P5, P6]
+    claims: [C4-PC-3]
+    expected: FAIL or CONSTRAINED depending on whether the retained fields were necessary and explicitly justified.
+  - id: C4-T4
+    type: negative
+    description: A discovery PASS is reported as proof that the subsequent Trust Task or relationship proof is end-to-end privacy-preserving.
+    requirements: [C4-R5]
+    invariants: [P4]
+    claims: [C4-PC-1]
+    expected: FAIL because policy-discovery privacy does not establish downstream interaction privacy.
+  - id: C4-T5
+    type: adversarial
+    description: Repeated target-specific queries, endpoint selection and high-resolution timestamps enable a target or operator to infer requester intent despite hidden identifiers.
+    requirements: [C4-R1, C4-R3, C4-R4, C4-R6]
+    invariants: [P1, P5, P6, P8]
+    claims: [C4-PC-3]
+    expected: CONSTRAINED unless the deployment mitigates timing, endpoint and retention correlation to the claimed scope.
+
+exceptions:
+  - description: Some target contexts necessarily learn that a policy query was made; DPIP requires the resulting intent exposure to be scoped and justified rather than claiming absolute pre-flight anonymity.
