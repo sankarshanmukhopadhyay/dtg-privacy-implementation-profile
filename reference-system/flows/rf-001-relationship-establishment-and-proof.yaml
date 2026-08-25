@@ -1,0 +1,242 @@
+flow:
+  id: RF-001
+  version: "0.1"
+  title: Relationship establishment and privacy-preserving proof
+  normative_status: non-normative
+  purpose: >-
+    Exercise DPIP across one coherent DTG integration hypothesis from evidence possession
+    through reciprocal relationship establishment, proof, verification, publication, and retention.
+
+actors:
+  - id: holder_a
+    role: party using a public/correlatable relationship half
+  - id: holder_b
+    role: party using a pairwise/private relationship half
+  - id: wallet_b
+    role: wallet/VTA composing holder B's private presentation
+  - id: verifier
+    role: relying party evaluating relationship evidence
+  - id: community_a
+    role: public or community-visible relationship context
+  - id: community_b
+    role: privacy-preserving relationship context
+  - id: operator
+    role: privileged operator observing retained state and audit surfaces
+
+components:
+  - id: credentials
+    owner: DTG Credentials / relationship semantics
+    repository: trustoverip/dtgwg-cred-spec
+    responsibility: Define credential and reciprocal relationship semantics.
+  - id: trust-task
+    owner: DTG Trust Tasks
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    responsibility: Carry exchange context and evidence/bindings without unnecessary durable correlation.
+  - id: zkp
+    owner: DTG ZKP
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    responsibility: Establish the required private predicate/binding and expose construction limitations.
+  - id: wallet-vta
+    owner: VTA/wallet implementation
+    responsibility: Isolate contexts, keys, retained state, and disclosure policy.
+  - id: verifier-policy
+    owner: deployment / VTN / verifier policy
+    responsibility: Decide which trust-context facts are required beyond cryptographic proof validity.
+  - id: graph-storage
+    owner: deployment / relationship service
+    responsibility: Publish or retain relationship state without silently defeating claimed privacy.
+
+assumptions:
+  - id: A-1
+    statement: A reciprocal relationship is represented by two authentic relationship halves whose semantics are owned by the credential layer.
+    owner: DTG Credentials
+    status: candidate
+    reference: dtgwg-zkp-tf#13 pressure-test input; exact upstream semantics remain external to DPIP
+  - id: A-2
+    statement: A Trust Task-like exchange can carry the proof inputs required for relationship binding without forcing disclosure of a durable cross-context subject identifier.
+    owner: DTG Trust Tasks
+    status: unresolved
+  - id: A-3
+    statement: A proof construction can establish the required correspondence between reciprocal halves while protecting holder B to the claimed scope.
+    owner: DTG ZKP
+    status: candidate
+    reference: sankarshanmukhopadhyay/dtgwg-zkp-tf#13
+  - id: A-4
+    statement: Proof verification alone does not establish common VTN anchoring, cross-VTN policy acceptance, or DTG edge conformance.
+    owner: verifier / trust-context policy
+    status: confirmed
+
+steps:
+  - id: S-01
+    action: Holder B makes personhood or membership evidence available to the wallet/VTA.
+    actor: holder_b
+    component: wallet-vta
+    owner: wallet/VTA implementation
+    assumption_status: confirmed
+    inputs: [holder-evidence]
+    outputs: [locally-held-evidence]
+    privacy_surfaces:
+      - value: holder evidence and local credential identifiers
+        observer: wallet_b
+        observable_scope: local
+        effective_scope: local
+        effect: Retention or telemetry could create correlation beyond the presentation boundary.
+    dpip_mappings:
+      interactions: [C1]
+      requirements: []
+      tests: []
+      claims: []
+
+  - id: S-02
+    action: Parties establish reciprocal relationship halves with intentionally different correlation postures.
+    actor: holder_a
+    component: credentials
+    owner: DTG Credentials / relationship semantics
+    assumption_status: candidate
+    assumptions: [A-1]
+    inputs: [party-a-context, party-b-context]
+    outputs: [public-half-a, private-half-b]
+    privacy_surfaces:
+      - value: public-half-a identifier
+        observer: community_a
+        declared_scope: public-or-correlatable
+        observable_scope: public-or-community
+        effective_scope: public-or-community
+        effect: Deliberately makes holder A and the existence of a relationship edge correlatable.
+      - value: private-half-b identifier
+        observer: holder_a
+        declared_scope: pairwise
+        observable_scope: pairwise
+        effective_scope: pairwise
+        effect: Must not become reusable across unrelated contexts through later composition.
+    dpip_mappings:
+      interactions: [C2, C3]
+      requirements: [C3-R1, C3-R3, C3-R8]
+      tests: [C3-T7]
+      claims: [C3-PC-2, C3-PC-3]
+
+  - id: S-03
+    action: Exchange context carries the evidence required to prepare the reciprocal relationship proof.
+    actor: wallet_b
+    component: trust-task
+    owner: DTG Trust Tasks
+    assumption_status: unresolved
+    assumptions: [A-2]
+    inputs: [private-half-b, reciprocal-binding-input, exchange-context]
+    outputs: [proof-input-package]
+    privacy_surfaces:
+      - value: exchange or task context identifier
+        observer: verifier
+        observable_scope: presentation-or-session
+        effective_scope: unresolved
+        effect: A stable task/thread identifier could become a protocol-envelope correlator.
+    dpip_mappings:
+      interactions: [C2, C3]
+      requirements: [C3-R2]
+      tests: [C3-T4]
+      claims: [C3-PC-2]
+
+  - id: S-04
+    action: Wallet/VTA creates a privacy-preserving proof of the required reciprocal relationship predicate.
+    actor: wallet_b
+    component: zkp
+    owner: DTG ZKP
+    assumption_status: candidate
+    assumptions: [A-3]
+    inputs: [proof-input-package, private-half-b, public-or-bound-half-a]
+    outputs: [relationship-proof]
+    privacy_surfaces:
+      - value: reciprocal proof binding
+        observer: verifier
+        declared_scope: presentation
+        observable_scope: presentation
+        effective_scope: construction-dependent
+        effect: Reusable binders or equality tokens may join otherwise unrelated presentations.
+    dpip_mappings:
+      interactions: [C3]
+      requirements: [C3-R2, C3-R4]
+      tests: [C3-T1, C3-T4, C3-T6]
+      claims: [C3-PC-1, C3-PC-2, C3-PC-4]
+
+  - id: S-05
+    action: Verifier validates the proof and separately evaluates trust-context requirements.
+    actor: verifier
+    component: verifier-policy
+    owner: deployment / VTN / verifier policy
+    assumption_status: confirmed
+    assumptions: [A-4]
+    inputs: [relationship-proof, applicable-trust-context]
+    outputs: [proof-result, trust-context-result]
+    privacy_surfaces:
+      - value: trust-context or VTN information
+        observer: verifier
+        observable_scope: verifier-or-community
+        effective_scope: verifier-or-community
+        effect: May expose community affiliation or policy context even when the proof hides the private identifier.
+    dpip_mappings:
+      interactions: [C3]
+      requirements: [C3-R6, C3-R7]
+      tests: [C3-T5]
+      claims: [C3-PC-4, C3-PC-5]
+
+  - id: S-06
+    action: Public/community relationship state is published or retained according to deployment policy.
+    actor: community_a
+    component: graph-storage
+    owner: deployment / relationship service
+    assumption_status: candidate
+    inputs: [public-half-a, relationship-state]
+    outputs: [published-or-retained-edge]
+    privacy_surfaces:
+      - value: public relationship graph signal
+        observer: verifier
+        declared_scope: public-or-community
+        observable_scope: public-or-community
+        effective_scope: public-or-community
+        effect: Can make the relationship externally correlatable even while private-half proof protection remains correct.
+      - value: administrator relationship view
+        observer: operator
+        observable_scope: privileged-deployment
+        effective_scope: privileged-deployment
+        effect: A privileged graph or audit view can reconstruct correlation intentionally absent from ordinary verifier views.
+    dpip_mappings:
+      interactions: [C3]
+      requirements: [C3-R4, C3-R5, C3-R8]
+      tests: [C3-T2, C3-T3, C3-T7]
+      claims: [C3-PC-3, C3-PC-4, C3-PC-5]
+
+  - id: S-07
+    action: DPIP evaluates the complete evidence set rather than inheriting the narrowest component privacy label.
+    actor: verifier
+    component: verifier-policy
+    owner: DPIP composition assessment
+    assumption_status: confirmed
+    inputs: [proof-result, trust-context-result, published-or-retained-edge, flow-observables]
+    outputs: [scoped-dpip-conformance-result]
+    privacy_surfaces:
+      - value: composed evidence set
+        observer: verifier
+        effective_scope: relationship-and-context-dependent
+        effect: Final privacy result must reflect the least-private material observable relevant to each scoped claim.
+    dpip_mappings:
+      interactions: [C3]
+      requirements: [C3-R3, C3-R4, C3-R5, C3-R7, C3-R8]
+      tests: [C3-T1, C3-T2, C3-T3, C3-T5, C3-T7]
+      claims: [C3-PC-1, C3-PC-2, C3-PC-3, C3-PC-4, C3-PC-5]
+
+expected_dpip_outcomes:
+  - claim: private-half non-disclosure
+    status: PASS
+    basis: Candidate proof construction protects holder B's private half; verified construction evidence is still pending.
+  - claim: private identifier cross-context unlinkability
+    status: INDETERMINATE
+    basis: Depends on unresolved Trust Task binding semantics and concrete ZKP construction evidence.
+  - claim: relationship unlinkability
+    status: FAIL
+    basis: The reciprocal public half and published relationship signal are intentionally correlatable.
+  - claim: presentation unlinkability
+    status: CONSTRAINED
+    basis: Proof material may avoid new correlation while public relationship and trust-context signals remain observable.
+  - claim: contextual/graph unlinkability
+    status: CONSTRAINED
+    basis: Public/community graph and privileged operator views remain explicit correlation surfaces.

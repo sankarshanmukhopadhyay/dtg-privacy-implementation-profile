@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip/reference-flow.schema.json",
+  "title": "DPIP Reference Composed Flow",
+  "type": "object",
+  "required": ["flow", "actors", "components", "assumptions", "steps", "expected_dpip_outcomes"],
+  "properties": {
+    "flow": {
+      "type": "object",
+      "required": ["id", "version", "title", "normative_status", "purpose"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^RF-[0-9]{3}$"},
+        "version": {"type": "string"},
+        "title": {"type": "string"},
+        "normative_status": {"const": "non-normative"},
+        "purpose": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "role"],
+        "properties": {"id": {"type": "string"}, "role": {"type": "string"}}
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "owner", "responsibility"],
+        "properties": {
+          "id": {"type": "string"},
+          "owner": {"type": "string"},
+          "repository": {"type": "string"},
+          "responsibility": {"type": "string"}
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "owner", "status"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^A-[0-9]+$"},
+          "statement": {"type": "string"},
+          "owner": {"type": "string"},
+          "status": {"enum": ["confirmed", "candidate", "unresolved"]},
+          "reference": {"type": "string"}
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "action", "actor", "component", "owner", "assumption_status", "inputs", "outputs", "privacy_surfaces", "dpip_mappings"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^S-[0-9]{2}$"},
+          "action": {"type": "string"},
+          "actor": {"type": "string"},
+          "component": {"type": "string"},
+          "owner": {"type": "string"},
+          "assumption_status": {"enum": ["confirmed", "candidate", "unresolved"]},
+          "assumptions": {"type": "array", "items": {"type": "string", "pattern": "^A-[0-9]+$"}},
+          "inputs": {"type": "array", "items": {"type": "string"}},
+          "outputs": {"type": "array", "items": {"type": "string"}},
+          "privacy_surfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["value", "observer", "effective_scope", "effect"],
+              "properties": {
+                "value": {"type": "string"},
+                "observer": {"type": "string"},
+                "declared_scope": {"type": "string"},
+                "observable_scope": {"type": "string"},
+                "effective_scope": {"type": "string"},
+                "effect": {"type": "string"}
+              }
+            }
+          },
+          "dpip_mappings": {
+            "type": "object",
+            "properties": {
+              "interactions": {"type": "array", "items": {"type": "string", "pattern": "^C[0-9]+$"}},
+              "requirements": {"type": "array", "items": {"type": "string", "pattern": "^C[0-9]+-R[0-9]+$"}},
+              "tests": {"type": "array", "items": {"type": "string", "pattern": "^C[0-9]+-T[0-9]+$"}},
+              "claims": {"type": "array", "items": {"type": "string", "pattern": "^C[0-9]+-PC-[0-9]+$"}}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "expected_dpip_outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim", "status", "basis"],
+        "properties": {
+          "claim": {"type": "string"},
+          "status": {"enum": ["PASS", "FAIL", "CONSTRAINED", "INDETERMINATE"]},
+          "basis": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
