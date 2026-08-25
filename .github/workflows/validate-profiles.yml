@@ -27,3 +27,5 @@ jobs:
         run: python scripts/validate_evidence.py
       - name: Validate conformance results
         run: python scripts/validate_results.py
+      - name: Validate composed reference flows
+        run: python scripts/validate_reference_flows.py
