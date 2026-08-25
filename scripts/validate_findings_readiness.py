@@ -10,6 +10,28 @@ ROOT = Path(__file__).resolve().parents[1]
 FINDING_SCHEMA = json.loads((ROOT / "schema" / "finding.schema.json").read_text())
 
 
+def promotion_errors(finding: dict) -> list[str]:
+    errors: list[str] = []
+    promotion = finding.get("promotion")
+    if not promotion:
+        return errors
+    state = promotion.get("state")
+    target_type = promotion.get("target_type")
+    targets = promotion.get("target_refs", [])
+    regression_refs = promotion.get("regression_refs", [])
+    if state in {"promoted-dpip", "promoted-upstream", "resolved-regression"} and not targets:
+        errors.append(f"{finding['id']}: promotion state {state} requires target_refs")
+    if state == "resolved-regression" and not regression_refs:
+        errors.append(f"{finding['id']}: resolved-regression requires regression_refs")
+    if state == "promoted-upstream" and target_type != "upstream-issue":
+        errors.append(f"{finding['id']}: promoted-upstream requires target_type upstream-issue")
+    if state == "promoted-dpip" and target_type not in {"dpip-requirement", "dpip-test", "dpip-guidance"}:
+        errors.append(f"{finding['id']}: promoted-dpip requires a DPIP target_type")
+    if state == "not-promoted" and target_type != "none":
+        errors.append(f"{finding['id']}: not-promoted must use target_type none")
+    return errors
+
+
 def main() -> int:
     failed = False
     registry_paths = sorted((ROOT / "reference-system" / "findings").glob("*.yaml"))
@@ -24,6 +46,7 @@ def main() -> int:
             if fid in all_findings:
                 errors.append(f"duplicate finding id {fid}")
             all_findings[fid] = finding
+            errors.extend(promotion_errors(finding))
         if errors:
             failed = True
             print(f"FAIL {path.relative_to(ROOT)}")
