@@ -1,7 +1,7 @@
 dpip_version: "0.1-draft"
 interaction:
   id: C3
-  version: "0.1"
+  version: "0.2"
   title: Asymmetric cross-community relationship privacy
   purpose: >-
     Establish a reciprocal relationship predicate when the two relationship halves
@@ -90,7 +90,7 @@ context_variants:
 external_evidence:
   - id: C3-E1
     owner: dtgwg-zkp-tf
-    purpose: construction-level evidence for the predicate and binding used to relate the reciprocal halves
+    purpose: construction-level pressure-test and future evidence for the predicate and binding used to relate asymmetric reciprocal halves
     reference: sankarshanmukhopadhyay/dtgwg-zkp-tf#13
     normative: false
 
@@ -123,6 +123,10 @@ requirements:
     normative_strength: MUST
     statement: Unsupported higher-level trust or privacy claims are reported as FAIL, CONSTRAINED, or INDETERMINATE rather than inferred from lower-level proof success.
     invariants: [P4]
+  - id: C3-R8
+    normative_strength: MUST
+    statement: Declared correlation scope is distinguished from observable and effective scope when composition with the reciprocal half, graph, protocol, or deployment changes the correlation available to an observer.
+    invariants: [P2, P4, P5]
 
 correlation_surfaces:
   - id: C3-CS-1
@@ -130,6 +134,11 @@ correlation_surfaces:
     value: public_half_identifier
     observers: [verifier, public_graph_observer]
     scope: public-or-community
+    correlation_scope:
+      declared_scope: public-or-correlatable
+      observable_scope: public-or-community
+      effective_scope: public-or-community
+      scope_basis: half A is intentionally exposed to verifier and public graph observers by the selected deployment
     stability: long-lived
     joinability: directly joinable by design
     necessity: intentional property of half A
@@ -141,6 +150,10 @@ correlation_surfaces:
     value: private_half_identifier
     observers: [wallet_vta]
     scope: pairwise
+    correlation_scope:
+      declared_scope: pairwise
+      observable_scope: pairwise
+      effective_scope: pairwise
     stability: relationship-scoped
     joinability: must not become cross-context joinable through proof composition
     necessity: identifies party B within its intended context
@@ -152,6 +165,11 @@ correlation_surfaces:
     value: reciprocal_relationship_binding
     observers: [verifier]
     scope: presentation-or-verifier
+    correlation_scope:
+      declared_scope: presentation-scoped
+      observable_scope: verifier-presentation
+      effective_scope: construction-dependent
+      scope_basis: the selected proof construction determines whether binding material is stable or reusable beyond the presentation
     stability: construction-dependent
     joinability: durable reuse could expose party B or join presentations
     necessity: some semantic relation between halves must be established
@@ -163,6 +181,11 @@ correlation_surfaces:
     value: public_relationship_graph
     observers: [verifier, public_graph_observer]
     scope: public-or-community
+    correlation_scope:
+      declared_scope: external-or-deployment-defined
+      observable_scope: public-or-community
+      effective_scope: relationship-correlatable
+      scope_basis: public half A and graph structure can be joined with presentation observations even when the private identifier remains hidden
     stability: persistent
     joinability: can combine public half A with other observations to infer relationship context
     necessity: external to the private proof and potentially intentional
@@ -174,6 +197,11 @@ correlation_surfaces:
     value: vtn_anchor_or_absence
     observers: [verifier, trust_context]
     scope: community-or-deployment
+    correlation_scope:
+      declared_scope: deployment-defined
+      observable_scope: community-or-verifier
+      effective_scope: deployment-dependent
+      scope_basis: trust-anchor or no-anchor facts can reveal community context independently of proof validity
     stability: variable
     joinability: trust context can expose community membership or relationship context
     necessity: deployment and policy dependent
@@ -199,10 +227,10 @@ tests:
   - id: C3-T3
     type: adversarial
     description: The private half is correctly hidden but public graph data is combined with verifier observations to infer the relationship.
-    requirements: [C3-R4, C3-R5]
+    requirements: [C3-R4, C3-R5, C3-R8]
     invariants: [P2, P4, P5]
     claims: [C3-PC-4, C3-PC-5]
-    expected: Proof-level protection may PASS while presentation/contextual unlinkability remains CONSTRAINED.
+    expected: Proof-level protection may PASS while presentation/contextual unlinkability remains CONSTRAINED and effective relationship correlation is broader than the private identifier's declared scope.
   - id: C3-T4
     type: negative
     description: A common durable binder is introduced to prove correspondence between the public and private halves and is reused across unrelated contexts.
@@ -224,6 +252,13 @@ tests:
     invariants: [P2, P3, P4, P5]
     claims: [C3-PC-2, C3-PC-4]
     expected: Candidate PASS for the strongest composed-presentation privacy claim supported by concrete construction and deployment evidence.
+  - id: C3-T7
+    type: negative
+    description: The implementation copies the private half's declared pairwise scope into the relationship-level result despite the reciprocal public half and observable graph.
+    requirements: [C3-R3, C3-R4, C3-R8]
+    invariants: [P2, P4, P5]
+    claims: [C3-PC-3, C3-PC-5]
+    expected: FAIL because declared identifier scope is not evidence of the effective correlation scope of the composed relationship or graph context.
 
 exceptions:
   - description: Deliberate public correlation of half A is an intended property, not a DPIP defect; it constrains which higher-level privacy claims may be made.

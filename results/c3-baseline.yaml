@@ -1,9 +1,9 @@
 dpip_version: "0.1-draft"
 interaction_id: C3
-interaction_version: "0.1"
+interaction_version: "0.2"
 implementation:
   name: reference-asymmetric-edge-baseline
-  version: "0.1"
+  version: "0.2"
   deployment: illustrative
 
 test_results:
@@ -25,6 +25,9 @@ test_results:
   - test_id: C3-T6
     status: INDETERMINATE
     notes: Strongest composed-presentation claim depends on concrete construction and deployment evidence.
+  - test_id: C3-T7
+    status: PASS
+    evidence: [E-C3-6]
 
 claim_results:
   - claim_id: C3-PC-1
@@ -35,16 +38,16 @@ claim_results:
     evidence: [E-C3-1, E-C3-4]
   - claim_id: C3-PC-3
     status: FAIL
-    evidence: [E-C3-2]
-    residual_correlation: Public half A remains deliberately correlatable.
+    evidence: [E-C3-2, E-C3-6]
+    residual_correlation: Public half A remains deliberately correlatable; the private half's declared pairwise scope does not narrow the relationship-level effective scope.
   - claim_id: C3-PC-4
     status: CONSTRAINED
     evidence: [E-C3-3]
     residual_correlation: Presentation observations may remain inferable when combined with public context.
   - claim_id: C3-PC-5
     status: CONSTRAINED
-    evidence: [E-C3-3]
-    residual_correlation: Public or community-visible graph data can reveal relationship context.
+    evidence: [E-C3-3, E-C3-6]
+    residual_correlation: Public or community-visible graph data can reveal relationship context despite the private identifier remaining pairwise.
 
 evidence_provenance:
   - id: E-C3-1
@@ -57,3 +60,5 @@ evidence_provenance:
     source: DPIP C3 durable binder negative vector
   - id: E-C3-5
     source: DPIP C3 VTN boundary negative vector
+  - id: E-C3-6
+    source: DPIP C3 declared-versus-effective-scope negative vector
