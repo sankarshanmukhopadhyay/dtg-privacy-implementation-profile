@@ -1,0 +1,229 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C3
+  version: "0.1"
+  title: Asymmetric cross-community relationship privacy
+  purpose: >-
+    Establish a reciprocal relationship predicate when the two relationship halves
+    intentionally have different correlation postures, without overstating the privacy
+    guarantee supported by the composed interaction.
+  target_profile: PP-4
+  invariants: [P1, P2, P3, P4, P5, P6, P7, P8]
+  construction_neutral: true
+
+actors:
+  - id: party_a
+    role: party represented by the public or correlatable relationship half
+  - id: party_b
+    role: party represented by the pairwise or private relationship half
+  - id: verifier
+    role: relying party evaluating the reciprocal relationship predicate
+  - id: wallet_vta
+    role: component composing and authorising the presentation
+  - id: trust_context
+    role: VTN, community, or other verification context relevant to the deployment
+  - id: public_graph_observer
+    role: observer able to combine presentation observations with public relationship information
+
+components:
+  - area: Credentials/relationship artifacts
+    specification: DTG relationship credential semantics selected by deployment
+    responsibility: Define reciprocal relationship semantics without requiring DPIP to invent a common identifier taxonomy.
+  - area: ZKP/selective disclosure
+    specification: Construction selected by deployment; construction evidence may be supplied by dtgwg-zkp-tf
+    responsibility: Prove the required relationship or binding predicate while protecting the private half to the supported scope.
+  - area: Trust Tasks
+    specification: Deployment-selected Trust Task, if any
+    responsibility: Carry evidence without reintroducing a durable private-half correlator.
+  - area: VTN/trust context
+    specification: Deployment-specific
+    responsibility: Establish trust-policy and anchoring facts that are not implied merely because a cryptographic proof verifies.
+
+privacy_claims:
+  - id: C3-PC-1
+    property: non-disclosure
+    subject: credential-half
+    scope: private-half presentation to verifier
+    expected_status: PASS
+    rationale: The pairwise/private half can remain undisclosed except for evidence required to establish the predicate.
+    invariants: [P1, P3, P4]
+  - id: C3-PC-2
+    property: cross-context-unlinkability
+    subject: identifier
+    scope: party-b pairwise identifier across unrelated verifier contexts
+    expected_status: PASS
+    rationale: Proof composition must not require a reusable durable binder for the private identifier.
+    invariants: [P2, P4]
+  - id: C3-PC-3
+    property: unlinkability
+    subject: relationship
+    scope: relationship considered with deliberately public half A
+    expected_status: FAIL
+    rationale: Public visibility of half A can make the relationship correlatable even when half B is cryptographically protected.
+    invariants: [P2, P4]
+  - id: C3-PC-4
+    property: unlinkability
+    subject: presentation
+    scope: proof material independent of external graph information
+    expected_status: CONSTRAINED
+    rationale: The proof may avoid new correlators while the presentation remains inferable when combined with deliberately public context.
+    invariants: [P4, P5]
+  - id: C3-PC-5
+    property: unlinkability
+    subject: contextual-graph
+    scope: verifier observations combined with public or community-visible graph data
+    expected_status: CONSTRAINED
+    rationale: DPIP cannot claim contextual unlinkability where external graph information intentionally exposes relationship structure.
+    invariants: [P2, P4, P5]
+
+context_variants:
+  - id: C3-V1
+    description: Both reciprocal halves are anchored in the same VTN.
+    expected_effect: Proof validity and common anchoring remain distinct claims; common anchoring must be evidenced.
+  - id: C3-V2
+    description: Reciprocal halves are anchored in different VTNs.
+    expected_effect: Cryptographic relationship proof does not establish cross-VTN policy acceptance or governance compatibility.
+  - id: C3-V3
+    description: One half is anchored in a VTN and the other intentionally has no VTN anchor.
+    expected_effect: Higher-level DTG edge or trust-policy conformance is INDETERMINATE unless supplied by another owning specification or policy layer.
+
+external_evidence:
+  - id: C3-E1
+    owner: dtgwg-zkp-tf
+    purpose: construction-level evidence for the predicate and binding used to relate the reciprocal halves
+    reference: sankarshanmukhopadhyay/dtgwg-zkp-tf#13
+    normative: false
+
+requirements:
+  - id: C3-R1
+    normative_strength: MUST
+    statement: The interaction represents the correlation posture of each reciprocal half independently and does not assume that both halves share one privacy level.
+    invariants: [P2, P4]
+  - id: C3-R2
+    normative_strength: MUST NOT
+    statement: Establishing the reciprocal relationship requires disclosure or derivation of a common durable cross-context identifier when a less correlatable binding can establish the required semantic relation.
+    invariants: [P2, P3, P4]
+  - id: C3-R3
+    normative_strength: MUST
+    statement: Every asserted privacy property identifies the subject and scope to which the property applies.
+    invariants: [P4]
+  - id: C3-R4
+    normative_strength: MUST NOT
+    statement: A valid cryptographic proof is reported as relationship-level, presentation-level, or contextual unlinkability unless evidence supports that higher-level claim.
+    invariants: [P4, P5]
+  - id: C3-R5
+    normative_strength: MUST
+    statement: Public or community-visible graph information that materially constrains an unlinkability claim is recorded as residual contextual correlation.
+    invariants: [P2, P4, P5]
+  - id: C3-R6
+    normative_strength: MUST NOT
+    statement: Proof verification alone is treated as evidence of common VTN anchoring, cross-VTN policy acceptance, or DTG edge conformance unless the relevant semantics and evidence are supplied by their owning layers.
+    invariants: [P4]
+  - id: C3-R7
+    normative_strength: MUST
+    statement: Unsupported higher-level trust or privacy claims are reported as FAIL, CONSTRAINED, or INDETERMINATE rather than inferred from lower-level proof success.
+    invariants: [P4]
+
+correlation_surfaces:
+  - id: C3-CS-1
+    class: identity
+    value: public_half_identifier
+    observers: [verifier, public_graph_observer]
+    scope: public-or-community
+    stability: long-lived
+    joinability: directly joinable by design
+    necessity: intentional property of half A
+    mitigation: do not misrepresent the relationship as globally unlinkable
+    residual_risk: relationship and graph correlation remain possible
+    invariants: [P2, P4]
+  - id: C3-CS-2
+    class: identity
+    value: private_half_identifier
+    observers: [wallet_vta]
+    scope: pairwise
+    stability: relationship-scoped
+    joinability: must not become cross-context joinable through proof composition
+    necessity: identifies party B within its intended context
+    mitigation: hidden, blinded, derived, or otherwise privacy-preserving proof binding
+    residual_risk: construction-dependent
+    invariants: [P2, P4]
+  - id: C3-CS-3
+    class: proof
+    value: reciprocal_relationship_binding
+    observers: [verifier]
+    scope: presentation-or-verifier
+    stability: construction-dependent
+    joinability: durable reuse could expose party B or join presentations
+    necessity: some semantic relation between halves must be established
+    mitigation: prove the required relation without exposing an unnecessary common durable identifier
+    residual_risk: construction-specific evidence required
+    invariants: [P2, P3, P4]
+  - id: C3-CS-4
+    class: contextual-graph
+    value: public_relationship_graph
+    observers: [verifier, public_graph_observer]
+    scope: public-or-community
+    stability: persistent
+    joinability: can combine public half A with other observations to infer relationship context
+    necessity: external to the private proof and potentially intentional
+    mitigation: bound the privacy claim to what the proof actually protects
+    residual_risk: contextual inference may remain even with perfect proof-level hiding
+    invariants: [P2, P4, P5]
+  - id: C3-CS-5
+    class: trust-context
+    value: vtn_anchor_or_absence
+    observers: [verifier, trust_context]
+    scope: community-or-deployment
+    stability: variable
+    joinability: trust context can expose community membership or relationship context
+    necessity: deployment and policy dependent
+    mitigation: separate proof claims from policy/anchoring claims and minimise unnecessary context disclosure
+    residual_risk: governance semantics remain outside ZKP proof validity
+    invariants: [P4, P5]
+
+tests:
+  - id: C3-T1
+    type: positive
+    description: Half A is public, half B is private, and the required reciprocal relationship predicate verifies without disclosing the pairwise identifier or a reusable binder for half B.
+    requirements: [C3-R1, C3-R2, C3-R3]
+    invariants: [P1, P2, P3, P4]
+    claims: [C3-PC-1, C3-PC-2]
+    expected: Private-half non-disclosure and scoped identifier unlinkability PASS; no stronger relationship-level claim is inferred.
+  - id: C3-T2
+    type: negative
+    description: The implementation labels the complete relationship unlinkable because the private half is hidden while half A remains deliberately public.
+    requirements: [C3-R3, C3-R4]
+    invariants: [P4]
+    claims: [C3-PC-3]
+    expected: FAIL because the asserted relationship-level claim exceeds the evidence.
+  - id: C3-T3
+    type: adversarial
+    description: The private half is correctly hidden but public graph data is combined with verifier observations to infer the relationship.
+    requirements: [C3-R4, C3-R5]
+    invariants: [P2, P4, P5]
+    claims: [C3-PC-4, C3-PC-5]
+    expected: Proof-level protection may PASS while presentation/contextual unlinkability remains CONSTRAINED.
+  - id: C3-T4
+    type: negative
+    description: A common durable binder is introduced to prove correspondence between the public and private halves and is reused across unrelated contexts.
+    requirements: [C3-R2]
+    invariants: [P2, P4]
+    claims: [C3-PC-2]
+    expected: FAIL for cross-context unlinkability of the private half.
+  - id: C3-T5
+    type: negative
+    description: A valid relationship proof is interpreted as evidence that both halves share a VTN or satisfy cross-VTN policy requirements.
+    requirements: [C3-R6, C3-R7]
+    invariants: [P4]
+    claims: []
+    expected: FAIL or INDETERMINATE for the higher-level trust-context claim unless separate evidence establishes it.
+  - id: C3-T6
+    type: positive
+    description: Both halves are privately proven, no unnecessary durable correlator is exposed, and surrounding context provides no contradictory public relationship signal.
+    requirements: [C3-R2, C3-R3, C3-R4, C3-R5]
+    invariants: [P2, P3, P4, P5]
+    claims: [C3-PC-2, C3-PC-4]
+    expected: Candidate PASS for the strongest composed-presentation privacy claim supported by concrete construction and deployment evidence.
+
+exceptions:
+  - description: Deliberate public correlation of half A is an intended property, not a DPIP defect; it constrains which higher-level privacy claims may be made.
