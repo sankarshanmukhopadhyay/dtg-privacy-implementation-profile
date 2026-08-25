@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip/finding.schema.json",
+  "title": "DPIP Finding Registry",
+  "type": "object",
+  "required": ["flow_id", "findings"],
+  "properties": {
+    "flow_id": {"type":"string","pattern":"^RF-[0-9]+$"},
+    "findings": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "required":["id","type","title","owner","status","severity","dpip_impact","evidence","disposition"],
+        "properties": {
+          "id":{"type":"string","pattern":"^RF-[0-9]+-F[0-9]+$"},
+          "type":{"enum":["dpip-gap","upstream-dependency","implementation-assumption","privacy-overclaim","evidence-gap"]},
+          "title":{"type":"string"},
+          "owner":{"type":"string"},
+          "repository":{"type":"string"},
+          "status":{"enum":["open","candidate","resolved","accepted-risk"]},
+          "severity":{"enum":["low","medium","high","blocking"]},
+          "dpip_impact":{"type":"array","items":{"type":"string"},"minItems":1},
+          "assumptions":{"type":"array","items":{"type":"string"}},
+          "evidence":{"type":"array","items":{"type":"string"},"minItems":1},
+          "disposition":{"type":"string"},
+          "upstream_issue":{"type":"string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
