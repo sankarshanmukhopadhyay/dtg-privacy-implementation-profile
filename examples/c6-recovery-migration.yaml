@@ -1,0 +1,191 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C6
+  version: "0.1"
+  title: Privacy-preserving recovery and migration
+  purpose: >-
+    Preserve control and relationship continuity during wallet/VTA recovery, backup,
+    key rotation, device migration, or credential re-binding without silently widening
+    cross-context correlation or exposing unrelated relationship state.
+  target_profile: PP-4
+  invariants: [P1, P2, P4, P5, P6, P7, P8]
+  construction_neutral: true
+
+actors:
+  - id: holder
+    role: party recovering or migrating control
+  - id: old_wallet
+    role: pre-migration wallet/VTA or device context
+  - id: new_wallet
+    role: recovered or migrated wallet/VTA or device context
+  - id: recovery_service
+    role: backup, trustee, escrow, support, or recovery component
+  - id: verifier
+    role: relying party observing post-recovery presentations
+  - id: operator
+    role: privileged infrastructure or telemetry observer
+
+components:
+  - area: Wallet/VTA
+    specification: Deployment-selected implementation
+    responsibility: Preserve context separation, key isolation, and minimum retained migration state.
+  - area: Recovery/backup
+    specification: Deployment-selected recovery mechanism
+    responsibility: Restore control without requiring a durable cross-context recovery binder.
+  - area: Credential/relationship artifacts
+    specification: Owning DTG component specifications
+    responsibility: Define continuity, re-binding, replacement, and lifecycle semantics used during migration.
+  - area: Verifier/trust context
+    specification: Deployment policy
+    responsibility: Evaluate post-migration evidence without assuming continuity implies global identifier reuse.
+
+privacy_claims:
+  - id: C6-PC-1
+    property: cross-context-unlinkability
+    subject: identifier
+    scope: unrelated pairwise identifiers before and after recovery
+    expected_status: PASS
+    rationale: Recovery should not require one reusable global identifier that joins previously separated relationship contexts.
+    invariants: [P2, P4]
+  - id: C6-PC-2
+    property: recovery-minimisation
+    subject: contextual-graph
+    scope: relationship graph visible to recovery/support actors
+    expected_status: CONSTRAINED
+    rationale: Some recovery actors may require limited continuity data, but full graph reconstruction must not be assumed necessary.
+    invariants: [P1, P2, P6]
+  - id: C6-PC-3
+    property: post-migration-presentation-privacy
+    subject: presentation
+    scope: verifier observations before and after migration
+    expected_status: INDETERMINATE
+    rationale: Privacy depends on identifier rotation, proof binding, lifecycle semantics, and retained migration mappings.
+    invariants: [P2, P4, P5, P7]
+
+requirements:
+  - id: C6-R1
+    normative_strength: MUST NOT
+    statement: Recovery or migration requires a durable cross-context identifier solely to reconnect otherwise independent pairwise contexts when continuity can be restored without such a binder.
+    invariants: [P2, P4]
+  - id: C6-R2
+    normative_strength: MUST
+    statement: Old-to-new identifier, key, credential, or relationship mappings used for migration have an explicit scope, purpose, and retention lifetime.
+    invariants: [P5, P6]
+  - id: C6-R3
+    normative_strength: MUST
+    statement: Recovery actors and privileged operators are represented as observers for every backup, escrow, support, telemetry, and migration correlation surface they can access.
+    invariants: [P1, P2, P6]
+  - id: C6-R4
+    normative_strength: MUST NOT
+    statement: A successful continuity or re-binding result is interpreted as evidence that pre- and post-migration presentations remain unlinkable unless the complete observable deployment supports that claim.
+    invariants: [P4, P5, P7]
+  - id: C6-R5
+    normative_strength: SHOULD
+    statement: Material privacy consequences introduced by recovery or migration are visible to the holder before authorizing the operation.
+    invariants: [P8]
+
+correlation_surfaces:
+  - id: C6-CS-1
+    class: recovery
+    value: recovery_account_or_ticket
+    observers: [recovery_service, operator]
+    scope: recovery-operation
+    correlation_scope:
+      declared_scope: recovery-operation
+      observable_scope: support-or-operator
+      effective_scope: cross-context-if-reused
+      scope_basis: A nominally temporary recovery account or ticket becomes a global join key if reused across relationship contexts or retained indefinitely.
+    stability: temporary-or-long-lived
+    joinability: direct if reused
+    necessity: operationally useful but not necessarily a permanent identity
+    mitigation: per-operation or narrowly scoped recovery handles with bounded retention
+    residual_risk: privileged systems may retain mappings longer than ordinary verifiers observe them
+    invariants: [P2, P5, P6]
+  - id: C6-CS-2
+    class: identity
+    value: old_to_new_identifier_mapping
+    observers: [old_wallet, new_wallet, recovery_service]
+    scope: migration
+    correlation_scope:
+      declared_scope: migration-only
+      observable_scope: migration-participants
+      effective_scope: migration-participants-until-deletion
+      scope_basis: Continuity often requires temporary mapping; privacy depends on deletion and whether the mapping spans unrelated contexts.
+    stability: bounded
+    joinability: direct
+    necessity: may be required for continuity in some component semantics
+    mitigation: context-specific mappings and explicit deletion/expiry
+    residual_risk: historical linking if retained
+    invariants: [P2, P4, P6, P7]
+  - id: C6-CS-3
+    class: persistence
+    value: backup_relationship_inventory
+    observers: [recovery_service, operator]
+    scope: backup-or-recovery-provider
+    correlation_scope:
+      declared_scope: minimum-recovery-material
+      observable_scope: provider-dependent
+      effective_scope: provider-visible-graph-if-centralised
+      scope_basis: Centralised backup indexes can expose relationship adjacency that ordinary protocol participants never see.
+    stability: long-lived
+    joinability: direct
+    necessity: deployment-specific
+    mitigation: minimise backup contents, encrypt compartmentalised contexts, and avoid global relationship indexes
+    residual_risk: provider compromise or authorised operator access may reconstruct relationships
+    invariants: [P1, P2, P6]
+  - id: C6-CS-4
+    class: protocol-envelope
+    value: migration_telemetry_or_device_identifier
+    observers: [operator]
+    scope: infrastructure
+    correlation_scope:
+      declared_scope: operation
+      observable_scope: infrastructure
+      effective_scope: infrastructure-dependent
+      scope_basis: Device, analytics, or transaction identifiers can join pre- and post-migration activity even when credential identifiers rotate.
+    stability: implementation-dependent
+    joinability: direct-or-probabilistic
+    necessity: operational/security dependent
+    mitigation: minimise telemetry, rotate identifiers, and separate analytics contexts
+    residual_risk: infrastructure correlation can remain
+    invariants: [P2, P5, P6]
+
+tests:
+  - id: C6-T1
+    type: positive
+    description: Two unrelated pairwise contexts are restored or migrated without introducing a shared durable recovery identifier visible to their verifiers.
+    requirements: [C6-R1, C6-R2, C6-R3]
+    invariants: [P1, P2, P4, P6]
+    claims: [C6-PC-1]
+    expected: PASS when continuity is restored with context-specific mappings and bounded recovery state.
+  - id: C6-T2
+    type: negative
+    description: A single recovery account identifier is copied into all migrated relationship contexts and later appears in verifier-visible or operator-queryable records.
+    requirements: [C6-R1, C6-R3]
+    invariants: [P2, P4]
+    claims: [C6-PC-1, C6-PC-2]
+    expected: FAIL for cross-context unlinkability and broaden effective relationship visibility.
+  - id: C6-T3
+    type: adversarial
+    description: Pairwise identifiers rotate correctly, but telemetry, migration tickets, or retained old-to-new mappings let an infrastructure operator join pre- and post-migration activity.
+    requirements: [C6-R2, C6-R3, C6-R4]
+    invariants: [P2, P4, P5, P6]
+    claims: [C6-PC-3]
+    expected: CONSTRAINED or FAIL for the affected observer scope.
+  - id: C6-T4
+    type: negative
+    description: Recovery of one relationship context requires exporting the holder's complete credential or relationship inventory to a recovery operator without a component-owned necessity.
+    requirements: [C6-R3]
+    invariants: [P1, P2, P6]
+    claims: [C6-PC-2]
+    expected: FAIL for data minimisation and contextual privacy unless the broader disclosure is explicitly required and justified.
+  - id: C6-T5
+    type: adversarial
+    description: A verifier treats successful post-migration continuity as proof that presentations before and after migration are unlinkable, despite retained migration mappings or lifecycle evidence.
+    requirements: [C6-R2, C6-R4, C6-R5]
+    invariants: [P4, P5, P7, P8]
+    claims: [C6-PC-3]
+    expected: FAIL because continuity evidence does not establish end-to-end presentation unlinkability.
+
+exceptions:
+  - description: Some recovery models necessarily introduce trusted recovery actors or continuity mappings; DPIP requires those observables to be explicit and scoped rather than forbidding all recoverability.
