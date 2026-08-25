@@ -1,6 +1,6 @@
 # DTG Privacy-Preserving Implementation Profile: Concept and Architecture
 
-Status: Initial development draft
+Status: Development draft — initial architecture implemented
 
 ## 1. Purpose
 
@@ -98,6 +98,8 @@ DPIP distinguishes between component ownership and composition ownership.
 - Human Trust Experience guidance provides the user-facing disclosure and authorization boundary.
 - DPIP defines whether the resulting composition preserves the claimed end-to-end privacy property.
 
+Requirement ownership and evidence ownership are distinct. DPIP may own an end-to-end requirement while depending on another DTG specification for the semantics, interface, or construction evidence necessary to evaluate it. The detailed traceability model is maintained in `docs/component-responsibilities.md`.
+
 ## 8. Correlation-surface model
 
 Every conforming interaction profile SHOULD identify potentially correlatable values, including:
@@ -125,6 +127,8 @@ For each value, an implementation profile SHOULD record:
 3. whether it can be joined with another observation;
 4. whether such joining is required, allowed, or prohibited;
 5. the mitigation or justification when it creates a correlation surface.
+
+The canonical interaction schema implements these fields for executable profiles.
 
 ## 9. Initial conformance profiles
 
@@ -166,11 +170,11 @@ A holder demonstrates a required relationship predicate using one or more creden
 
 A holder demonstrates a relationship whose two relevant identities or relationship contexts are intentionally distinct across communities or domains. The proof must preserve the legitimate distinction between those contexts and MUST NOT require their collapse onto a common durable identifier merely to bind the proof.
 
-C3 is an initial pressure test for P4 Compositional Privacy.
+C3 is an initial pressure test for P4 Compositional Privacy and for scoped privacy claims. Identifier, credential-half, relationship, presentation, and contextual/graph privacy may legitimately have different results for the same interaction.
 
 ## 11. Negative-test model
 
-DPIP conformance should include tests that attempt to disprove claimed privacy properties.
+DPIP conformance includes tests that attempt to disprove claimed privacy properties.
 
 Example:
 
@@ -178,17 +182,18 @@ Example:
 
 Negative cases may originate from specification review, implementation experience, RAHP pressure testing, security/privacy analysis, or discovered interoperability failures.
 
-A sufficiently stable negative case SHOULD be promoted from prose into machine-readable conformance evidence.
+A sufficiently stable negative case SHOULD be promoted from prose into machine-readable conformance evidence. C1-C3 now include positive, negative, and/or adversarial vectors in the canonical interaction fixtures.
 
 ## 12. Conformance evidence
 
-A DPIP conformance claim should eventually identify:
+A DPIP conformance claim identifies, as applicable:
 
 - interaction identifier and version;
 - profile level;
 - participating DTG specifications and versions;
 - implementation components and relevant configuration;
 - privacy invariants claimed;
+- scoped privacy claims and their subjects;
 - identified correlation surfaces;
 - normative assertions tested;
 - positive test evidence;
@@ -196,7 +201,7 @@ A DPIP conformance claim should eventually identify:
 - known exceptions and justified linkability;
 - result and evidence provenance.
 
-The project should progressively move from narrative evidence to structured fixtures and executable tests while retaining human-readable rationale.
+The project provides machine-readable interaction and conformance-result schemas, validation tooling, and automated repository checks. Conformance results MUST NOT upgrade a narrower privacy result into a broader claim without supporting evidence.
 
 ## 13. Relationship to RAHP
 
@@ -214,7 +219,7 @@ This provides a feedback loop from adversarial review to implementation assuranc
 
 ## 14. Evolution model
 
-DPIP should evolve independently of the release cadence of individual DTG components while recording the specification versions against which an interaction profile has been validated.
+DPIP evolves independently of the release cadence of individual DTG components while recording the specification versions and evidence sources against which an interaction profile has been validated.
 
 Changes in an underlying specification SHOULD be assessed for impact on:
 
@@ -222,19 +227,40 @@ Changes in an underlying specification SHOULD be assessed for impact on:
 - component boundaries;
 - correlation surfaces;
 - canonical interactions;
+- scoped privacy claims;
 - conformance assertions;
-- executable tests.
+- executable tests;
+- external evidence bindings.
 
 This creates a natural integration point with portfolio monitoring and cross-repository assurance tooling.
 
-## 15. Next work
+## 15. Implementation status and next work
 
-The next development increments should:
+The original architecture roadmap has now produced an executable initial baseline.
 
-1. formalize component responsibility boundaries;
-2. formalize the correlation-surface taxonomy;
-3. define a machine-readable interaction/profile schema;
-4. produce the three initial worked interaction cases;
-5. add negative tests for composed-presentation correlation;
-6. map requirements to current DTG specifications without hard-coding unstable construction details;
-7. define the first executable conformance evidence format.
+| Initial increment | Status | Current artifact |
+|---|---|---|
+| Formalize component responsibility boundaries | Implemented | `docs/component-responsibilities.md` and Section 7 |
+| Formalize correlation-surface taxonomy | Implemented baseline | `docs/correlation-surfaces.md`, Section 8, and interaction fixtures |
+| Define machine-readable interaction/profile schema | Implemented | `schema/interaction-profile.schema.json` |
+| Produce C1-C3 worked interaction cases | Implemented | canonical YAML fixtures under `examples/` |
+| Add negative tests for composed-presentation correlation | Implemented baseline | C1-C3 test vectors, including C3 asymmetric/privacy-scope cases |
+| Map requirements to current DTG specifications without hard-coding unstable constructions | Implemented baseline | cross-specification traceability in `docs/component-responsibilities.md` |
+| Define first executable conformance evidence format | Implemented | conformance-result schema, example result, validator, and CI |
+
+### 15.1 Next-phase priorities
+
+The next phase moves DPIP from an executable concept baseline toward a versioned implementation profile suitable for external implementer use.
+
+1. **Cross-repository evidence binding.** Define a machine-readable way for a DPIP conformance result to reference versioned evidence owned by another DTG repository while recording provenance and the exact claim that evidence supports.
+2. **Construction-aware, construction-neutral evidence.** Permit concrete ZKP/selective-disclosure evidence to be attached to a profile without making one construction normative. C3 should use `dtgwg-zkp-tf#13` and subsequent artifacts as an early pressure test.
+3. **Evidence-to-claim sufficiency rules.** Extend automated validation beyond syntactic traceability so that evidence for identifier or credential-half privacy cannot be silently promoted to relationship, presentation, or contextual privacy.
+4. **Deployment profiles and implementation guidance.** Add deployer-facing guidance for wallet/VTA behaviour, Trust Task envelopes, status/revocation, storage, telemetry, discovery, VTN context, and HTX privacy consequences.
+5. **Portfolio change-impact analysis.** Define machine-readable links from DTG repository/specification versions to affected DPIP invariants, interactions, requirements, tests, and evidence records so portfolio monitoring can identify privacy-relevant drift.
+6. **Additional canonical interactions.** Add recovery/migration, withdrawal/revocation, discovery/routing, and other interactions where privacy can fail outside the credential proof itself.
+7. **Adversarial regression pipeline.** Establish a repeatable path from RAHP or implementation findings to candidate negative tests, reviewed conformance vectors, and retained regression evidence.
+8. **v0.1 specification baseline.** Promote the concept document into a coherent versioned specification once the evidence-binding model and deployer guidance are sufficiently stable.
+
+### 15.2 Readiness criterion for v0.1
+
+DPIP should be considered ready for a v0.1 specification baseline when an implementer can select a canonical interaction, identify the applicable privacy profile and scoped claims, map each dependency to an owning DTG specification or deployment component, execute or inspect the required tests, attach provenance-bearing evidence, and produce a machine-validated conformance result without relying on undocumented architectural assumptions.
