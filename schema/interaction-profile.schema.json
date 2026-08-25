@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip/interaction-profile.schema.json",
+  "title": "DPIP Interaction Profile",
+  "type": "object",
+  "required": ["dpip_version", "interaction", "actors", "requirements", "correlation_surfaces", "tests"],
+  "properties": {
+    "dpip_version": {"type": "string"},
+    "interaction": {
+      "type": "object",
+      "required": ["id", "version", "title", "purpose", "target_profile", "invariants"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^C[0-9]+$"},
+        "version": {"type": "string"},
+        "title": {"type": "string"},
+        "purpose": {"type": "string"},
+        "target_profile": {"type": "string", "pattern": "^PP-[1-5]$"},
+        "invariants": {"type": "array", "items": {"type": "string", "pattern": "^P[1-8]$"}, "uniqueItems": true},
+        "construction_neutral": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "role"],
+        "properties": {
+          "id": {"type": "string"},
+          "role": {"type": "string"},
+          "observes": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "responsibility"],
+        "properties": {
+          "area": {"type": "string"},
+          "specification": {"type": "string"},
+          "responsibility": {"type": "string"}
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "invariants", "normative_strength"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^C[0-9]+-R[0-9]+$"},
+          "statement": {"type": "string"},
+          "invariants": {"type": "array", "items": {"type": "string", "pattern": "^P[1-8]$"}},
+          "normative_strength": {"enum": ["MUST", "MUST NOT", "SHOULD", "SHOULD NOT", "MAY"]},
+          "construction_constraint": {"type": "string"}
+        }
+      }
+    },
+    "correlation_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "class", "value", "observers", "scope", "stability", "joinability", "necessity", "mitigation", "invariants"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^C[0-9]+-CS-[0-9]+$"},
+          "class": {"type": "string"},
+          "value": {"type": "string"},
+          "observers": {"type": "array", "items": {"type": "string"}},
+          "scope": {"type": "string"},
+          "stability": {"type": "string"},
+          "joinability": {"type": "string"},
+          "necessity": {"type": "string"},
+          "mitigation": {"type": "string"},
+          "residual_risk": {"type": "string"},
+          "invariants": {"type": "array", "items": {"type": "string", "pattern": "^P[1-8]$"}}
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "description", "requirements", "invariants", "expected"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^C[0-9]+-T[0-9]+$"},
+          "type": {"enum": ["positive", "negative", "adversarial"]},
+          "description": {"type": "string"},
+          "requirements": {"type": "array", "items": {"type": "string"}},
+          "invariants": {"type": "array", "items": {"type": "string", "pattern": "^P[1-8]$"}},
+          "expected": {"type": "string"}
+        }
+      }
+    },
+    "exceptions": {"type": "array"}
+  },
+  "additionalProperties": true
+}
