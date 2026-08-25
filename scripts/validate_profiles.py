@@ -38,6 +38,20 @@ def semantic_errors(profile: dict) -> list[str]:
                 f"{claim['id']}: invariants outside interaction scope: {', '.join(sorted(outside))}"
             )
 
+    for surface in profile.get("correlation_surfaces", []):
+        scope = surface.get("correlation_scope")
+        if scope:
+            values = {
+                scope.get("declared_scope"),
+                scope.get("observable_scope"),
+                scope.get("effective_scope"),
+            }
+            values.discard(None)
+            if len(values) > 1 and not scope.get("scope_basis"):
+                errors.append(
+                    f"{surface['id']}: divergent declared/observable/effective scope requires scope_basis"
+                )
+
     for test in profile.get("tests", []):
         test_id = test["id"]
         outside = set(test.get("invariants", [])) - interaction_invariants
