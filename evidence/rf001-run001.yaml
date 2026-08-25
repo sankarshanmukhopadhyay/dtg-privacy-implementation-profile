@@ -1,0 +1,98 @@
+dpip_version: "0.1-draft"
+interaction_id: C3
+bindings:
+  - id: EV-C3-101
+    maturity: verified
+    repository: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+    revision: 07bb57e9520343127dc7495cd69dfc5487abcfea
+    artifact:
+      kind: generated-evidence
+      locator: implementation-runs/rf-001/run-001/implementation.yaml
+    evidence_kind: implementation
+    supports:
+      - {target_type: requirement, target_id: C3-R1}
+      - {target_type: requirement, target_id: C3-R3}
+    scope:
+      subject: deployment
+      statement: Defines the exact non-normative fixture configuration used for RF-001 RUN-001, including two independent private contexts and privileged observer state.
+    limitations:
+      - Fixture behavior is evidence only of this DPIP run and is not normative DTG implementation evidence.
+    owner_normative_status: experimental
+  - id: EV-C3-102
+    maturity: verified
+    repository: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+    revision: 7709639077e5997508baad317f1919df3164f6dd
+    artifact:
+      kind: generated-evidence
+      locator: implementation-runs/rf-001/run-001/observations/run-observations.yaml
+    evidence_kind: implementation
+    supports:
+      - {target_type: test, target_id: C3-T1}
+      - {target_type: test, target_id: C3-T2}
+      - {target_type: test, target_id: C3-T3}
+      - {target_type: test, target_id: C3-T5}
+      - {target_type: test, target_id: C3-T7}
+      - {target_type: privacy-claim, target_id: C3-PC-1}
+      - {target_type: privacy-claim, target_id: C3-PC-3}
+      - {target_type: privacy-claim, target_id: C3-PC-4}
+      - {target_type: privacy-claim, target_id: C3-PC-5}
+    scope:
+      subject: deployment
+      statement: Captures RF-001 S-01 through S-07 observations and ordinary-versus-privileged observer visibility for the executed fixture.
+    limitations:
+      - Trust Task and proof construction observations use explicit fixtures and cannot resolve upstream interface or construction claims.
+    owner_normative_status: experimental
+  - id: EV-C3-103
+    maturity: verified
+    repository: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+    revision: 899744f9d87c285f1d947f052a9cd4145a16fc2b
+    artifact:
+      kind: generated-evidence
+      locator: implementation-runs/rf-001/run-001/adversarial/join-attempts.yaml
+    evidence_kind: adversarial
+    supports:
+      - {target_type: test, target_id: C3-T3}
+      - {target_type: test, target_id: C3-T4}
+      - {target_type: test, target_id: C3-T7}
+      - {target_type: privacy-claim, target_id: C3-PC-3}
+      - {target_type: privacy-claim, target_id: C3-PC-4}
+      - {target_type: privacy-claim, target_id: C3-PC-5}
+    scope:
+      subject: contextual-graph
+      statement: Records attempted cross-context joins through private identifiers, task IDs, proof binders, public graph state, operator state, and telemetry.
+    limitations:
+      - Negative task/proof joins demonstrate fixture behavior only, not upstream guarantees.
+    owner_normative_status: experimental
+  - id: EV-C3-104
+    maturity: candidate
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    artifact:
+      kind: spec-section
+      locator: RF-001-A-2-unresolved-interface
+    evidence_kind: protocol-interface
+    supports:
+      - {target_type: test, target_id: C3-T4}
+      - {target_type: privacy-claim, target_id: C3-PC-2}
+    scope:
+      subject: protocol-envelope
+      statement: A concrete privacy-compatible Trust Task binding interface is required before private-identifier cross-context unlinkability can be promoted to PASS.
+    limitations:
+      - No immutable implementation artifact establishing the required interface is bound by this run.
+    owner_normative_status: unknown
+  - id: EV-C3-105
+    maturity: candidate
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    artifact:
+      kind: issue
+      locator: "13"
+    evidence_kind: construction
+    supports:
+      - {target_type: test, target_id: C3-T6}
+      - {target_type: privacy-claim, target_id: C3-PC-2}
+      - {target_type: privacy-claim, target_id: C3-PC-4}
+    scope:
+      subject: proof-construction
+      statement: Cross-community asymmetric relationship proof remains candidate construction input pending an immutable construction or test vector.
+    limitations:
+      - GitHub issue evidence is not itself verified construction evidence.
+    owner_normative_status: experimental
