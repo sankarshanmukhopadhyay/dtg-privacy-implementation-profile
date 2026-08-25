@@ -1,0 +1,185 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C2
+  version: "0.1"
+  title: Privacy-preserving relationship proof
+  purpose: >-
+    Enable a holder to prove a required relationship predicate without disclosing
+    unnecessary relationship data or introducing a durable cross-context subject,
+    holder, or relationship correlator.
+  target_profile: PP-4
+  invariants: [P1, P2, P3, P4, P5, P6, P7, P8]
+  construction_neutral: true
+
+actors:
+  - id: holder
+    role: party presenting the relationship predicate
+  - id: counterparty
+    role: other party represented by or bound into the relationship evidence
+  - id: issuer_or_relationship_authority
+    role: component or authority responsible for relationship evidence semantics
+  - id: verifier
+    role: relying party evaluating the relationship predicate
+  - id: wallet_vta
+    role: holder-controlled component composing evidence and authorising presentation
+  - id: trust_task_infrastructure
+    role: protocol layer carrying requests, evidence, or results when used
+
+components:
+  - area: Credentials/relationship artifacts
+    specification: DTG relationship credential or artifact selected by the deployment
+    responsibility: Define relationship semantics and the minimum bindings necessary to establish the predicate.
+  - area: ZKP/selective disclosure
+    specification: Construction selected by the deployment
+    responsibility: Demonstrate the relationship predicate and required bindings without unnecessary identifier disclosure.
+  - area: Trust Tasks
+    specification: Trust Task used by the deployment, if any
+    responsibility: Carry proof inputs and results without reintroducing hidden relationship or subject correlators.
+  - area: Wallet/VTA
+    specification: Implementation-specific
+    responsibility: Compose evidence, maintain context isolation, enforce retention policy, and obtain holder authorisation.
+
+requirements:
+  - id: C2-R1
+    normative_strength: MUST
+    statement: The verifier receives only the relationship predicate and additional information explicitly required by the declared trust purpose.
+    invariants: [P1, P3]
+    construction_constraint: The proof construction is deployment-specific.
+  - id: C2-R2
+    normative_strength: MUST NOT
+    statement: Proving the relationship requires disclosure or reuse of a globally stable relationship identifier across unrelated verifier contexts unless such linkage is explicitly required and justified.
+    invariants: [P2, P4]
+    construction_constraint: Relationship-scoped, blinded, derived, or presentation-scoped references may be used.
+  - id: C2-R3
+    normative_strength: MUST NOT
+    statement: Two independently privacy-preserving credentials or relationship artifacts become cross-context linkable solely because the composition requires a common durable holder or relationship binding.
+    invariants: [P2, P4]
+    construction_constraint: A selected construction must support the required semantic binding without unnecessary durable correlation.
+  - id: C2-R4
+    normative_strength: MUST NOT
+    statement: Trust Task envelopes, transcript identifiers, endpoints, or routing handles expose a durable relationship correlator that the proof layer otherwise hides.
+    invariants: [P4, P5]
+    construction_constraint: Protocol metadata must be assessed independently from proof disclosure.
+  - id: C2-R5
+    normative_strength: MUST NOT
+    statement: Status, revocation, or withdrawal checks reveal relationship membership beyond the actors and contexts required by the trust purpose.
+    invariants: [P4, P5, P7]
+    construction_constraint: Status architecture is deployment-specific but its privacy behavior is part of conformance.
+  - id: C2-R6
+    normative_strength: MUST
+    statement: Any legitimate relationship-scoped identifier remains bounded to its declared scope and is not silently promoted into a global subject or relationship handle.
+    invariants: [P2, P4]
+    construction_constraint: Scope enforcement may be cryptographic, protocol-level, policy-based, or a justified combination.
+  - id: C2-R7
+    normative_strength: MUST
+    statement: Retained transcripts and telemetry are minimised so that they do not unnecessarily reconstruct relationship graphs.
+    invariants: [P6]
+    construction_constraint: Retention controls are deployment-specific.
+  - id: C2-R8
+    normative_strength: MUST
+    statement: Before authorisation, the holder can identify the verifier, relationship predicate, intended disclosure, and material declared linkability.
+    invariants: [P8]
+    construction_constraint: User-interface implementation is deployment-specific.
+
+correlation_surfaces:
+  - id: C2-CS-1
+    class: relationship
+    value: relationship_identifier
+    observers: [verifier]
+    scope: relationship-or-presentation
+    stability: scoped
+    joinability: durable reuse across verifiers would permit direct relationship linkage
+    necessity: may be required within a relationship context but not globally by default
+    mitigation: derive, blind, rotate, or otherwise scope the reference to its intended context
+    residual_risk: deployment-dependent
+    invariants: [P2, P4]
+  - id: C2-CS-2
+    class: proof
+    value: common_holder_or_party_binding
+    observers: [verifier]
+    scope: construction-dependent
+    stability: variable
+    joinability: a common durable binding may join otherwise unlinkable credentials
+    necessity: semantic binding may be required; durable cross-context linkability is not implied
+    mitigation: use composition mechanisms that prove required sameness or relationship predicates without exposing a reusable correlator
+    residual_risk: construction-dependent
+    invariants: [P2, P4]
+  - id: C2-CS-3
+    class: protocol-envelope
+    value: trust_task_transcript_identifier
+    observers: [verifier, trust_task_infrastructure]
+    scope: session-or-deployment
+    stability: variable
+    joinability: reuse or predictable derivation may expose relationship continuity
+    necessity: session correlation may be required
+    mitigation: scope identifiers to the interaction and avoid reuse across unrelated contexts
+    residual_risk: infrastructure metadata may remain observable
+    invariants: [P4, P5]
+  - id: C2-CS-4
+    class: protocol-envelope
+    value: relationship_status_check
+    observers: [issuer_or_relationship_authority, trust_task_infrastructure]
+    scope: deployment-specific
+    stability: event-based
+    joinability: requests may reveal that a relationship is being tested
+    necessity: depends on status semantics
+    mitigation: privacy-preserving status design, indirection, caching, batching, or another justified control
+    residual_risk: deployment-dependent
+    invariants: [P4, P5, P7]
+  - id: C2-CS-5
+    class: persistence
+    value: retained_relationship_transcript
+    observers: [verifier, wallet_vta]
+    scope: deployment-specific
+    stability: long-lived if retained
+    joinability: accumulated transcripts can reconstruct a relationship graph
+    necessity: only for declared purposes
+    mitigation: minimise fields, access, retention duration, and secondary use
+    residual_risk: accountability or legal obligations may constrain minimisation
+    invariants: [P6]
+
+tests:
+  - id: C2-T1
+    type: positive
+    description: The holder proves the required relationship predicate without exposing unrelated relationship attributes or a mandatory globally stable relationship identifier.
+    requirements: [C2-R1, C2-R2, C2-R6]
+    invariants: [P1, P2, P3, P4]
+    expected: Verification succeeds with only permitted predicate evidence and scoped relationship references.
+  - id: C2-T2
+    type: adversarial
+    description: Two unrelated verifiers compare relationship proof artifacts from separate presentations.
+    requirements: [C2-R2, C2-R6]
+    invariants: [P2, P4]
+    expected: Protocol-mandated values do not provide an undeclared direct cross-verifier relationship correlator.
+  - id: C2-T3
+    type: adversarial
+    description: Two independently private credentials are composed and an observer attempts to join them through a common durable holder or relationship binding.
+    requirements: [C2-R3]
+    invariants: [P2, P4]
+    expected: The required semantic composition does not expose a reusable cross-context correlator unless explicitly justified.
+  - id: C2-T4
+    type: adversarial
+    description: The proof hides relationship identifiers but the Trust Task envelope or transcript exposes a stable relationship handle.
+    requirements: [C2-R4]
+    invariants: [P4, P5]
+    expected: The interaction fails conformance if protocol metadata defeats the claimed privacy property.
+  - id: C2-T5
+    type: adversarial
+    description: A status or revocation observer attempts to infer relationship membership from verification-time checks.
+    requirements: [C2-R5]
+    invariants: [P4, P5, P7]
+    expected: Material leakage is mitigated or explicitly recorded as residual risk that limits the profile claim.
+  - id: C2-T6
+    type: adversarial
+    description: Accumulated verifier or wallet transcripts are analysed to reconstruct a relationship graph beyond declared purposes.
+    requirements: [C2-R7]
+    invariants: [P6]
+    expected: Retention and access controls prevent or materially constrain undeclared graph reconstruction.
+  - id: C2-T7
+    type: positive
+    description: The holder can identify the verifier, relationship predicate, disclosure, and material linkability before authorisation.
+    requirements: [C2-R8]
+    invariants: [P8]
+    expected: Holder-facing decision context is available before presentation.
+
+exceptions: []
