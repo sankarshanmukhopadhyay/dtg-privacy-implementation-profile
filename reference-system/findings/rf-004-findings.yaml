@@ -1,0 +1,42 @@
+findings:
+  - id: RF-004-F001
+    flow: RF-004
+    interaction: C6
+    type: upstream-dependency
+    severity: blocking
+    owner: owning DTG credential and relationship specifications
+    status: open
+    summary: Recovery continuity semantics are not yet sufficiently evidenced to establish privacy-preserving re-binding without cross-context identifier reuse.
+    affected_requirements: [C6-R1, C6-R2, C6-R4]
+    affected_claims: [C6-PC-1, C6-PC-3]
+    evidence_status: candidate
+    disposition: route-upstream
+    rationale: DPIP can test the composed privacy consequence, but the owning layers must define the continuity or re-binding semantics that the test exercises.
+
+  - id: RF-004-F002
+    flow: RF-004
+    interaction: C6
+    type: deployment-risk
+    severity: high
+    owner: deployment operator
+    status: open
+    summary: Recovery providers or privileged operators may become master observers of otherwise separated relationship contexts.
+    affected_requirements: [C6-R3]
+    affected_claims: [C6-PC-2, C6-PC-3]
+    evidence_status: candidate
+    disposition: retain-as-dpip-test
+    rationale: The effective privacy scope depends on concrete backup, support, telemetry and administrative observability.
+
+  - id: RF-004-F003
+    flow: RF-004
+    interaction: C6
+    type: deployment-risk
+    severity: medium
+    owner: deployment operator
+    status: open
+    summary: Temporary old-to-new mappings and migration tickets may outlive their continuity purpose and preserve historical linkability.
+    affected_requirements: [C6-R2, C6-R3]
+    affected_claims: [C6-PC-1, C6-PC-3]
+    evidence_status: candidate
+    disposition: retain-as-dpip-test
+    rationale: Retention and deletion behaviour is deployment-specific and must be verified against observed implementation evidence.
