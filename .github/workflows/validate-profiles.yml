@@ -23,3 +23,5 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Validate interaction profiles
         run: python scripts/validate_profiles.py
+      - name: Validate conformance results
+        run: python scripts/validate_results.py
