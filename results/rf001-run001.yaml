@@ -1,0 +1,75 @@
+dpip_version: "0.1-draft"
+interaction_id: C3
+interaction_version: "0.2"
+implementation:
+  name: dpip-rf001-minimal-integration-fixture
+  version: "0.1"
+  deployment: RF-001-RUN-001 non-normative executed fixture
+
+test_results:
+  - test_id: C3-T1
+    status: PASS
+    evidence: [EV-C3-101, EV-C3-102]
+    notes: The executed fixture keeps the two private identifiers undisclosed to the ordinary verifier and uses context-distinct task/proof values.
+  - test_id: C3-T2
+    status: PASS
+    evidence: [EV-C3-102, EV-C3-103]
+    notes: The run detects the public relationship signal and does not promote private-half protection to relationship unlinkability.
+  - test_id: C3-T3
+    status: PASS
+    evidence: [EV-C3-102, EV-C3-103]
+    notes: Public graph and privileged operator observations successfully demonstrate broader effective correlation than the private identifier scope.
+  - test_id: C3-T4
+    status: INDETERMINATE
+    evidence: [EV-C3-103, EV-C3-104]
+    notes: The fixture does not reuse a task/proof binder, but unresolved DTG Trust Task binding semantics prevent promotion to a production-interface conclusion.
+  - test_id: C3-T5
+    status: PASS
+    evidence: [EV-C3-102]
+    notes: The verifier fixture evaluates trust context separately and does not infer common VTN anchoring from proof validity.
+  - test_id: C3-T6
+    status: NOT_RUN
+    evidence: [EV-C3-105]
+    notes: RUN-001 deliberately includes contradictory public relationship signals and does not instantiate the all-private surrounding context required by C3-T6.
+  - test_id: C3-T7
+    status: PASS
+    evidence: [EV-C3-102, EV-C3-103]
+    notes: The run keeps the private identifier pairwise while reporting relationship and graph correlation at their broader observed scopes.
+
+claim_results:
+  - claim_id: C3-PC-1
+    status: PASS
+    evidence: [EV-C3-102]
+    notes: In RUN-001 the verifier does not observe either private-half identifier.
+  - claim_id: C3-PC-2
+    status: INDETERMINATE
+    evidence: [EV-C3-103, EV-C3-104, EV-C3-105]
+    residual_correlation: The fixture uses distinct task and proof values, but this cannot establish the privacy properties of unresolved upstream Trust Task binding or candidate ZKP construction semantics.
+    notes: No production-level PASS is inferred from adapter behavior.
+  - claim_id: C3-PC-3
+    status: FAIL
+    evidence: [EV-C3-102, EV-C3-103]
+    residual_correlation: Public relationship halves and graph signals remain deliberately correlatable.
+  - claim_id: C3-PC-4
+    status: CONSTRAINED
+    evidence: [EV-C3-102, EV-C3-103, EV-C3-105]
+    residual_correlation: Fixture proof values are context-distinct, but public context, privileged operator state, telemetry, and missing immutable construction evidence constrain the composed presentation claim.
+  - claim_id: C3-PC-5
+    status: CONSTRAINED
+    evidence: [EV-C3-102, EV-C3-103]
+    residual_correlation: Public graph state plus operator subject and device indexes join contexts that remain separate to the ordinary verifier.
+
+evidence_provenance:
+  - id: EV-C3-101
+    source: implementation-runs/rf-001/run-001/implementation.yaml
+    version: "0.1"
+  - id: EV-C3-102
+    source: implementation-runs/rf-001/run-001/observations/run-observations.yaml
+    version: "0.1"
+  - id: EV-C3-103
+    source: implementation-runs/rf-001/run-001/adversarial/join-attempts.yaml
+    version: "0.1"
+  - id: EV-C3-104
+    source: RF-001 A-2 / DTG Trust Tasks unresolved interface dependency
+  - id: EV-C3-105
+    source: sankarshanmukhopadhyay/dtgwg-zkp-tf#13
