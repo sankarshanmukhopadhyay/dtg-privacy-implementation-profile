@@ -1,101 +1,226 @@
-dpip_version: "0.1-draft"
-reference_flow:
+flow:
   id: RF-004
   version: "0.1"
   title: Recovery and migration composed flow
+  normative_status: non-normative
   purpose: >-
-    Exercise privacy-preserving recovery or migration across wallet/VTA control,
-    credential or relationship continuity, lifecycle state, recovery services,
-    privileged infrastructure, and post-migration verification.
-  interaction_ids: [C6]
-  invariants: [P1, P2, P4, P5, P6, P7, P8]
+    Pressure-test recovery or migration across wallet/VTA control, continuity semantics,
+    recovery services, privileged infrastructure and post-migration verification without
+    silently widening correlation scope.
 
 actors:
-  - holder
-  - old_wallet
-  - new_wallet
-  - recovery_service
-  - verifier
-  - operator
+  - id: holder
+    role: party recovering or migrating control
+  - id: old_wallet
+    role: pre-migration wallet/VTA context
+  - id: new_wallet
+    role: post-migration wallet/VTA context
+  - id: recovery_service
+    role: backup, trustee, escrow, support or recovery component
+  - id: verifier
+    role: relying party evaluating post-migration evidence
+  - id: operator
+    role: privileged infrastructure, support or telemetry observer
 
-preconditions:
-  - Holder has at least two unrelated relationship contexts established before recovery or migration.
-  - The deployment declares recovery, backup, migration, re-binding, and lifecycle mechanisms in use.
-  - Privileged observers and telemetry processors are included in the observable deployment model.
+components:
+  - id: wallet-vta
+    owner: deployment-selected wallet/VTA implementation
+    responsibility: Preserve context separation, key isolation and minimum retained migration state.
+  - id: recovery
+    owner: deployment-selected recovery mechanism
+    responsibility: Restore control without introducing an unjustified durable cross-context binder.
+  - id: continuity
+    owner: owning DTG credential and relationship specifications
+    responsibility: Define replacement, re-binding and continuity semantics used by migration.
+  - id: verifier-policy
+    owner: deployment / verifier policy
+    responsibility: Evaluate continuity without inferring global identity or unlinkability beyond observed evidence.
+  - id: storage
+    owner: deployment operator
+    responsibility: Bound retention of migration mappings, backup indexes, telemetry and support records.
+
+assumptions:
+  - id: A-1
+    statement: The selected recovery mechanism can restore control using scoped recovery state rather than one permanent identifier shared across all contexts.
+    owner: deployment-selected recovery mechanism
+    status: candidate
+  - id: A-2
+    statement: Owning component specifications define sufficient continuity or re-binding semantics for affected credentials and relationships.
+    owner: owning DTG component specifications
+    status: unresolved
+  - id: A-3
+    statement: Temporary old-to-new mappings can be given an explicit purpose, scope and retention lifetime.
+    owner: deployment operator
+    status: candidate
+  - id: A-4
+    statement: Privileged infrastructure and telemetry observers can be enumerated for the recovery path.
+    owner: deployment operator
+    status: candidate
 
 steps:
-  - id: RF004-S1
+  - id: S-01
+    action: Holder initiates recovery or migration for selected contexts.
     actor: holder
-    action: initiate recovery or migration
-    privacy_focus: expose only the minimum continuity material required for the selected recovery path
-    surfaces: [recovery_account_or_ticket]
-  - id: RF004-S2
+    component: recovery
+    owner: deployment-selected recovery mechanism
+    assumption_status: candidate
+    assumptions: [A-1]
+    inputs: [selected-contexts, recovery-authority-evidence]
+    outputs: [recovery-session]
+    privacy_surfaces:
+      - value: recovery account or ticket
+        observer: recovery_service
+        declared_scope: recovery-session
+        observable_scope: support-and-recovery-service
+        effective_scope: cross-context-if-reused
+        effect: Reuse across unrelated contexts creates a durable join surface.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R1, C6-R3, C6-R5]
+      tests: [C6-T1, C6-T2]
+      claims: [C6-PC-1, C6-PC-2]
+
+  - id: S-02
+    action: Recovery service obtains only continuity material needed for the selected contexts.
     actor: recovery_service
-    action: authenticate recovery authority and obtain continuity material
-    privacy_focus: avoid requiring unrelated credential or relationship inventory
-    surfaces: [recovery_account_or_ticket, backup_relationship_inventory]
-  - id: RF004-S3
+    component: recovery
+    owner: deployment-selected recovery mechanism
+    assumption_status: candidate
+    assumptions: [A-1]
+    inputs: [recovery-session, scoped-backup-material]
+    outputs: [recovery-material]
+    privacy_surfaces:
+      - value: backup relationship inventory
+        observer: recovery_service
+        declared_scope: selected-contexts
+        observable_scope: recovery-provider
+        effective_scope: provider-visible-graph-if-centralised
+        effect: Centralised backup indexes can expose relationship adjacency not visible to ordinary verifiers.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R1, C6-R3]
+      tests: [C6-T4]
+      claims: [C6-PC-2]
+
+  - id: S-03
+    action: Old wallet or continuity source produces context-specific old-to-new bindings where continuity requires them.
     actor: old_wallet
-    action: supply scoped old-to-new continuity bindings where available
-    privacy_focus: keep mappings context-specific and bounded in retention
-    surfaces: [old_to_new_identifier_mapping]
-  - id: RF004-S4
+    component: continuity
+    owner: owning DTG component specifications
+    assumption_status: unresolved
+    assumptions: [A-2, A-3]
+    inputs: [recovery-material, pre-migration-context-state]
+    outputs: [scoped-continuity-bindings]
+    privacy_surfaces:
+      - value: old-to-new identifier mapping
+        observer: recovery_service
+        declared_scope: migration-only
+        observable_scope: migration-participants
+        effective_scope: migration-participants-until-deletion
+        effect: Retained mappings preserve historical linkability after migration completes.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R2, C6-R4]
+      tests: [C6-T3, C6-T5]
+      claims: [C6-PC-1, C6-PC-3]
+
+  - id: S-04
+    action: New wallet establishes replacement keys, identifiers, credentials or relationship bindings per context.
     actor: new_wallet
-    action: establish replacement keys, identifiers, credentials, or relationship bindings
-    privacy_focus: do not reuse one durable identifier across otherwise independent contexts
-    surfaces: [old_to_new_identifier_mapping, migration_telemetry_or_device_identifier]
-  - id: RF004-S5
+    component: wallet-vta
+    owner: deployment-selected wallet/VTA implementation
+    assumption_status: candidate
+    assumptions: [A-1, A-2]
+    inputs: [scoped-continuity-bindings]
+    outputs: [post-migration-context-state]
+    privacy_surfaces:
+      - value: post-migration identifier set
+        observer: verifier
+        declared_scope: relationship-context
+        observable_scope: verifier-specific
+        effective_scope: verifier-specific-unless-external-joins-exist
+        effect: A single reused recovery-derived identifier would collapse unrelated contexts.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R1, C6-R4]
+      tests: [C6-T1, C6-T2]
+      claims: [C6-PC-1, C6-PC-3]
+
+  - id: S-05
+    action: Deployment processes telemetry, support, audit or infrastructure events associated with migration.
     actor: operator
-    action: process infrastructure, telemetry, audit, or support events associated with migration
-    privacy_focus: assess whether privileged infrastructure can join pre- and post-migration contexts
-    surfaces: [migration_telemetry_or_device_identifier, recovery_account_or_ticket]
-  - id: RF004-S6
+    component: storage
+    owner: deployment operator
+    assumption_status: candidate
+    assumptions: [A-4]
+    inputs: [recovery-session, post-migration-context-state]
+    outputs: [migration-observability-records]
+    privacy_surfaces:
+      - value: migration telemetry or device identifier
+        observer: operator
+        declared_scope: operation
+        observable_scope: infrastructure
+        effective_scope: infrastructure-dependent
+        effect: Device, analytics or transaction identifiers can join pre- and post-migration activity even when pairwise identifiers rotate.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R2, C6-R3, C6-R4]
+      tests: [C6-T3]
+      claims: [C6-PC-3]
+
+  - id: S-06
+    action: Verifier evaluates post-migration continuity evidence without assuming continuity proves unlinkability.
     actor: verifier
-    action: verify post-migration continuity or relationship evidence
-    privacy_focus: do not infer presentation unlinkability solely from successful continuity
-    surfaces: [old_to_new_identifier_mapping]
-  - id: RF004-S7
+    component: verifier-policy
+    owner: deployment / verifier policy
+    assumption_status: unresolved
+    assumptions: [A-2]
+    inputs: [post-migration-context-state, continuity-evidence]
+    outputs: [post-migration-verification-result]
+    privacy_surfaces:
+      - value: continuity evidence
+        observer: verifier
+        observable_scope: verifier
+        effective_scope: verifier-plus-deployment-joins
+        effect: Continuity evidence may itself bridge historical state and therefore cannot be treated as proof of unlinkability.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R4]
+      tests: [C6-T5]
+      claims: [C6-PC-3]
+
+  - id: S-07
+    action: Recovery service and operator expire justified temporary mappings, tickets and retained migration state.
     actor: recovery_service
-    action: expire or delete temporary mappings and recovery state
-    privacy_focus: ensure effective scope contracts after justified continuity processing completes
-    surfaces: [old_to_new_identifier_mapping, recovery_account_or_ticket, backup_relationship_inventory]
+    component: storage
+    owner: deployment operator
+    assumption_status: candidate
+    assumptions: [A-3]
+    inputs: [scoped-continuity-bindings, migration-observability-records]
+    outputs: [bounded-recovery-audit]
+    privacy_surfaces:
+      - value: retained recovery and migration mapping set
+        observer: operator
+        declared_scope: continuity-and-audit
+        observable_scope: privileged-deployment
+        effective_scope: privileged-deployment-until-deletion
+        effect: Indefinite retention can preserve a master historical join surface across contexts.
+    dpip_mappings:
+      interactions: [C6]
+      requirements: [C6-R2, C6-R3]
+      tests: [C6-T3]
+      claims: [C6-PC-1, C6-PC-2, C6-PC-3]
 
-observer_expectations:
-  ordinary_verifier:
-    expected_scope: relationship-context-only
-    prohibited_inference: successful continuity implies global identity or cross-context linkability
-  recovery_service:
-    expected_scope: minimum recovery material needed for selected contexts
-    risk: central provider may become a relationship-graph observer
-  operator:
-    expected_scope: deployment-specific infrastructure metadata
-    risk: telemetry or support systems may create a master pre/post-migration join surface
-
-adversarial_cases:
-  - id: RF004-A1
-    scenario: One stable recovery account is reused across unrelated relationship contexts.
-    expected_outcome: FAIL
-    affected_claims: [C6-PC-1, C6-PC-2]
-  - id: RF004-A2
-    scenario: Pairwise identifiers rotate, but telemetry joins old and new contexts through device or migration identifiers.
-    expected_outcome: CONSTRAINED
-    affected_claims: [C6-PC-3]
-  - id: RF004-A3
-    scenario: Recovery of one relationship requires export of the complete relationship graph.
-    expected_outcome: FAIL
-    affected_claims: [C6-PC-2]
-  - id: RF004-A4
-    scenario: Temporary old-to-new mappings persist indefinitely after migration completes.
-    expected_outcome: CONSTRAINED
-    affected_claims: [C6-PC-1, C6-PC-3]
-  - id: RF004-A5
-    scenario: Verifier treats successful re-binding as proof of unlinkability across pre- and post-migration presentations.
-    expected_outcome: FAIL
-    affected_claims: [C6-PC-3]
-
-result_policy:
-  success_condition: >-
-    Continuity is restored without creating an unjustified durable cross-context binder,
-    recovery observers are explicitly scoped, temporary mappings are bounded, and
-    residual privileged-observer correlation is reflected in the conformance result.
-  allowed_statuses: [PASS, FAIL, CONSTRAINED, INDETERMINATE]
+expected_dpip_outcomes:
+  - claim: cross-context unlinkability after recovery
+    status: INDETERMINATE
+    basis: Depends on whether the concrete recovery mechanism introduces a shared durable binder or privileged join surface.
+  - claim: recovery data minimisation
+    status: CONSTRAINED
+    basis: Some continuity material may be necessary, but full relationship-graph disclosure is not assumed justified.
+  - claim: post-migration presentation privacy
+    status: INDETERMINATE
+    basis: Depends on concrete identifier rotation, continuity semantics, telemetry and retained mapping behaviour.
+  - claim: privileged-observer contextual privacy
+    status: CONSTRAINED
+    basis: Recovery and migration may require bounded privileged visibility that must be represented explicitly in effective scope.
