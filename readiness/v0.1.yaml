@@ -1,0 +1,65 @@
+release: v0.1
+status: not-ready
+criteria:
+  - id: R1
+    name: canonical-interaction-selection
+    status: PASS
+    evidence:
+      - examples/c1-personhood-presentation.yaml
+      - examples/c2-relationship-proof.yaml
+      - examples/c3-asymmetric-cross-community-relationship.yaml
+      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
+  - id: R2
+    name: privacy-profile-and-scoped-claims
+    status: PASS
+    evidence:
+      - spec/dpip-concept.md#9-initial-conformance-profiles
+      - examples/c3-asymmetric-cross-community-relationship.yaml
+  - id: R3
+    name: dependency-ownership-mapping
+    status: PASS
+    evidence:
+      - docs/component-responsibilities.md
+      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
+  - id: R4
+    name: executable-test-and-result-path
+    status: PASS
+    evidence:
+      - scripts/validate_profiles.py
+      - scripts/validate_results.py
+      - results/c3-baseline.yaml
+  - id: R5
+    name: provenance-bearing-external-evidence
+    status: PARTIAL
+    blocking_findings: [RF-001-F002]
+    evidence:
+      - schema/evidence-binding.schema.json
+      - evidence/c3-external-evidence.yaml
+    notes: Evidence-binding mechanism is implemented, but important C3 construction evidence remains candidate rather than immutable verified evidence.
+  - id: R6
+    name: explicit-assumptions-and-findings
+    status: PASS
+    evidence:
+      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
+      - reference-system/findings/rf-001-findings.yaml
+  - id: R7
+    name: implementation-guidance
+    status: PARTIAL
+    evidence:
+      - docs/deployment-guide/rf-001-implementation-guidance.md
+    notes: RF-001 has a first deployer-facing slice; broader lifecycle, recovery, discovery/routing and HTX guidance remains future work.
+  - id: R8
+    name: no-undocumented-blocking-assumptions
+    status: FAIL
+    blocking_findings: [RF-001-F001]
+    notes: Privacy-compatible Trust Task binding semantics remain unresolved for C3 private-identifier unlinkability.
+release_gate:
+  ready_when:
+    - all criteria are PASS or explicitly accepted as non-blocking limitations
+    - no finding with severity blocking is open
+    - CI validates profiles, evidence, results, reference flows, findings, and this readiness record
+  current_blockers:
+    - RF-001-F001
+  current_nonblocking_limitations:
+    - RF-001-F002
+    - broader deployment guidance beyond RF-001
