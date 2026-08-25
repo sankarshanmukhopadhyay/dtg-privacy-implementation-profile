@@ -1,0 +1,60 @@
+flow_id: RF-001
+findings:
+  - id: RF-001-F001
+    type: upstream-dependency
+    title: Trust Task binding semantics remain unresolved for privacy-preserving relationship proof
+    owner: DTG Trust Tasks
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    status: open
+    severity: blocking
+    dpip_impact: [C3-R2, C3-T4, C3-PC-2]
+    assumptions: [A-2]
+    evidence:
+      - RF-001 S-03 marks effective scope unresolved for exchange/task context
+    disposition: Keep C3 private-identifier cross-context unlinkability INDETERMINATE until a privacy-compatible binding interface is evidenced.
+  - id: RF-001-F002
+    type: evidence-gap
+    title: C3 proof construction evidence is candidate rather than immutable verified evidence
+    owner: DTG ZKP
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    status: candidate
+    severity: high
+    dpip_impact: [C3-R2, C3-R4, C3-T1, C3-T6, C3-PC-1, C3-PC-2, C3-PC-4]
+    assumptions: [A-3]
+    evidence:
+      - sankarshanmukhopadhyay/dtgwg-zkp-tf#13
+    disposition: Retain candidate evidence and do not promote the strongest composed-presentation claim until a commit-, test-vector-, or release-pinned artifact exists.
+  - id: RF-001-F003
+    type: privacy-overclaim
+    title: Pairwise private-half scope cannot be inherited as relationship-level unlinkability
+    owner: DPIP composition assessment
+    status: resolved
+    severity: high
+    dpip_impact: [C3-R4, C3-R5, C3-R8, C3-T2, C3-T3, C3-T7, C3-PC-3, C3-PC-5]
+    evidence:
+      - RF-001 S-02 private-half-b is pairwise while public-half-a is public/community observable
+      - RF-001 S-06 publishes or retains a relationship graph signal
+    disposition: Resolved by scoped claims plus declared/observable/effective correlation scope; relationship unlinkability remains FAIL and contextual privacy CONSTRAINED.
+  - id: RF-001-F004
+    type: implementation-assumption
+    title: Privileged operator views may reconstruct correlation excluded from ordinary verifier views
+    owner: deployment / relationship service
+    status: open
+    severity: high
+    dpip_impact: [P2, P4, P6, C3-R5, C3-PC-5]
+    evidence:
+      - RF-001 S-06 administrator relationship view has privileged-deployment effective scope
+    disposition: Deployment guidance must require explicit privileged-observer analysis, retention purpose, access controls, and claim scoping.
+  - id: RF-001-F005
+    type: upstream-dependency
+    title: Reciprocal relationship semantics remain externally owned and must not be invented by DPIP
+    owner: DTG Credentials
+    repository: trustoverip/dtgwg-cred-spec
+    status: candidate
+    severity: medium
+    dpip_impact: [C2, C3, C3-R1, C3-R6]
+    assumptions: [A-1]
+    evidence:
+      - RF-001 S-02 treats reciprocal relationship semantics as credential-layer owned
+      - sankarshanmukhopadhyay/dtgwg-zkp-tf#13 records the cross-spec boundary
+    disposition: Continue testing the integration hypothesis while keeping the semantic dependency explicit; raise upstream only where DPIP needs a concrete interface or definition to evaluate conformance.
