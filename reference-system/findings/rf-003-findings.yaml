@@ -1,0 +1,57 @@
+flow_id: RF-003
+findings:
+  - id: RF-003-F001
+    type: upstream-dependency
+    title: Cross-artifact lifecycle precedence is not yet evidenced
+    owner: deployment / verifier / VTN policy
+    status: open
+    severity: high
+    dpip_impact: [C5-R3, C5-R4, C5-T4, C5-PC-3]
+    assumptions: [A-2]
+    evidence:
+      - RF-003 S-05 requires an evidenced precedence rule before a composed lifecycle decision can be PASS or FAIL
+    disposition: Keep composed lifecycle decision correctness INDETERMINATE until the owning specifications or deployment policy define and evidence precedence.
+  - id: RF-003-F002
+    type: evidence-gap
+    title: Privacy properties of the selected status mechanism remain deployment-specific
+    owner: status/lifecycle mechanism
+    status: candidate
+    severity: high
+    dpip_impact: [C5-R5, C5-R6, C5-T3, C5-PC-2]
+    assumptions: [A-3]
+    evidence:
+      - RF-003 S-02 models a status query handle whose effective scope depends on reuse and status-source logging
+    disposition: Require concrete status-query scope, caching, identifier reuse and observer evidence before reporting status-query unlinkability PASS.
+  - id: RF-003-F003
+    type: upstream-dependency
+    title: Trust Task lifecycle semantics must be evaluated separately from cryptographic validity
+    owner: DTG Trust Tasks
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    status: candidate
+    severity: high
+    dpip_impact: [C5-R1, C5-R2, C5-R3, C5-T6, C5-PC-3]
+    assumptions: [A-1]
+    evidence:
+      - RF-003 S-03 separates Trust Task freshness/cancellation/supersession state from proof validity
+    disposition: Do not treat stale or superseded Trust Task evidence as current unless the owning Trust Task semantics support that conclusion.
+  - id: RF-003-F004
+    type: implementation-assumption
+    title: Supersession and replacement chains can collapse otherwise separate contexts
+    owner: deployment operator
+    status: open
+    severity: high
+    dpip_impact: [C5-R5, C5-R7, C5-T5, C5-PC-4]
+    assumptions: [A-4]
+    evidence:
+      - RF-003 S-06 exposes replacement history to privileged operators
+    disposition: Bound historical linkage to continuity/accountability purpose, minimise exposed predecessors, and scope the resulting privacy claim.
+  - id: RF-003-F005
+    type: privacy-overclaim
+    title: Cryptographic validity cannot be promoted to current lifecycle effectiveness
+    owner: DPIP composition assessment
+    status: resolved
+    severity: high
+    dpip_impact: [C5-R1, C5-R2, C5-T2]
+    evidence:
+      - C5-T2 rejects acceptance of a cryptographically valid but superseded artifact
+    disposition: Retain C5-T2 as a regression test separating proof/signature validity from lifecycle effect.
