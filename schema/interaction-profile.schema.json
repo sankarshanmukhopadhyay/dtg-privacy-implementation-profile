@@ -47,7 +47,37 @@
       "items":{"type":"object","required":["id","owner","purpose"],"properties":{"id":{"type":"string"},"owner":{"type":"string"},"purpose":{"type":"string"},"reference":{"type":"string"},"normative":{"type":"boolean"}}}
     },
     "requirements": {"type":"array","items":{"type":"object","required":["id","statement","invariants","normative_strength"],"properties":{"id":{"type":"string","pattern":"^C[0-9]+-R[0-9]+$"},"statement":{"type":"string"},"invariants":{"type":"array","items":{"type":"string","pattern":"^P[1-8]$"}},"normative_strength":{"enum":["MUST","MUST NOT","SHOULD","SHOULD NOT","MAY"]},"construction_constraint":{"type":"string"}}}},
-    "correlation_surfaces": {"type":"array","items":{"type":"object","required":["id","class","value","observers","scope","stability","joinability","necessity","mitigation","invariants"],"properties":{"id":{"type":"string","pattern":"^C[0-9]+-CS-[0-9]+$"},"class":{"type":"string"},"value":{"type":"string"},"observers":{"type":"array","items":{"type":"string"}},"scope":{"type":"string"},"stability":{"type":"string"},"joinability":{"type":"string"},"necessity":{"type":"string"},"mitigation":{"type":"string"},"residual_risk":{"type":"string"},"invariants":{"type":"array","items":{"type":"string","pattern":"^P[1-8]$"}}}}},
+    "correlation_surfaces": {
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","class","value","observers","scope","stability","joinability","necessity","mitigation","invariants"],
+        "properties":{
+          "id":{"type":"string","pattern":"^C[0-9]+-CS-[0-9]+$"},
+          "class":{"type":"string"},
+          "value":{"type":"string"},
+          "observers":{"type":"array","items":{"type":"string"}},
+          "scope":{"type":"string"},
+          "correlation_scope": {
+            "type": "object",
+            "required": ["declared_scope", "observable_scope", "effective_scope"],
+            "properties": {
+              "declared_scope": {"type": "string", "minLength": 1},
+              "observable_scope": {"type": "string", "minLength": 1},
+              "effective_scope": {"type": "string", "minLength": 1},
+              "scope_basis": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
+          "stability":{"type":"string"},
+          "joinability":{"type":"string"},
+          "necessity":{"type":"string"},
+          "mitigation":{"type":"string"},
+          "residual_risk":{"type":"string"},
+          "invariants":{"type":"array","items":{"type":"string","pattern":"^P[1-8]$"}}
+        }
+      }
+    },
     "tests": {"type":"array","items":{"type":"object","required":["id","type","description","requirements","invariants","expected"],"properties":{"id":{"type":"string","pattern":"^C[0-9]+-T[0-9]+$"},"type":{"enum":["positive","negative","adversarial"]},"description":{"type":"string"},"requirements":{"type":"array","items":{"type":"string"}},"invariants":{"type":"array","items":{"type":"string","pattern":"^P[1-8]$"}},"claims":{"type":"array","items":{"type":"string"}},"expected":{"type":"string"}}}},
     "exceptions": {"type":"array"}
   },
