@@ -1,0 +1,32 @@
+dpip_version: "0.1-draft"
+interaction_id: C3
+bindings:
+  - id: EV-C3-1
+    maturity: candidate
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    artifact:
+      kind: issue
+      locator: "13"
+    evidence_kind: construction
+    supports:
+      - target_type: privacy-claim
+        target_id: C3-PC-1
+      - target_type: privacy-claim
+        target_id: C3-PC-2
+      - target_type: test
+        target_id: C3-T6
+    scope:
+      subject: proof-construction
+      statement: >-
+        Candidate construction evidence for proving reciprocal relationship and hidden/private-half
+        bindings without exposing an unnecessary durable cross-context identifier.
+    limitations:
+      - An issue is a hypothesis/work tracker, not immutable verified construction evidence.
+      - This binding cannot by itself justify relationship, presentation, or contextual unlinkability.
+      - A verified binding must later resolve to an immutable commit, released artifact, or generated evidence record.
+    owner_normative_status: experimental
+    provenance:
+      captured_from: "github issue #13"
+      notes: >-
+        DPIP records this as candidate evidence only. It is intentionally not sufficient to upgrade
+        any canonical privacy claim result.
