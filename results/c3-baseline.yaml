@@ -1,0 +1,59 @@
+dpip_version: "0.1-draft"
+interaction_id: C3
+interaction_version: "0.1"
+implementation:
+  name: reference-asymmetric-edge-baseline
+  version: "0.1"
+  deployment: illustrative
+
+test_results:
+  - test_id: C3-T1
+    status: PASS
+    evidence: [E-C3-1]
+  - test_id: C3-T2
+    status: PASS
+    evidence: [E-C3-2]
+  - test_id: C3-T3
+    status: PASS
+    evidence: [E-C3-3]
+  - test_id: C3-T4
+    status: PASS
+    evidence: [E-C3-4]
+  - test_id: C3-T5
+    status: PASS
+    evidence: [E-C3-5]
+  - test_id: C3-T6
+    status: INDETERMINATE
+    notes: Strongest composed-presentation claim depends on concrete construction and deployment evidence.
+
+claim_results:
+  - claim_id: C3-PC-1
+    status: PASS
+    evidence: [E-C3-1]
+  - claim_id: C3-PC-2
+    status: PASS
+    evidence: [E-C3-1, E-C3-4]
+  - claim_id: C3-PC-3
+    status: FAIL
+    evidence: [E-C3-2]
+    residual_correlation: Public half A remains deliberately correlatable.
+  - claim_id: C3-PC-4
+    status: CONSTRAINED
+    evidence: [E-C3-3]
+    residual_correlation: Presentation observations may remain inferable when combined with public context.
+  - claim_id: C3-PC-5
+    status: CONSTRAINED
+    evidence: [E-C3-3]
+    residual_correlation: Public or community-visible graph data can reveal relationship context.
+
+evidence_provenance:
+  - id: E-C3-1
+    source: DPIP C3 private-half positive vector
+  - id: E-C3-2
+    source: DPIP C3 relationship-level overclaim negative vector
+  - id: E-C3-3
+    source: DPIP C3 contextual graph adversarial vector
+  - id: E-C3-4
+    source: DPIP C3 durable binder negative vector
+  - id: E-C3-5
+    source: DPIP C3 VTN boundary negative vector
