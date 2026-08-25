@@ -1,0 +1,225 @@
+flow:
+  id: RF-003
+  version: "0.1"
+  title: Lifecycle privacy and precedence
+  normative_status: non-normative
+  purpose: >-
+    Pressure-test a composed DTG trust decision in which credential, relationship,
+    delegation and exchange artifacts may have different lifecycle states while lifecycle
+    evidence itself can create correlation.
+
+actors:
+  - id: holder
+    role: party presenting current trust evidence
+  - id: wallet_vta
+    role: component collecting and composing lifecycle evidence
+  - id: verifier
+    role: relying party making the composed trust decision
+  - id: status_source
+    role: issuer, registry or relationship service providing lifecycle evidence
+  - id: trust_task_service
+    role: exchange layer providing freshness or task lifecycle evidence
+  - id: operator
+    role: privileged observer of status and audit history
+
+components:
+  - id: credentials
+    owner: DTG Credentials / relationship semantics
+    repository: trustoverip/dtgwg-cred-spec
+    responsibility: Define credential and relationship lifecycle states and effect.
+  - id: trust-task
+    owner: DTG Trust Tasks
+    repository: trustoverip/dtgwg-trust-tasks-spec
+    responsibility: Define freshness, cancellation, supersession or related exchange lifecycle semantics.
+  - id: wallet-vta
+    owner: VTA/wallet implementation
+    responsibility: Collect minimal lifecycle evidence and isolate status-query contexts.
+  - id: verifier-policy
+    owner: deployment / verifier / VTN policy
+    responsibility: Define composed decision precedence where multiple owning-layer lifecycle states participate.
+  - id: storage
+    owner: deployment operator
+    responsibility: Bound historical status and supersession-chain retention.
+
+assumptions:
+  - id: A-1
+    statement: Each lifecycle-bearing artifact exposes or permits evidence of its current state according to its owning semantics.
+    owner: owning component specifications
+    status: candidate
+  - id: A-2
+    statement: The deployment defines precedence when current credential, relationship, delegation or Trust Task states conflict.
+    owner: deployment / verifier policy
+    status: unresolved
+  - id: A-3
+    statement: Lifecycle evidence can be obtained without requiring one reusable cross-verifier status identifier.
+    owner: status/lifecycle mechanism
+    status: candidate
+  - id: A-4
+    statement: Historical replacement or supersession linkage can be bounded to the continuity or accountability purpose that requires it.
+    owner: deployment operator
+    status: candidate
+
+steps:
+  - id: S-01
+    action: Wallet/VTA identifies which lifecycle-bearing artifacts materially participate in the trust decision.
+    actor: wallet_vta
+    component: wallet-vta
+    owner: VTA/wallet implementation
+    assumption_status: confirmed
+    inputs: [credential-evidence, relationship-evidence, delegation-evidence, trust-task-evidence]
+    outputs: [lifecycle-dependency-set]
+    privacy_surfaces:
+      - value: artifact dependency set
+        observer: wallet_vta
+        observable_scope: local
+        effective_scope: local-unless-telemetry-retained
+        effect: A complete dependency inventory can reveal relationships and delegation structure if exported or logged.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R1, C5-R5]
+      tests: [C5-T1]
+      claims: [C5-PC-1]
+
+  - id: S-02
+    action: Wallet/VTA obtains current lifecycle/freshness evidence from the applicable owning sources.
+    actor: wallet_vta
+    component: credentials
+    owner: owning lifecycle sources
+    assumption_status: candidate
+    assumptions: [A-1, A-3]
+    inputs: [lifecycle-dependency-set]
+    outputs: [current-lifecycle-evidence]
+    privacy_surfaces:
+      - value: status query handle
+        observer: status_source
+        declared_scope: decision-or-verifier
+        observable_scope: status-source
+        effective_scope: status-source-if-reused
+        effect: Reuse can let a status source correlate otherwise separate presentations.
+      - value: freshness timestamp
+        observer: status_source
+        observable_scope: status-source
+        effective_scope: status-source-log-dependent
+        effect: Timing can correlate presentation activity even where identifiers are minimised.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R5, C5-R6]
+      tests: [C5-T3]
+      claims: [C5-PC-2]
+
+  - id: S-03
+    action: Trust Task service contributes task freshness, cancellation or supersession state where the task artifact participates in the decision.
+    actor: trust_task_service
+    component: trust-task
+    owner: DTG Trust Tasks
+    assumption_status: candidate
+    assumptions: [A-1]
+    inputs: [trust-task-evidence]
+    outputs: [trust-task-lifecycle-state]
+    privacy_surfaces:
+      - value: task lifecycle/thread state
+        observer: trust_task_service
+        observable_scope: service-or-session
+        effective_scope: service-if-retained
+        effect: Stable task identifiers can connect lifecycle checks to previous exchanges.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R1, C5-R2, C5-R3, C5-R5]
+      tests: [C5-T6]
+      claims: [C5-PC-3]
+
+  - id: S-04
+    action: Verifier evaluates cryptographic validity and lifecycle state as distinct inputs.
+    actor: verifier
+    component: verifier-policy
+    owner: deployment / verifier policy
+    assumption_status: confirmed
+    inputs: [current-lifecycle-evidence, trust-task-lifecycle-state]
+    outputs: [per-artifact-state-results]
+    privacy_surfaces:
+      - value: per-artifact lifecycle decision set
+        observer: verifier
+        observable_scope: verifier
+        effective_scope: verifier
+        effect: More historical state than needed can reveal prior relationships, delegation or replacement history.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R1, C5-R2]
+      tests: [C5-T2]
+      claims: [C5-PC-1, C5-PC-3]
+
+  - id: S-05
+    action: Verifier applies an evidenced precedence rule across conflicting lifecycle states or reports the decision indeterminate.
+    actor: verifier
+    component: verifier-policy
+    owner: deployment / verifier / VTN policy
+    assumption_status: unresolved
+    assumptions: [A-2]
+    inputs: [per-artifact-state-results]
+    outputs: [composed-lifecycle-decision]
+    privacy_surfaces:
+      - value: precedence rationale
+        observer: verifier
+        observable_scope: verifier
+        effective_scope: verifier-or-audit
+        effect: Decision rationale can expose which relationship/delegation artifacts participated in the decision.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R3, C5-R4]
+      tests: [C5-T4, C5-T6]
+      claims: [C5-PC-3]
+
+  - id: S-06
+    action: Deployment retains only justified lifecycle audit and replacement-chain evidence.
+    actor: operator
+    component: storage
+    owner: deployment operator
+    assumption_status: candidate
+    assumptions: [A-4]
+    inputs: [composed-lifecycle-decision, supersession-or-replacement-evidence]
+    outputs: [bounded-lifecycle-audit]
+    privacy_surfaces:
+      - value: supersession or replacement chain
+        observer: operator
+        declared_scope: continuity
+        observable_scope: privileged-deployment
+        effective_scope: privileged-deployment
+        effect: Historical links can collapse contexts that are otherwise pairwise or separately scoped.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R5, C5-R7]
+      tests: [C5-T5]
+      claims: [C5-PC-4]
+
+  - id: S-07
+    action: DPIP reports lifecycle privacy and decision correctness separately, preserving unresolved precedence dependencies.
+    actor: verifier
+    component: verifier-policy
+    owner: DPIP composition assessment
+    assumption_status: confirmed
+    inputs: [composed-lifecycle-decision, flow-observables, bounded-lifecycle-audit]
+    outputs: [scoped-c5-result]
+    privacy_surfaces:
+      - value: composed lifecycle evidence set
+        observer: verifier
+        effective_scope: verifier-and-deployment-dependent
+        effect: Final result must represent both residual status correlation and unresolved decision semantics.
+    dpip_mappings:
+      interactions: [C5]
+      requirements: [C5-R1, C5-R2, C5-R3, C5-R4, C5-R5, C5-R6, C5-R7]
+      tests: [C5-T1, C5-T2, C5-T3, C5-T4, C5-T5, C5-T6]
+      claims: [C5-PC-1, C5-PC-2, C5-PC-3, C5-PC-4]
+
+expected_dpip_outcomes:
+  - claim: lifecycle data minimisation
+    status: PASS
+    basis: Reference flow asks only for lifecycle evidence material to the current decision.
+  - claim: status-query unlinkability
+    status: INDETERMINATE
+    basis: Depends on the concrete status mechanism and whether query handles are reused or centrally observable.
+  - claim: composed lifecycle decision correctness
+    status: INDETERMINATE
+    basis: Precedence between component-owned lifecycle states is an unresolved deployment/owning-layer dependency.
+  - claim: historical context unlinkability
+    status: CONSTRAINED
+    basis: Supersession and replacement may require bounded continuity links that remain visible to privileged observers.
