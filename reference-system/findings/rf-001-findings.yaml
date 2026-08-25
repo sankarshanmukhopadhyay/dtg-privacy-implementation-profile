@@ -12,6 +12,10 @@ findings:
     evidence:
       - RF-001 S-03 marks effective scope unresolved for exchange/task context
     disposition: Keep C3 private-identifier cross-context unlinkability INDETERMINATE until a privacy-compatible binding interface is evidenced.
+    promotion:
+      state: reviewed
+      target_type: upstream-issue
+      rationale: The missing binding interface is owned by Trust Tasks; DPIP retains the composition requirement and should raise upstream only when a concrete interface gap is ready to be filed.
   - id: RF-001-F002
     type: evidence-gap
     title: C3 proof construction evidence is candidate rather than immutable verified evidence
@@ -24,6 +28,10 @@ findings:
     evidence:
       - sankarshanmukhopadhyay/dtgwg-zkp-tf#13
     disposition: Retain candidate evidence and do not promote the strongest composed-presentation claim until a commit-, test-vector-, or release-pinned artifact exists.
+    promotion:
+      state: candidate
+      target_type: none
+      rationale: Issue-level evidence remains a hypothesis/input until immutable construction evidence exists.
   - id: RF-001-F003
     type: privacy-overclaim
     title: Pairwise private-half scope cannot be inherited as relationship-level unlinkability
@@ -35,6 +43,12 @@ findings:
       - RF-001 S-02 private-half-b is pairwise while public-half-a is public/community observable
       - RF-001 S-06 publishes or retains a relationship graph signal
     disposition: Resolved by scoped claims plus declared/observable/effective correlation scope; relationship unlinkability remains FAIL and contextual privacy CONSTRAINED.
+    promotion:
+      state: resolved-regression
+      target_type: dpip-test
+      target_refs: [C3-T2, C3-T3, C3-T7]
+      rationale: The finding is now encoded as repeatable negative/adversarial conformance behavior rather than remaining a prose observation.
+      regression_refs: [C3-R4, C3-R5, C3-R8, C3-PC-3, C3-PC-5]
   - id: RF-001-F004
     type: implementation-assumption
     title: Privileged operator views may reconstruct correlation excluded from ordinary verifier views
@@ -45,6 +59,11 @@ findings:
     evidence:
       - RF-001 S-06 administrator relationship view has privileged-deployment effective scope
     disposition: Deployment guidance must require explicit privileged-observer analysis, retention purpose, access controls, and claim scoping.
+    promotion:
+      state: promoted-dpip
+      target_type: dpip-guidance
+      target_refs: [docs/deployment-guide/rf-001-implementation-guidance.md]
+      rationale: The stable implementation risk has been promoted into deployer guidance while remaining deployment-specific.
   - id: RF-001-F005
     type: upstream-dependency
     title: Reciprocal relationship semantics remain externally owned and must not be invented by DPIP
@@ -58,3 +77,7 @@ findings:
       - RF-001 S-02 treats reciprocal relationship semantics as credential-layer owned
       - sankarshanmukhopadhyay/dtgwg-zkp-tf#13 records the cross-spec boundary
     disposition: Continue testing the integration hypothesis while keeping the semantic dependency explicit; raise upstream only where DPIP needs a concrete interface or definition to evaluate conformance.
+    promotion:
+      state: reviewed
+      target_type: upstream-issue
+      rationale: The semantic dependency is understood, but no new upstream issue should be raised until DPIP has a concrete unresolved interface/definition needed for conformance.
