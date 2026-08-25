@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip/conformance-result.schema.json",
+  "title": "DPIP Conformance Result",
+  "type": "object",
+  "required": ["dpip_version", "interaction_id", "interaction_version", "implementation", "test_results", "claim_results"],
+  "properties": {
+    "dpip_version": {"type": "string"},
+    "interaction_id": {"type": "string", "pattern": "^C[0-9]+$"},
+    "interaction_version": {"type": "string"},
+    "implementation": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "deployment": {"type": "string"}
+      }
+    },
+    "test_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["test_id", "status"],
+        "properties": {
+          "test_id": {"type": "string", "pattern": "^C[0-9]+-T[0-9]+$"},
+          "status": {"enum": ["PASS", "FAIL", "INDETERMINATE", "NOT_RUN"]},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "claim_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "status"],
+        "properties": {
+          "claim_id": {"type": "string", "pattern": "^C[0-9]+-PC-[0-9]+$"},
+          "status": {"enum": ["PASS", "FAIL", "CONSTRAINED", "INDETERMINATE"]},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "residual_correlation": {"type": "string"},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "evidence_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source"],
+        "properties": {
+          "id": {"type": "string"},
+          "source": {"type": "string"},
+          "version": {"type": "string"},
+          "digest": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
