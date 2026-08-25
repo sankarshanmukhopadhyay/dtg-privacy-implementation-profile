@@ -1,42 +1,37 @@
+flow_id: RF-004
 findings:
   - id: RF-004-F001
-    flow: RF-004
-    interaction: C6
     type: upstream-dependency
-    severity: blocking
+    title: Recovery continuity semantics are not yet sufficiently evidenced
     owner: owning DTG credential and relationship specifications
     status: open
-    summary: Recovery continuity semantics are not yet sufficiently evidenced to establish privacy-preserving re-binding without cross-context identifier reuse.
-    affected_requirements: [C6-R1, C6-R2, C6-R4]
-    affected_claims: [C6-PC-1, C6-PC-3]
-    evidence_status: candidate
-    disposition: route-upstream
-    rationale: DPIP can test the composed privacy consequence, but the owning layers must define the continuity or re-binding semantics that the test exercises.
+    severity: high
+    dpip_impact: [C6-R1, C6-R2, C6-R4, C6-PC-1, C6-PC-3]
+    assumptions: [A-2]
+    evidence:
+      - RF-004 S-03 requires component-owned continuity or re-binding semantics before privacy-preserving migration can be evaluated conclusively
+    disposition: Keep cross-context unlinkability and post-migration presentation privacy INDETERMINATE until owning-layer continuity semantics are available as evidence.
 
   - id: RF-004-F002
-    flow: RF-004
-    interaction: C6
-    type: deployment-risk
-    severity: high
+    type: implementation-assumption
+    title: Recovery providers may become master observers of separated relationship contexts
     owner: deployment operator
     status: open
-    summary: Recovery providers or privileged operators may become master observers of otherwise separated relationship contexts.
-    affected_requirements: [C6-R3]
-    affected_claims: [C6-PC-2, C6-PC-3]
-    evidence_status: candidate
-    disposition: retain-as-dpip-test
-    rationale: The effective privacy scope depends on concrete backup, support, telemetry and administrative observability.
+    severity: high
+    dpip_impact: [C6-R3, C6-T3, C6-T4, C6-PC-2, C6-PC-3]
+    assumptions: [A-4]
+    evidence:
+      - RF-004 S-02 and S-05 expose backup inventory, support state and telemetry to recovery or privileged operators
+    disposition: Retain privileged-observer reconstruction as a DPIP regression test and scope any privacy result to the complete observable deployment.
 
   - id: RF-004-F003
-    flow: RF-004
-    interaction: C6
-    type: deployment-risk
-    severity: medium
+    type: evidence-gap
+    title: Retention of migration mappings and recovery tickets remains deployment-specific
     owner: deployment operator
-    status: open
-    summary: Temporary old-to-new mappings and migration tickets may outlive their continuity purpose and preserve historical linkability.
-    affected_requirements: [C6-R2, C6-R3]
-    affected_claims: [C6-PC-1, C6-PC-3]
-    evidence_status: candidate
-    disposition: retain-as-dpip-test
-    rationale: Retention and deletion behaviour is deployment-specific and must be verified against observed implementation evidence.
+    status: candidate
+    severity: high
+    dpip_impact: [C6-R2, C6-R3, C6-T3, C6-PC-1, C6-PC-3]
+    assumptions: [A-3]
+    evidence:
+      - RF-004 S-07 requires expiry or deletion of temporary mappings and recovery state after justified continuity processing
+    disposition: Require observed retention and deletion evidence before reporting historical cross-context unlinkability PASS.
