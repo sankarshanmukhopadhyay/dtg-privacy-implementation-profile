@@ -1,0 +1,199 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C5
+  version: "0.1"
+  title: Privacy-preserving lifecycle evaluation and precedence
+  purpose: >-
+    Evaluate lifecycle state across multiple DTG artifacts without unnecessary identity,
+    relationship, status-query, or historical-context exposure and without inferring precedence
+    rules that belong to component specifications or deployment policy.
+  target_profile: PP-2
+  invariants: [P1, P2, P4, P5, P6, P7]
+  construction_neutral: true
+
+actors:
+  - id: holder
+    role: party presenting current relationship or trust evidence
+  - id: verifier
+    role: relying party evaluating lifecycle state and trust effect
+  - id: status_source
+    role: issuer, registry, relationship service or other lifecycle evidence source
+  - id: wallet_vta
+    role: component collecting and composing lifecycle evidence
+  - id: operator
+    role: privileged operator observing status, audit or historical state
+
+components:
+  - area: Credentials/relationship artifacts
+    specification: Owning DTG credential/relationship specifications
+    responsibility: Define artifact lifecycle states and semantics such as validity, expiry, suspension, supersession or restoration.
+  - area: Trust Tasks
+    specification: Owning Trust Task specification
+    responsibility: Define freshness, cancellation, supersession or other protocol lifecycle semantics where applicable.
+  - area: Wallet/VTA
+    specification: Implementation-selected
+    responsibility: Collect only the lifecycle evidence needed for the decision and avoid cross-context status correlation.
+  - area: Verifier/trust policy
+    specification: Deployment-selected
+    responsibility: Define decision precedence when multiple owning-layer lifecycle states participate in one trust decision.
+
+privacy_claims:
+  - id: C5-PC-1
+    property: lifecycle-data-minimisation
+    subject: presentation
+    scope: lifecycle evidence presented for one trust decision
+    expected_status: PASS
+    rationale: The verifier should receive only lifecycle facts required for the current decision rather than complete historical records.
+    invariants: [P1, P4, P7]
+  - id: C5-PC-2
+    property: status-query-unlinkability
+    subject: identifier
+    scope: holder or relationship status checks across unrelated verifier contexts
+    expected_status: PASS
+    rationale: Lifecycle evaluation should not require a reusable status handle that lets status sources or verifiers join unrelated presentations.
+    invariants: [P2, P5, P7]
+  - id: C5-PC-3
+    property: lifecycle-decision-correctness
+    subject: relationship
+    scope: composed trust decision using multiple lifecycle-bearing artifacts
+    expected_status: INDETERMINATE
+    rationale: Correctness depends on precedence semantics owned by the participating specifications and deployment policy.
+    invariants: [P4, P7]
+  - id: C5-PC-4
+    property: historical-context-unlinkability
+    subject: contextual-graph
+    scope: supersession, restoration, replacement and recovery history
+    expected_status: CONSTRAINED
+    rationale: Continuity may require limited historical linkage, but that linkage must not automatically become globally observable.
+    invariants: [P2, P4, P6, P7]
+
+requirements:
+  - id: C5-R1
+    normative_strength: MUST
+    statement: A composed lifecycle decision distinguishes cryptographic validity from lifecycle state and from policy precedence.
+    invariants: [P4, P7]
+  - id: C5-R2
+    normative_strength: MUST NOT
+    statement: A cryptographically valid artifact is treated as currently effective when evidence indicates it is expired, suspended, superseded, withdrawn or otherwise non-effective under its owning semantics.
+    invariants: [P4, P7]
+  - id: C5-R3
+    normative_strength: MUST
+    statement: When multiple lifecycle-bearing artifacts participate in a decision, the implementation identifies the owning source for each state and the precedence rule used to derive the final decision.
+    invariants: [P4, P7]
+  - id: C5-R4
+    normative_strength: MUST NOT
+    statement: DPIP invents a lifecycle precedence rule where the relevant component specifications or deployment policy have not defined one.
+    invariants: [P4]
+  - id: C5-R5
+    normative_strength: MUST
+    statement: Status queries, freshness checks, timestamps, status handles and lifecycle logs are treated as correlation surfaces.
+    invariants: [P2, P5, P6, P7]
+  - id: C5-R6
+    normative_strength: SHOULD
+    statement: A lifecycle decision uses the least revealing status or freshness mechanism capable of supporting the required trust decision.
+    invariants: [P1, P2, P5, P7]
+  - id: C5-R7
+    normative_strength: MUST
+    statement: Restoration, replacement or supersession evidence that links historical contexts is explicitly scoped and retained only to the extent required for continuity, accountability or policy.
+    invariants: [P2, P4, P6, P7]
+
+correlation_surfaces:
+  - id: C5-CS-1
+    class: protocol-envelope
+    value: status_query_handle
+    observers: [status_source, verifier]
+    scope: verifier-or-status-source
+    declared_scope: decision-or-verifier
+    observable_scope: status-source
+    effective_scope: status-source-if-reused
+    scope_basis: A stable lookup token can allow a status source to observe repeated presentations across verifiers.
+    stability: construction-dependent
+    joinability: direct if reused
+    necessity: lifecycle evidence may require status resolution
+    mitigation: privacy-preserving status lists, short-lived handles, cached evidence or other less correlatable mechanisms where applicable
+    residual_risk: status source may still learn query timing or target artifact class
+    invariants: [P2, P5, P7]
+  - id: C5-CS-2
+    class: temporal
+    value: freshness_timestamp
+    observers: [verifier, status_source]
+    scope: presentation
+    stability: event
+    joinability: timing correlation across logs or protocol traces
+    necessity: freshness may be required to evaluate lifecycle state
+    mitigation: minimum required precision and bounded retention
+    residual_risk: timing inference can remain
+    invariants: [P5, P6, P7]
+  - id: C5-CS-3
+    class: contextual-graph
+    value: supersession_or_replacement_chain
+    observers: [wallet_vta, verifier, operator]
+    scope: relationship-or-history
+    declared_scope: continuity
+    observable_scope: deployment-dependent
+    effective_scope: deployment-dependent
+    scope_basis: Replacement chains can connect identifiers or relationship contexts that were otherwise intended to remain separate.
+    stability: long-lived
+    joinability: direct or transitive
+    necessity: continuity and audit may require some linkage
+    mitigation: expose only the proof of current effect or bounded predecessor relation required for the decision
+    residual_risk: privileged observers may retain broader history
+    invariants: [P2, P4, P6, P7]
+  - id: C5-CS-4
+    class: persistence
+    value: lifecycle_audit_log
+    observers: [operator]
+    scope: privileged-deployment
+    stability: long-lived
+    joinability: joins artifact, holder, decision and historical state when over-collected
+    necessity: accountability/security dependent
+    mitigation: minimise fields, segregate contexts, bound retention and record purpose
+    residual_risk: operator correlation may remain by design
+    invariants: [P2, P6, P7]
+
+tests:
+  - id: C5-T1
+    type: positive
+    description: Verifier receives current lifecycle evidence sufficient for the decision without receiving the holder's complete status or supersession history.
+    requirements: [C5-R1, C5-R5, C5-R6]
+    invariants: [P1, P4, P5, P7]
+    claims: [C5-PC-1]
+    expected: PASS when current effect can be established from minimal lifecycle evidence.
+  - id: C5-T2
+    type: negative
+    description: A cryptographically valid but superseded artifact is accepted solely because its signature/proof verifies.
+    requirements: [C5-R1, C5-R2]
+    invariants: [P4, P7]
+    claims: [C5-PC-3]
+    expected: FAIL for lifecycle decision correctness.
+  - id: C5-T3
+    type: adversarial
+    description: The same stable status handle is queried across unrelated verifier contexts and enables the status source to correlate presentations.
+    requirements: [C5-R5, C5-R6]
+    invariants: [P2, P5, P7]
+    claims: [C5-PC-2]
+    expected: FAIL for status-query unlinkability.
+  - id: C5-T4
+    type: negative
+    description: Credential is current while a required delegation is suspended, but the verifier has no defined precedence rule for the combined decision.
+    requirements: [C5-R3, C5-R4]
+    invariants: [P4, P7]
+    claims: [C5-PC-3]
+    expected: INDETERMINATE rather than an invented PASS or FAIL.
+  - id: C5-T5
+    type: adversarial
+    description: Restoration or replacement publishes a durable predecessor chain that joins previously separate holder or relationship contexts.
+    requirements: [C5-R5, C5-R7]
+    invariants: [P2, P4, P6, P7]
+    claims: [C5-PC-4]
+    expected: CONSTRAINED or FAIL according to whether the historical linkage is necessary, scoped and justified.
+  - id: C5-T6
+    type: negative
+    description: Stale Trust Task evidence is combined with current credential evidence and silently treated as current without evaluating task freshness or supersession semantics.
+    requirements: [C5-R1, C5-R2, C5-R3]
+    invariants: [P4, P7]
+    claims: [C5-PC-3]
+    expected: FAIL or INDETERMINATE depending on whether the owning Trust Task lifecycle semantics define the stale artifact's effect.
+
+exceptions:
+  - description: DPIP may record an unresolved precedence dependency without deciding the outcome; such a result is INDETERMINATE until the owning semantics or deployment policy are evidenced.
