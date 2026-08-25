@@ -1,0 +1,175 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C1
+  version: "0.1"
+  title: Privacy-preserving personhood presentation
+  purpose: >-
+    Enable a holder to establish that the required personhood predicate is satisfied
+    without unnecessarily disclosing source attributes or requiring a durable
+    cross-context holder identifier.
+  target_profile: PP-3
+  invariants: [P1, P2, P3, P4, P5, P6, P8]
+  construction_neutral: true
+
+actors:
+  - id: holder
+    role: person presenting the required personhood predicate
+    observes: [request, disclosure_preview, result]
+  - id: issuer
+    role: authority or process responsible for the source personhood credential or evidence
+    observes: [issuance_context]
+  - id: verifier
+    role: relying party evaluating the personhood predicate
+    observes: [presentation, verification_result]
+  - id: wallet_vta
+    role: holder-controlled component preparing and authorising the presentation
+    observes: [credential_material, request, proof_inputs]
+  - id: protocol_infrastructure
+    role: transport, resolution, status, or trust-task infrastructure required by the deployment
+    observes: [deployment_specific_metadata]
+
+components:
+  - area: Credentials
+    specification: DTG credential specification/profile selected by the deployment
+    responsibility: Define the personhood claim semantics and the evidence from which the predicate can be established.
+  - area: ZKP/selective disclosure
+    specification: Construction selected by the deployment
+    responsibility: Prove the required predicate and binding properties without unnecessary attribute disclosure.
+  - area: Trust Tasks
+    specification: Trust Task used by the deployment, if any
+    responsibility: Carry the request, proof inputs, and result without requiring a durable cross-context subject correlator.
+  - area: Wallet/VTA
+    specification: Implementation-specific
+    responsibility: Enforce context separation, disclosure authorisation, key handling, and retention controls.
+  - area: HTX
+    specification: Human trust interaction profile used by the deployment
+    responsibility: Make the recipient, purpose, disclosure, and material linkability consequences visible before authorisation.
+
+requirements:
+  - id: C1-R1
+    normative_strength: MUST
+    statement: The verifier receives only information required to establish the declared personhood predicate and declared operational requirements.
+    invariants: [P1, P3]
+    construction_constraint: No specific proof construction is required.
+  - id: C1-R2
+    normative_strength: MUST NOT
+    statement: The interaction requires reuse of a stable holder or subject identifier across unrelated verifier contexts solely to establish personhood.
+    invariants: [P2, P4]
+    construction_constraint: Pairwise, blinded, presentation-scoped, or equivalent bindings may be used.
+  - id: C1-R3
+    normative_strength: MUST
+    statement: Holder binding, where required, is scoped so that it does not silently become a verifier-to-verifier correlation handle.
+    invariants: [P2, P4]
+    construction_constraint: The selected construction must demonstrate the required control or binding without unnecessary global stability.
+  - id: C1-R4
+    normative_strength: MUST NOT
+    statement: Protocol envelopes, status mechanisms, resolution behavior, or transcript identifiers defeat the unlinkability claimed for the presentation.
+    invariants: [P4, P5]
+    construction_constraint: Deployment-specific mechanisms must be analysed as observable correlation surfaces.
+  - id: C1-R5
+    normative_strength: MUST
+    statement: The holder is shown the relying party, purpose, and material disclosure or linkability consequences before authorising the presentation.
+    invariants: [P8]
+    construction_constraint: User-interface design is implementation-specific but the required information must be available at authorisation time.
+  - id: C1-R6
+    normative_strength: MUST
+    statement: Retained presentation data and telemetry are bounded to declared operational, security, accountability, or legal purposes.
+    invariants: [P6]
+    construction_constraint: Retention duration and controls are deployment-specific and form part of the conformance evidence.
+
+correlation_surfaces:
+  - id: C1-CS-1
+    class: proof
+    value: holder_binding
+    observers: [verifier]
+    scope: verifier-or-presentation
+    stability: scoped
+    joinability: must not support unrelated verifier-to-verifier direct linkage
+    necessity: required only when the trust purpose requires proof of holder control or binding
+    mitigation: use a pairwise, blinded, presentation-scoped, or equivalently privacy-preserving binding
+    residual_risk: construction-dependent
+    invariants: [P2, P4]
+  - id: C1-CS-2
+    class: protocol-envelope
+    value: status_check_behavior
+    observers: [issuer, protocol_infrastructure]
+    scope: deployment-specific
+    stability: event-based
+    joinability: timing or request characteristics may permit correlation
+    necessity: depends on status semantics
+    mitigation: privacy-preserving status design, caching, batching, indirection, or another justified deployment control
+    residual_risk: deployment-dependent
+    invariants: [P4, P5]
+  - id: C1-CS-3
+    class: protocol-envelope
+    value: endpoint_or_routing_handle
+    observers: [verifier, protocol_infrastructure]
+    scope: deployment-specific
+    stability: variable
+    joinability: stable endpoints can join otherwise unlinkable interactions
+    necessity: routing may be required; durable cross-context identity linkage is not implied
+    mitigation: scope or rotate routing handles where feasible and document unavoidable visibility
+    residual_risk: network and deployment metadata may remain observable
+    invariants: [P2, P5]
+  - id: C1-CS-4
+    class: temporal
+    value: presentation_timestamp
+    observers: [verifier, protocol_infrastructure]
+    scope: session
+    stability: ephemeral
+    joinability: high-resolution timing may support probabilistic joins with issuer or network observations
+    necessity: coarse freshness evidence may be required
+    mitigation: minimise precision and avoid unnecessary synchronized external calls
+    residual_risk: timing correlation cannot always be eliminated
+    invariants: [P5]
+  - id: C1-CS-5
+    class: persistence
+    value: retained_presentation_transcript
+    observers: [verifier, wallet_vta]
+    scope: deployment-specific
+    stability: long-lived if retained
+    joinability: retained transcripts can recreate relationship histories
+    necessity: only for declared purposes
+    mitigation: minimise fields, retention period, access, and secondary use
+    residual_risk: accountability and legal retention may constrain minimisation
+    invariants: [P6]
+
+tests:
+  - id: C1-T1
+    type: positive
+    description: A holder proves the required personhood predicate while revealing no unrelated source attributes and no mandatory globally stable holder identifier.
+    requirements: [C1-R1, C1-R2, C1-R3]
+    invariants: [P1, P2, P3, P4]
+    expected: Verification succeeds with only the permitted predicate evidence and scoped binding material.
+  - id: C1-T2
+    type: negative
+    description: Two unrelated verifiers compare protocol-mandated holder-binding values from separate presentations.
+    requirements: [C1-R2, C1-R3]
+    invariants: [P2, P4]
+    expected: The values do not provide a mandated direct cross-verifier correlation handle.
+  - id: C1-T3
+    type: adversarial
+    description: An observer attempts to correlate a presentation with an issuer-side or status-service observation using status-check timing or request characteristics.
+    requirements: [C1-R4]
+    invariants: [P4, P5]
+    expected: The deployment either prevents material linkage or records the residual linkage capability and cannot claim a stronger profile than the evidence supports.
+  - id: C1-T4
+    type: negative
+    description: A verifier replays a captured presentation or proof outside its intended challenge or session context.
+    requirements: [C1-R4]
+    invariants: [P4, P5]
+    expected: Replay does not produce a valid fresh personhood presentation.
+  - id: C1-T5
+    type: adversarial
+    description: Retained verifier or wallet telemetry is queried to reconstruct holder interactions beyond the declared retention purpose.
+    requirements: [C1-R6]
+    invariants: [P6]
+    expected: Retention and access controls prevent or materially constrain undeclared relationship reconstruction.
+  - id: C1-T6
+    type: positive
+    description: Before authorisation, the holder can identify the verifier, trust purpose, intended disclosure, and any material declared linkability.
+    requirements: [C1-R5]
+    invariants: [P8]
+    expected: The holder-facing interaction contains the required decision context.
+
+exceptions: []
