@@ -1,0 +1,49 @@
+dpip_version: "0.1-draft"
+interaction_id: C4
+interaction_version: "0.1"
+implementation:
+  name: reference-policy-discovery-baseline
+  version: "0.1"
+  deployment: illustrative
+
+test_results:
+  - test_id: C4-T1
+    status: PASS
+    evidence: [E-C4-1]
+  - test_id: C4-T2
+    status: PASS
+    evidence: [E-C4-2]
+  - test_id: C4-T3
+    status: PASS
+    evidence: [E-C4-3]
+  - test_id: C4-T4
+    status: PASS
+    evidence: [E-C4-4]
+  - test_id: C4-T5
+    status: INDETERMINATE
+    notes: Concrete endpoint, timing and retention evidence is deployment-specific.
+
+claim_results:
+  - claim_id: C4-PC-1
+    status: PASS
+    evidence: [E-C4-1]
+  - claim_id: C4-PC-2
+    status: INDETERMINATE
+    evidence: [E-C4-2]
+    residual_correlation: Concrete discovery/routing identifier scope is not yet evidenced by an owning interface.
+  - claim_id: C4-PC-3
+    status: CONSTRAINED
+    evidence: [E-C4-3, E-C4-5]
+    residual_correlation: Target-specific queries and privileged logs may reveal that a relationship or trust interaction was contemplated.
+
+evidence_provenance:
+  - id: E-C4-1
+    source: DPIP C4 minimum-disclosure policy-discovery vector
+  - id: E-C4-2
+    source: DPIP C4 requester-handle reuse negative vector
+  - id: E-C4-3
+    source: DPIP C4 rejection-retention adversarial vector
+  - id: E-C4-4
+    source: DPIP C4 downstream-privacy overclaim regression vector
+  - id: E-C4-5
+    source: RF-002 target-specific intent and privileged-observer analysis

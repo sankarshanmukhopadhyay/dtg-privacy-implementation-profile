@@ -1,0 +1,164 @@
+flow:
+  id: RF-002
+  version: "0.1"
+  title: Privacy-preserving policy discovery
+  normative_status: non-normative
+  purpose: >-
+    Pressure-test whether a DTG implementation can determine interaction admissibility
+    before relationship establishment without unnecessary identity or relationship-intent disclosure.
+
+actors:
+  - id: requester
+    role: wallet/VTA or party seeking an admissibility answer
+  - id: discovery_service
+    role: routing or policy-discovery service
+  - id: target_context
+    role: target community, VTN or verifier policy context
+  - id: operator
+    role: privileged operator observing logs and telemetry
+
+components:
+  - id: wallet-vta
+    owner: VTA/wallet implementation
+    responsibility: Minimise requester identity and isolate discovery state.
+  - id: discovery
+    owner: DTG discovery/routing layer
+    responsibility: Resolve the minimum policy endpoint or policy class needed for the query.
+  - id: policy
+    owner: deployment / VTN / verifier policy
+    responsibility: Answer admissibility without requiring unnecessary relationship-specific disclosure.
+  - id: storage
+    owner: deployment operator
+    responsibility: Bound retention of discovery identifiers, rejections and telemetry.
+
+assumptions:
+  - id: A-1
+    statement: A deployment exposes sufficient policy information to answer at least some admissibility questions before relationship establishment.
+    owner: deployment / VTN policy
+    status: candidate
+  - id: A-2
+    statement: Discovery can operate with a session- or target-scoped handle instead of a durable cross-context requester identifier.
+    owner: DTG discovery/routing layer
+    status: candidate
+  - id: A-3
+    statement: A negative policy result need not be retained with full requester and relationship-intent context.
+    owner: deployment operator
+    status: candidate
+
+steps:
+  - id: S-01
+    action: Requester determines the minimum policy class or endpoint required for pre-flight evaluation.
+    actor: requester
+    component: discovery
+    owner: DTG discovery/routing layer
+    assumption_status: candidate
+    assumptions: [A-2]
+    inputs: [target-class, requested-trust-purpose]
+    outputs: [policy-endpoint-or-class]
+    privacy_surfaces:
+      - value: target-specific endpoint selection
+        observer: discovery_service
+        observable_scope: discovery-service
+        effective_scope: discovery-service
+        effect: Endpoint selection can reveal which community or relationship context is being considered.
+    dpip_mappings:
+      interactions: [C4]
+      requirements: [C4-R1, C4-R4]
+      tests: [C4-T5]
+      claims: [C4-PC-3]
+
+  - id: S-02
+    action: Wallet/VTA creates a minimal policy query using a target- or session-scoped request handle.
+    actor: requester
+    component: wallet-vta
+    owner: VTA/wallet implementation
+    assumption_status: candidate
+    assumptions: [A-2]
+    inputs: [policy-endpoint-or-class, minimum-policy-facts]
+    outputs: [minimal-policy-query]
+    privacy_surfaces:
+      - value: requester discovery handle
+        observer: target_context
+        declared_scope: target-context
+        observable_scope: target-context
+        effective_scope: target-context
+        effect: Reuse beyond this target would create cross-context linkage.
+    dpip_mappings:
+      interactions: [C4]
+      requirements: [C4-R1, C4-R2]
+      tests: [C4-T1, C4-T2]
+      claims: [C4-PC-1, C4-PC-2]
+
+  - id: S-03
+    action: Target context evaluates admissibility and returns the minimum decision information.
+    actor: target_context
+    component: policy
+    owner: deployment / VTN / verifier policy
+    assumption_status: candidate
+    assumptions: [A-1]
+    inputs: [minimal-policy-query]
+    outputs: [admissibility-result]
+    privacy_surfaces:
+      - value: proposed relationship or trust intent
+        observer: target_context
+        declared_scope: requester-private-before-query
+        observable_scope: target-context
+        effective_scope: target-context
+        effect: A sufficiently specific query may reveal that the requester is contemplating an interaction.
+    dpip_mappings:
+      interactions: [C4]
+      requirements: [C4-R1, C4-R5, C4-R6]
+      tests: [C4-T1, C4-T4, C4-T5]
+      claims: [C4-PC-1, C4-PC-3]
+
+  - id: S-04
+    action: Discovery and policy systems retain only justified operational state for the query and any rejection.
+    actor: operator
+    component: storage
+    owner: deployment operator
+    assumption_status: candidate
+    assumptions: [A-3]
+    inputs: [admissibility-result, policy-query-metadata]
+    outputs: [bounded-audit-state]
+    privacy_surfaces:
+      - value: rejection log
+        observer: operator
+        declared_scope: operational
+        observable_scope: privileged-deployment
+        effective_scope: privileged-deployment
+        effect: Identity, target and timing retained together can reconstruct relationship intent.
+    dpip_mappings:
+      interactions: [C4]
+      requirements: [C4-R3, C4-R4]
+      tests: [C4-T3, C4-T5]
+      claims: [C4-PC-3]
+
+  - id: S-05
+    action: DPIP evaluates pre-flight privacy independently from privacy of any subsequent relationship or proof interaction.
+    actor: requester
+    component: wallet-vta
+    owner: DPIP composition assessment
+    assumption_status: confirmed
+    inputs: [admissibility-result, flow-observables, bounded-audit-state]
+    outputs: [scoped-c4-result]
+    privacy_surfaces:
+      - value: composed discovery evidence
+        observer: requester
+        effective_scope: target-and-deployment-dependent
+        effect: Final claim must include residual intent exposure and privileged observer correlation.
+    dpip_mappings:
+      interactions: [C4]
+      requirements: [C4-R1, C4-R2, C4-R3, C4-R4, C4-R5, C4-R6]
+      tests: [C4-T1, C4-T2, C4-T3, C4-T4, C4-T5]
+      claims: [C4-PC-1, C4-PC-2, C4-PC-3]
+
+expected_dpip_outcomes:
+  - claim: data-minimised policy discovery
+    status: PASS
+    basis: Reference flow restricts the query to minimum policy facts, subject to upstream policy semantics.
+  - claim: requester cross-context unlinkability
+    status: INDETERMINATE
+    basis: Depends on concrete discovery/routing identifier scope and retention behaviour.
+  - claim: pre-establishment relationship-intent confidentiality
+    status: CONSTRAINED
+    basis: A target-specific query can reveal intent to the target and privileged operator even when durable requester identity is hidden.
