@@ -1,0 +1,44 @@
+run_id: RF-001-RUN-001
+attempts:
+  - id: J-01
+    surface: private_identifier
+    observer: ordinary_verifier
+    inputs: [pairwise-b-alpha, pairwise-b-beta]
+    joined: false
+    result: PASS
+    notes: Pairwise identifiers are distinct and not disclosed to the verifier by the fixture.
+  - id: J-02
+    surface: task_identifier
+    observer: ordinary_verifier
+    inputs: [task-alpha-001, task-beta-001]
+    joined: false
+    result: INDETERMINATE
+    notes: Fixture task IDs are distinct, but this is not evidence of DTG Trust Tasks production binding semantics.
+  - id: J-03
+    surface: proof_binder
+    observer: ordinary_verifier
+    inputs: [proof-alpha-001, proof-beta-001]
+    joined: false
+    result: INDETERMINATE
+    notes: Fixture binders are presentation-scoped; immutable upstream proof-construction evidence is still missing.
+  - id: J-04
+    surface: public_graph
+    observer: public_graph_observer
+    inputs: [public-a-alpha, public-a-beta]
+    joined: true
+    result: FAIL
+    notes: Public relationship signals intentionally preserve relationship-level correlation.
+  - id: J-05
+    surface: operator_subject_ref
+    observer: privileged_operator
+    inputs: [context-alpha, context-beta, operator-subject-b-001]
+    joined: true
+    result: FAIL
+    notes: Privileged operator state reconstructs the two contexts despite ordinary verifier separation.
+  - id: J-06
+    surface: telemetry_device_identifier
+    observer: privileged_operator
+    inputs: [device-b-001, context-alpha, context-beta]
+    joined: true
+    result: FAIL
+    notes: Shared telemetry metadata creates an infrastructure-level cross-context join surface.

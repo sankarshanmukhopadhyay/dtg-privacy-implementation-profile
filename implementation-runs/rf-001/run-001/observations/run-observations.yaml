@@ -1,0 +1,57 @@
+run_id: RF-001-RUN-001
+observations:
+  - step: S-01
+    result: PASS
+    observed:
+      wallet_local_identifiers: [pairwise-b-alpha, pairwise-b-beta]
+      verifier_visibility: none
+  - step: S-02
+    result: PASS
+    observed:
+      context_alpha: {public_half: public-a-alpha, private_half: pairwise-b-alpha}
+      context_beta: {public_half: public-a-beta, private_half: pairwise-b-beta}
+      private_identifiers_equal: false
+  - step: S-03
+    result: INDETERMINATE
+    observed:
+      task_identifiers: [task-alpha-001, task-beta-001]
+      task_identifiers_equal: false
+    limitation: The exchange is a DPIP fixture, not immutable evidence of a DTG Trust Tasks interface.
+  - step: S-04
+    result: INDETERMINATE
+    observed:
+      proof_binders: [proof-alpha-001, proof-beta-001]
+      proof_binders_equal: false
+      private_identifier_disclosed_to_verifier: false
+    limitation: Fixture behavior demonstrates the test harness only; upstream construction evidence remains candidate.
+  - step: S-05
+    result: PASS
+    observed:
+      proof_result: valid-fixture-proof
+      trust_context_evaluated_separately: true
+      common_vtn_inferred_from_proof: false
+  - step: S-06
+    result: CONSTRAINED
+    observed:
+      public_graph_signals: [public-a-alpha, public-a-beta]
+      privileged_operator_subject_ref: operator-subject-b-001
+      operator_can_join_contexts: true
+      telemetry_device_identifier: device-b-001
+  - step: S-07
+    result: PASS
+    observed:
+      result_scoped_by_claim: true
+      narrow_private_identifier_scope_not_inherited_by_relationship: true
+observer_matrix:
+  ordinary_verifier:
+    sees: [public_half_identifier, task_identifier, proof_binder, trust_context]
+    cannot_directly_join_private_identifiers: true
+  wallet_vta:
+    sees: [private_identifier, public_half_identifier, task_identifier, proof_binder]
+  trust_task_fixture:
+    sees: [task_identifier, context_local_proof_input]
+  public_graph_observer:
+    sees: [public_half_identifier, public_relationship_signal]
+  privileged_operator:
+    sees: [operator_subject_ref, public_half_identifier, telemetry_device_identifier]
+    can_join_contexts: true

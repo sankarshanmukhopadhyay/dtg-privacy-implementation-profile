@@ -1,0 +1,52 @@
+run_id: RF-001-RUN-001
+reference_flow: RF-001
+interaction_id: C3
+interaction_version: "0.2"
+status: executed-fixture
+normative_status: non-normative
+implementation:
+  name: dpip-rf001-minimal-integration-fixture
+  version: "0.1"
+  repository: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+  branch: feat/rf001-run-001
+components:
+  credentials:
+    mode: fixture
+    semantics: reciprocal public/private relationship halves as assumed by RF-001 A-1
+    limitation: Does not replace DTG credential-layer normative semantics.
+  trust_task:
+    mode: fixture
+    behavior: per-context task identifiers with no deliberately shared durable binder
+    limitation: Does not establish that DTG Trust Tasks exposes a privacy-compatible production interface; RF-001 A-2 remains unresolved.
+  zkp:
+    mode: fixture
+    behavior: per-presentation proof token derived from context-local inputs
+    limitation: Does not promote dtgwg-zkp-tf issue-level construction evidence to verified upstream evidence.
+  wallet_vta:
+    mode: fixture
+    behavior: maintains separate private identifiers for two unrelated contexts
+  verifier:
+    mode: fixture
+    behavior: validates fixture proof token and treats trust-context assertions separately
+  graph_storage:
+    mode: fixture
+    behavior: publishes public-half relationship signal and retains a privileged operator subject index
+contexts:
+  - id: context-alpha
+    private_identifier: pairwise-b-alpha
+    public_half_identifier: public-a-alpha
+    task_identifier: task-alpha-001
+    proof_binder: proof-alpha-001
+    trust_context: community-alpha
+  - id: context-beta
+    private_identifier: pairwise-b-beta
+    public_half_identifier: public-a-beta
+    task_identifier: task-beta-001
+    proof_binder: proof-beta-001
+    trust_context: community-beta
+privileged_state:
+  operator_subject_ref: operator-subject-b-001
+  joins_contexts: [context-alpha, context-beta]
+telemetry:
+  shared_device_identifier: device-b-001
+  note: Deliberately retained to pressure-test privileged/infrastructure correlation.
