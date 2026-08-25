@@ -23,7 +23,19 @@
           "assumptions":{"type":"array","items":{"type":"string"}},
           "evidence":{"type":"array","items":{"type":"string"},"minItems":1},
           "disposition":{"type":"string"},
-          "upstream_issue":{"type":"string"}
+          "upstream_issue":{"type":"string"},
+          "promotion": {
+            "type":"object",
+            "required":["state","target_type","rationale"],
+            "properties": {
+              "state":{"enum":["candidate","reviewed","promoted-dpip","promoted-upstream","resolved-regression","not-promoted"]},
+              "target_type":{"enum":["dpip-requirement","dpip-test","dpip-guidance","upstream-issue","accepted-risk","none"]},
+              "target_refs":{"type":"array","items":{"type":"string"}},
+              "rationale":{"type":"string"},
+              "regression_refs":{"type":"array","items":{"type":"string"}}
+            },
+            "additionalProperties": false
+          }
         },
         "additionalProperties": false
       }
