@@ -1,0 +1,52 @@
+name: Return completed DPIP dispositions to RAHP
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Optional DPIP issue number to reconcile
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: dpip-rahp-return-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
+  cancel-in-progress: false
+
+jobs:
+  return-disposition:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && github.event.label.name == 'run:complete')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Validate return transport
+        run: python scripts/rahp_return.py --self-test
+      - name: Return completed disposition
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RAHP_HANDOFF_TOKEN: ${{ secrets.RAHP_HANDOFF_TOKEN }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+          RAHP_REPOSITORY: sankarshanmukhopadhyay/rahp-toolkit
+          EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          if [ -n "$issue_number" ]; then
+            python scripts/rahp_return.py --issue-number "$issue_number"
+          else
+            python scripts/rahp_return.py
+          fi
