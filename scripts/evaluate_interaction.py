@@ -50,10 +50,15 @@ def evaluate(profile, evidence):
         if test_id not in tests:
             raise ValueError(f"Unknown test_id {test_id}")
 
+        applicable = set(tests[test_id].get("claims", []))
         claim_results = []
-        for claim_id in tests[test_id].get("claims", []):
-            if claim_id not in claims or claim_id not in rules:
-                status, notes = "INDETERMINATE", "No executable DPIP rule is available for this claim."
+        for claim_id in claims:
+            if claim_id not in applicable:
+                status = "INDETERMINATE"
+                notes = "This vector does not supply evidence for this privacy claim."
+            elif claim_id not in rules:
+                status = "INDETERMINATE"
+                notes = "No executable DPIP rule is available for this claim."
             else:
                 status, notes = claim_status(rules[claim_id], vector)
             claim_results.append({
@@ -63,13 +68,14 @@ def evaluate(profile, evidence):
                 "notes": notes,
             })
 
-        if not claim_results:
+        evaluated = [result for result in claim_results if result["claim_id"] in applicable]
+        if not evaluated:
             test_status = "INDETERMINATE"
-        elif any(result["status"] == "FAIL" for result in claim_results):
+        elif any(result["status"] == "FAIL" for result in evaluated):
             test_status = "FAIL"
-        elif any(result["status"] == "INDETERMINATE" for result in claim_results):
+        elif any(result["status"] == "INDETERMINATE" for result in evaluated):
             test_status = "INDETERMINATE"
-        elif any(result["status"] == "CONSTRAINED" for result in claim_results):
+        elif any(result["status"] == "CONSTRAINED" for result in evaluated):
             test_status = "CONSTRAINED"
         else:
             test_status = "PASS"
@@ -114,13 +120,14 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
-    outputs = evaluate(load_yaml(args.profile), load_yaml(args.evidence))
+    profile = load_yaml(args.profile)
+    outputs = evaluate(profile, load_yaml(args.evidence))
     output_dir = Path(args.output_dir)
     failures = []
 
     for result in outputs:
         vector_id = result.pop("_vector_id")
-        path = output_dir / (vector_id.lower() + ".yaml")
+        path = output_dir / f"{profile['interaction']['id'].lower()}-{vector_id.lower()}.yaml"
         rendered = canonical_yaml(result)
         if args.check:
             if not path.exists() or path.read_text(encoding="utf-8") != rendered:
