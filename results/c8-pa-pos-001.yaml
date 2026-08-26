@@ -26,6 +26,11 @@ claim_results:
   evidence:
   - vector:PA-POS-001
   notes: No configured forbidden disclosure was observed.
+- claim_id: C8-PC-3
+  status: INDETERMINATE
+  evidence:
+  - vector:PA-POS-001
+  notes: This vector does not supply evidence for this privacy claim.
 evidence_provenance:
 - id: interop-lab-case
   source: sankarshanmukhopadhyay/trust-protocol-interop-lab
