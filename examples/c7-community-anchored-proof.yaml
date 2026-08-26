@@ -1,0 +1,244 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C7
+  version: "0.1"
+  title: Community-Anchored Proof composed privacy
+  purpose: >-
+    Evaluate whether a Community-Anchored Proof interaction establishes shared-community
+    relationship eligibility without exposing the holder, counterparty, relationship identifier,
+    or a reusable cross-context correlator.
+  target_profile: PP-4
+  invariants: [P1, P2, P3, P4, P5, P6, P7, P8]
+  construction_neutral: true
+
+provenance:
+  source: https://docs.fpp.storm.ws/dtg-community-anchored-proof-adr.html
+  record: ADR-001
+  zkp_issue: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/issues/14
+  dpip_issue: https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/issues/58
+
+actors:
+  - id: holder
+    role: presenter holding the relationship and holder-membership credentials
+  - id: counterparty
+    role: issuer of the relationship credential whose same-community membership is part of the proof predicate
+  - id: verifier
+    role: relying party evaluating the Community-Anchored Proof
+  - id: wallet_vta
+    role: component composing and authorising the presentation
+  - id: registry
+    role: source of independently checkable community and current-status evidence
+  - id: colluding_verifier
+    role: second verifier used to test cross-verifier unlinkability
+
+components:
+  - area: Credentials
+    specification: DTG Core Credentials semantics selected by deployment
+    responsibility: Define relationship, membership, issuer/subject binding, and any issuance-time proof inputs.
+  - area: ZKP/selective disclosure
+    specification: dtgwg-zkp-tf experimental Community-Anchored Proof implementation evidence
+    responsibility: Prove the three ADR clauses, holder binding, challenge binding, and scoped proof privacy.
+  - area: Trust Registry
+    specification: construction-neutral deployment interface
+    responsibility: Expose independently checkable community/currentness evidence without creating a holder correlation surface.
+  - area: DPIP
+    specification: this interaction profile
+    responsibility: Evaluate the composed observations and effective privacy claim rather than infer privacy from proof validity alone.
+
+privacy_claims:
+  - id: C7-PC-1
+    property: non-disclosure
+    subject: relationship-identifier
+    scope: verifier observation
+    expected_status: PASS
+    rationale: ADR P1 requires no relationship identifier to be revealed.
+    invariants: [P1, P3, P4]
+  - id: C7-PC-2
+    property: non-disclosure
+    subject: counterparty-identifier
+    scope: verifier observation
+    expected_status: PASS
+    rationale: ADR P2 requires the counterparty identity to remain hidden.
+    invariants: [P1, P3, P4]
+  - id: C7-PC-3
+    property: non-disclosure
+    subject: holder-identifier
+    scope: verifier observation beyond deliberate disclosure
+    expected_status: PASS
+    rationale: ADR P3 permits only attributes deliberately disclosed by the holder.
+    invariants: [P1, P3, P4]
+  - id: C7-PC-4
+    property: cross-verifier-unlinkability
+    subject: presentation
+    scope: two presentations derived from the same credentials
+    expected_status: PASS
+    rationale: ADR P4 forbids linkability by one verifier or colluding verifiers.
+    invariants: [P2, P4, P5]
+  - id: C7-PC-5
+    property: data-minimisation
+    subject: composed-interaction
+    scope: verifier and registry observations
+    expected_status: PASS
+    rationale: ADR P5 requires the verifier to learn the outcome and deliberate disclosures only.
+    invariants: [P1, P3, P4, P5]
+  - id: C7-PC-6
+    property: status-privacy
+    subject: currentness-check
+    scope: registry/status interaction
+    expected_status: PASS
+    rationale: ADR C3 requires currentness checks not to identify the holder.
+    invariants: [P2, P4, P7]
+
+external_evidence:
+  - id: C7-E1
+    owner: dtgwg-zkp-tf
+    purpose: proof predicates, semantic vectors, and eventual concrete proof execution evidence
+    reference: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/issues/14
+    normative: false
+  - id: C7-E2
+    owner: Trust Registry / deployment
+    purpose: independently checkable membership/currentness state and published revocation propagation bound
+    reference: unresolved construction-neutral registry interface
+    normative: false
+  - id: C7-E3
+    owner: DTG Credentials / deployment
+    purpose: issuer/subject semantics and any issuance-time material needed for offline third-party membership proof
+    reference: unresolved Clause 3 input contract
+    normative: false
+
+requirements:
+  - id: C7-R1
+    normative_strength: MUST
+    statement: The composed interaction exposes no relationship identifier, counterparty identifier, or holder identifier beyond deliberate disclosure.
+    invariants: [P1, P3, P4]
+  - id: C7-R2
+    normative_strength: MUST
+    statement: Repeated presentations from the same credentials expose no reusable value that permits one verifier or colluding verifiers to link them.
+    invariants: [P2, P4, P5]
+  - id: C7-R3
+    normative_strength: MUST
+    statement: The interaction records proof validity separately from the privacy result of the complete interaction.
+    invariants: [P4, P5]
+  - id: C7-R4
+    normative_strength: MUST
+    statement: Registry and status observations are included in effective correlation analysis.
+    invariants: [P2, P4, P5, P7]
+  - id: C7-R5
+    normative_strength: MUST
+    statement: Missing independently checkable Clause 3 evidence yields INDETERMINATE rather than an assumed successful privacy result.
+    invariants: [P4, P6]
+  - id: C7-R6
+    normative_strength: MUST
+    statement: Challenge binding and replay resistance are evidenced for each successful presentation.
+    invariants: [P4, P6]
+  - id: C7-R7
+    normative_strength: MUST
+    statement: Revoked or suspended membership ceases to support the interaction within the published currency bound.
+    invariants: [P6, P7]
+  - id: C7-R8
+    normative_strength: MUST NOT
+    statement: A construction-level unlinkability result is promoted to relationship or contextual unlinkability where external evidence shows a broader effective correlation scope.
+    invariants: [P2, P4, P5]
+
+correlation_surfaces:
+  - id: C7-CS-1
+    class: proof
+    value: proof_or_presentation_binder
+    observers: [verifier, colluding_verifier]
+    scope: presentation
+    correlation_scope:
+      declared_scope: presentation-scoped
+      observable_scope: verifier-presentation
+      effective_scope: evidence-dependent
+      scope_basis: reusable proof material would make otherwise separate presentations joinable
+    stability: must be presentation-scoped
+    joinability: prohibited across unrelated presentations
+    necessity: construction-dependent
+    mitigation: randomised/blinded proof construction and verifier challenge binding
+    residual_risk: requires concrete construction evidence
+    invariants: [P2, P4, P5]
+  - id: C7-CS-2
+    class: resolution
+    value: registry_or_status_lookup
+    observers: [registry, verifier]
+    scope: community/currentness
+    correlation_scope:
+      declared_scope: community-state
+      observable_scope: deployment-dependent
+      effective_scope: evidence-dependent
+      scope_basis: live per-holder lookups can identify or link the holder even when proof material is unlinkable
+    stability: deployment-dependent
+    joinability: must not expose a stable holder lookup handle
+    necessity: currentness evidence is required
+    mitigation: privacy-preserving independently checkable state or equivalent construction-neutral mechanism
+    residual_risk: unresolved until registry interface evidence is supplied
+    invariants: [P2, P4, P7]
+  - id: C7-CS-3
+    class: identity
+    value: relationship_or_counterparty_identifier
+    observers: [wallet_vta]
+    scope: private credential context
+    correlation_scope:
+      declared_scope: private-or-pairwise
+      observable_scope: holder-side only
+      effective_scope: holder-side only if construction evidence confirms hiding
+    stability: relationship-scoped
+    joinability: must not become verifier-visible
+    necessity: credential semantics may require it internally
+    mitigation: hidden proof input
+    residual_risk: construction-dependent
+    invariants: [P1, P3, P4]
+
+tests:
+  - id: C7-T1
+    type: positive
+    description: ACCEPTS — all three ADR clauses, holder binding, challenge binding and currentness are evidenced; verifier observes only outcome and deliberate disclosures.
+    requirements: [C7-R1, C7-R3, C7-R6]
+    invariants: [P1, P3, P4, P6]
+    claims: [C7-PC-1, C7-PC-2, C7-PC-3, C7-PC-5]
+    expected: PASS when concrete ZKP and registry evidence is complete; otherwise INDETERMINATE.
+  - id: C7-T2
+    type: negative
+    description: REJECTS — the relationship counterparty is not a current member of community C.
+    requirements: [C7-R3, C7-R7]
+    invariants: [P4, P6, P7]
+    claims: []
+    expected: The proof cannot be produced or does not verify; no privacy PASS is inferred from an invalid proof.
+  - id: C7-T3
+    type: adversarial
+    description: UNLINKABLE — two proofs from the same credentials are compared by colluding verifiers.
+    requirements: [C7-R2, C7-R8]
+    invariants: [P2, P4, P5]
+    claims: [C7-PC-4]
+    expected: PASS only if no proof, transport, registry, status, or surrounding observation provides a reusable join key.
+  - id: C7-T4
+    type: lifecycle
+    description: CURRENT — counterparty membership is revoked and the published propagation bound expires.
+    requirements: [C7-R4, C7-R7]
+    invariants: [P4, P6, P7]
+    claims: [C7-PC-6]
+    expected: Proof relying on stale membership fails after the bound, while currentness checking remains non-identifying.
+  - id: C7-T5
+    type: negative
+    description: Clause 3 is asserted without independently checkable third-party membership evidence.
+    requirements: [C7-R3, C7-R5]
+    invariants: [P4, P6]
+    claims: []
+    expected: INDETERMINATE; DPIP does not manufacture missing ZKP/registry evidence.
+  - id: C7-T6
+    type: negative
+    description: Proof verifies but status lookup exposes a stable holder handle.
+    requirements: [C7-R3, C7-R4]
+    invariants: [P2, P4, P5, P7]
+    claims: [C7-PC-4, C7-PC-6]
+    expected: FAIL for the composed privacy claim even though proof validity may PASS.
+  - id: C7-T7
+    type: negative
+    description: Proof verifies but a durable relationship, counterparty, or presentation binder is observable.
+    requirements: [C7-R1, C7-R2, C7-R3]
+    invariants: [P1, P2, P3, P4, P5]
+    claims: [C7-PC-1, C7-PC-2, C7-PC-4, C7-PC-5]
+    expected: FAIL for the affected privacy claims.
+
+exceptions:
+  - description: A successful semantic ZKP fixture is not treated as concrete Clause 3 cryptographic evidence; real construction evidence remains externally bound.
