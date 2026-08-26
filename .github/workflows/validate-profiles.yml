@@ -23,11 +23,13 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Validate interaction profiles
         run: python scripts/validate_profiles.py
+      - name: Validate executable observation fixtures
+        run: python scripts/validate_observations.py
       - name: Execute protected-access DPIP evaluation
         run: >-
           python scripts/evaluate_interaction.py
           --profile examples/c8-protected-access.yaml
-          --evidence evidence/c8-protected-access-observations.yaml
+          --evidence observations/c8-protected-access.yaml
           --output-dir results
           --check
       - name: Validate external evidence bindings
