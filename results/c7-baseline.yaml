@@ -1,0 +1,78 @@
+dpip_version: "0.1-draft"
+interaction_id: C7
+interaction_version: "0.1"
+implementation:
+  name: community-anchored-proof-semantic-baseline
+  version: "0.1"
+  deployment: illustrative-pending-external-proof-evidence
+
+test_results:
+  - test_id: C7-T1
+    status: INDETERMINATE
+    notes: ACCEPTS requires concrete Clause 3 ZKP evidence and registry/currentness evidence from the owning components.
+  - test_id: C7-T2
+    status: PASS
+    evidence: [E-C7-ZKP-SEMANTIC]
+    notes: The semantic negative vector rejects a missing counterparty membership condition.
+  - test_id: C7-T3
+    status: INDETERMINATE
+    notes: Cross-verifier unlinkability requires observations from at least two concrete presentations plus registry/status traces.
+  - test_id: C7-T4
+    status: INDETERMINATE
+    notes: Currentness requires a concrete registry state and published revocation propagation bound.
+  - test_id: C7-T5
+    status: PASS
+    evidence: [E-C7-ZKP-SEMANTIC]
+    notes: Missing independently checkable Clause 3 evidence is explicitly reported as INDETERMINATE rather than accepted.
+  - test_id: C7-T6
+    status: PASS
+    evidence: [E-C7-DPIP-NEGATIVE]
+    notes: A stable status lookup handle is defined as a composed privacy failure even if proof validity succeeds.
+  - test_id: C7-T7
+    status: PASS
+    evidence: [E-C7-DPIP-NEGATIVE]
+    notes: Observable durable identity or proof binders fail the affected privacy claims.
+
+claim_results:
+  - claim_id: C7-PC-1
+    status: INDETERMINATE
+    notes: Awaiting concrete proof observation evidence.
+  - claim_id: C7-PC-2
+    status: INDETERMINATE
+    notes: Awaiting concrete proof observation evidence.
+  - claim_id: C7-PC-3
+    status: INDETERMINATE
+    notes: Awaiting concrete proof observation evidence.
+  - claim_id: C7-PC-4
+    status: INDETERMINATE
+    notes: Requires cross-verifier execution evidence and status/registry observation traces.
+  - claim_id: C7-PC-5
+    status: INDETERMINATE
+    notes: Requires complete verifier and registry observation evidence.
+  - claim_id: C7-PC-6
+    status: INDETERMINATE
+    notes: Requires implementation evidence for the currentness/status path.
+
+evidence_provenance:
+  - id: E-C7-ZKP-SEMANTIC
+    source: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/tree/main/conformance-harness/examples/community-anchored-proof.json
+    type: semantic-vector
+    limitation: Does not constitute a concrete zero-knowledge implementation of ADR Clause 3.
+  - id: E-C7-DPIP-NEGATIVE
+    source: DPIP C7 negative interaction vectors
+    type: modeled-adversarial-evidence
+    limitation: Demonstrates result semantics, not a live implementation observation.
+
+external_dependencies:
+  - id: C7-DEP-1
+    owner: dtgwg-zkp-tf
+    issue: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/issues/14
+    required_for: [C7-T1, C7-T3, C7-PC-1, C7-PC-2, C7-PC-3, C7-PC-4, C7-PC-5]
+  - id: C7-DEP-2
+    owner: Trust Registry / deployment
+    required_for: [C7-T1, C7-T3, C7-T4, C7-PC-4, C7-PC-5, C7-PC-6]
+    missing: construction-neutral independently checkable membership/currentness interface and published propagation bound
+  - id: C7-DEP-3
+    owner: DTG Credentials / deployment
+    required_for: [C7-T1]
+    missing: any issuance-time proof input needed for offline third-party membership proof
