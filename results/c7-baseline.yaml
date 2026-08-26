@@ -57,22 +57,8 @@ evidence_provenance:
   - id: E-C7-ZKP-SEMANTIC
     source: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/tree/main/conformance-harness/examples/community-anchored-proof.json
     type: semantic-vector
-    limitation: Does not constitute a concrete zero-knowledge implementation of ADR Clause 3.
+    limitation: Does not constitute a concrete zero-knowledge implementation of ADR Clause 3; dependency is tracked in the C7 interaction profile and ZKP issue 14.
   - id: E-C7-DPIP-NEGATIVE
     source: DPIP C7 negative interaction vectors
     type: modeled-adversarial-evidence
-    limitation: Demonstrates result semantics, not a live implementation observation.
-
-external_dependencies:
-  - id: C7-DEP-1
-    owner: dtgwg-zkp-tf
-    issue: https://github.com/sankarshanmukhopadhyay/dtgwg-zkp-tf/issues/14
-    required_for: [C7-T1, C7-T3, C7-PC-1, C7-PC-2, C7-PC-3, C7-PC-4, C7-PC-5]
-  - id: C7-DEP-2
-    owner: Trust Registry / deployment
-    required_for: [C7-T1, C7-T3, C7-T4, C7-PC-4, C7-PC-5, C7-PC-6]
-    missing: construction-neutral independently checkable membership/currentness interface and published propagation bound
-  - id: C7-DEP-3
-    owner: DTG Credentials / deployment
-    required_for: [C7-T1]
-    missing: any issuance-time proof input needed for offline third-party membership proof
+    limitation: Demonstrates result semantics, not a live implementation observation; registry and credential dependencies remain explicit in the C7 interaction profile.
