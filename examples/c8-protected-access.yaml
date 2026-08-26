@@ -1,0 +1,145 @@
+dpip_version: "0.1-draft"
+interaction:
+  id: C8
+  version: "0.1"
+  title: Protected-person confidential service access
+  purpose: >-
+    Evaluate whether a protected person can prove a narrowly scoped entitlement
+    without revealing protected provider, relationship, case, location, or durable
+    cross-context identifiers.
+  target_profile: PP-4
+  invariants: [P1, P2, P3, P4, P5, P8]
+  construction_neutral: true
+
+actors:
+  - id: holder
+    role: protected person presenting entitlement evidence
+  - id: verifier
+    role: relying party evaluating the entitlement
+  - id: provider
+    role: authorised protected-service provider
+
+components:
+  - area: Credentials
+    specification: DTG credential/evidence selected by the deployment
+    responsibility: Establish the minimum entitlement and authority facts.
+  - area: ZKP/selective disclosure
+    specification: Construction selected by the deployment
+    responsibility: Reveal only the facts required by the relying purpose.
+  - area: Trust Tasks
+    specification: Trust Task selected by the deployment, if any
+    responsibility: Carry evidence without reintroducing protected correlation surfaces.
+
+privacy_claims:
+  - id: C8-PC-1
+    property: minimum-disclosure
+    subject: presentation
+    scope: relying presentation
+    expected_status: PASS
+    rationale: Protected provider, relationship, location and case data are not required by the relying purpose.
+    invariants: [P1, P3]
+  - id: C8-PC-2
+    property: protected-relationship-non-discoverability
+    subject: relationship
+    scope: verifier observation
+    expected_status: PASS
+    rationale: The verifier should not learn the protected provider or protected relationship.
+    invariants: [P2, P4, P5]
+  - id: C8-PC-3
+    property: context-bounded-presentation
+    subject: presentation
+    scope: verifier/challenge/purpose context
+    expected_status: PASS
+    rationale: A presentation accepted in one relying context must not be silently reusable in another.
+    invariants: [P2, P4]
+
+requirements:
+  - id: C8-R1
+    normative_strength: MUST
+    statement: The verifier receives only entitlement and authority facts required by the declared purpose.
+    invariants: [P1, P3]
+  - id: C8-R2
+    normative_strength: MUST NOT
+    statement: The presentation reveals protected provider identity, provider location, protected relationship, or case identifier.
+    invariants: [P2, P4, P5]
+  - id: C8-R3
+    normative_strength: MUST NOT
+    statement: The presentation exposes a durable subject or provider identifier usable as an undeclared cross-context correlator.
+    invariants: [P2, P4]
+  - id: C8-R4
+    normative_strength: MUST
+    statement: Acceptance is bound to the declared verifier, challenge, and purpose context when the selected construction supports such binding.
+    invariants: [P2, P4]
+
+correlation_surfaces:
+  - id: C8-CS-1
+    class: presentation
+    value: protected_provider_identity
+    observers: [verifier]
+    scope: protected relationship
+    stability: durable
+    joinability: Directly identifies the protected provider across relying contexts.
+    necessity: not required for the relying entitlement decision
+    mitigation: do not disclose
+    residual_risk: provider class or authority provenance may still be observable by design
+    invariants: [P1, P2, P4]
+  - id: C8-CS-2
+    class: presentation
+    value: case_or_durable_identifier
+    observers: [verifier]
+    scope: case or subject
+    stability: durable
+    joinability: Reuse permits direct joining of otherwise separate presentations.
+    necessity: not required for the relying entitlement decision
+    mitigation: omit or use presentation-scoped values
+    residual_risk: implementation metadata is outside this fixture unless supplied
+    invariants: [P2, P4]
+
+tests:
+  - id: C8-T1
+    type: positive
+    description: A valid presentation reveals only the minimum entitlement and authority facts.
+    requirements: [C8-R1, C8-R2, C8-R3]
+    invariants: [P1, P2, P3, P4, P5]
+    claims: [C8-PC-1, C8-PC-2]
+    expected: Minimum disclosure and protected-relationship non-discoverability pass.
+  - id: C8-T2
+    type: negative
+    description: A cryptographically valid presentation reveals protected provider information.
+    requirements: [C8-R1, C8-R2]
+    invariants: [P1, P3, P4, P5]
+    claims: [C8-PC-1, C8-PC-2]
+    expected: Cryptographic validity does not prevent privacy claims from failing.
+  - id: C8-T3
+    type: adversarial
+    description: A presentation valid in its original context is replayed under a changed verifier/challenge/purpose context.
+    requirements: [C8-R4]
+    invariants: [P2, P4]
+    claims: [C8-PC-3]
+    expected: Changed-context replay is rejected; unrelated privacy claims remain unevaluated.
+
+exceptions: []
+
+executable_evaluation:
+  evidence_version: "0.1"
+  claims:
+    C8-PC-1:
+      rule: forbidden_disclosures
+      fields:
+        - protected_provider_identity
+        - protected_provider_location
+        - protected_relationship_type
+        - case_identifier
+        - durable_subject_identifier
+        - durable_provider_identifier
+    C8-PC-2:
+      rule: forbidden_disclosures
+      fields:
+        - protected_provider_identity
+        - protected_provider_location
+        - protected_relationship_type
+        - case_identifier
+    C8-PC-3:
+      rule: context_replay_rejection
+      original_field: original_context_verified
+      changed_field: changed_context_verified
