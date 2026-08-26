@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip/observation-fixture.schema.json",
+  "title": "DPIP Executable Observation Fixture",
+  "type": "object",
+  "required": ["version", "interaction_id", "implementation", "provenance", "vectors"],
+  "properties": {
+    "version": {"type": "string"},
+    "interaction_id": {"type": "string", "pattern": "^C[0-9]+$"},
+    "implementation": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "deployment": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source"],
+        "properties": {
+          "id": {"type": "string"},
+          "source": {"type": "string"},
+          "version": {"type": "string"},
+          "digest": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "test_id"],
+        "properties": {
+          "id": {"type": "string"},
+          "test_id": {"type": "string", "pattern": "^C[0-9]+-T[0-9]+$"},
+          "crypto_verified": {"type": "boolean"},
+          "disclosed_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "original_context_verified": {"type": "boolean"},
+          "changed_context_verified": {"type": "boolean"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

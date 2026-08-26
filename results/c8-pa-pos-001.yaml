@@ -1,0 +1,40 @@
+dpip_version: 0.1-draft
+interaction_id: C8
+interaction_version: '0.1'
+implementation:
+  name: Interop Lab protected-access evidence adapter
+  version: '0.1'
+  deployment: construction-layer experimental evidence
+human_summary:
+  outcome: PASS
+  explanation: DPIP-native evaluation of PA-POS-001 using C8-T1.
+  action: Use only the evaluated claim results; unevaluated privacy properties remain outside this result.
+test_results:
+- test_id: C8-T1
+  status: PASS
+  evidence:
+  - vector:PA-POS-001
+  notes: 'Source cryptographic verification observation: True.'
+claim_results:
+- claim_id: C8-PC-1
+  status: PASS
+  evidence:
+  - vector:PA-POS-001
+  notes: No configured forbidden disclosure was observed.
+- claim_id: C8-PC-2
+  status: PASS
+  evidence:
+  - vector:PA-POS-001
+  notes: No configured forbidden disclosure was observed.
+- claim_id: C8-PC-3
+  status: INDETERMINATE
+  evidence:
+  - vector:PA-POS-001
+  notes: This vector does not supply evidence for this privacy claim.
+evidence_provenance:
+- id: interop-lab-case
+  source: sankarshanmukhopadhyay/trust-protocol-interop-lab
+  version: b582dbd6212fb9712542c0b91248f6861744e1fb
+- id: bbs-profile
+  source: sankarshanmukhopadhyay/dtgwg-zkp-tf
+  version: 6e1356812716dbd0e551272251e3e825132a8268
