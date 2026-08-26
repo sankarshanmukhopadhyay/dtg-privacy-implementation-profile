@@ -182,6 +182,7 @@ correlation_surfaces:
       declared_scope: private-or-pairwise
       observable_scope: holder-side only
       effective_scope: holder-side only if construction evidence confirms hiding
+      scope_basis: effective scope depends on whether the selected proof construction keeps the credential identifiers hidden and avoids exporting a stable binder
     stability: relationship-scoped
     joinability: must not become verifier-visible
     necessity: credential semantics may require it internally
