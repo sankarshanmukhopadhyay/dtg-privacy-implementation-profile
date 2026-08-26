@@ -130,7 +130,7 @@ def main():
         path = output_dir / f"{profile['interaction']['id'].lower()}-{vector_id.lower()}.yaml"
         rendered = canonical_yaml(result)
         if args.check:
-            if not path.exists() or path.read_text(encoding="utf-8") != rendered:
+            if not path.exists() or yaml.safe_load(path.read_text(encoding="utf-8")) != yaml.safe_load(rendered):
                 failures.append(str(path))
         else:
             output_dir.mkdir(parents=True, exist_ok=True)
