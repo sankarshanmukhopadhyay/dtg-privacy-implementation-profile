@@ -1,0 +1,106 @@
+dpip_version: "0.1-draft"
+interaction_id: C7
+bindings:
+  - id: EV-C7-1
+    maturity: candidate
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    revision: "55771f2f2927876c1498059e53d830070b97482d"
+    artifact:
+      kind: path
+      locator: conformance-harness/examples/community-anchored-proof.json
+    evidence_kind: semantic
+    supports:
+      - target_type: requirement
+        target_id: C7-R3
+      - target_type: requirement
+        target_id: C7-R5
+      - target_type: test
+        target_id: C7-T2
+      - target_type: test
+        target_id: C7-T5
+    scope:
+      subject: proof-construction
+      statement: >-
+        Machine-readable semantic evidence distinguishing valid, rejected, privacy-failing,
+        and indeterminate Community-Anchored Proof conditions, including explicit refusal
+        to treat missing independently checkable Clause 3 evidence as a PASS.
+    limitations:
+      - These are semantic conformance vectors, not a production zero-knowledge proof implementation.
+      - The binding does not establish a concrete offline third-party membership construction for ADR Clause 3.
+      - Positive privacy claims remain INDETERMINATE until concrete proof, registry, and observation evidence is supplied.
+    owner_normative_status: experimental
+    provenance:
+      captured_from: "dtgwg-zkp-tf issue #14 implementation work"
+      notes: >-
+        The referenced revision contains the Community-Anchored Proof scenario, semantic vectors,
+        tests, and construction-neutral Clause 3 input contract.
+
+  - id: EV-C7-2
+    maturity: candidate
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    revision: "55771f2f2927876c1498059e53d830070b97482d"
+    artifact:
+      kind: path
+      locator: docs/implementation-guide/interoperability/community-anchored-proof-input-contract.md
+    evidence_kind: protocol-interface
+    supports:
+      - target_type: requirement
+        target_id: C7-R4
+      - target_type: requirement
+        target_id: C7-R5
+      - target_type: requirement
+        target_id: C7-R7
+      - target_type: test
+        target_id: C7-T1
+      - target_type: test
+        target_id: C7-T4
+    scope:
+      subject: presentation
+      statement: >-
+        Construction-neutral contract for the Credential and Registry evidence required to
+        support offline counterparty membership, currentness, challenge binding, and private
+        status evaluation without manufacturing missing semantics in DPIP or the ZKP layer.
+    limitations:
+      - The contract records required semantics and evidence classes but does not instantiate a registry interface.
+      - Credential issuance-time inputs and concrete membership witnesses remain external dependencies.
+      - This binding cannot upgrade ACCEPTS or CURRENT from INDETERMINATE without execution evidence.
+    owner_normative_status: experimental
+    provenance:
+      captured_from: "ADR-001 dependency analysis"
+      notes: >-
+        Source ADR: https://docs.fpp.storm.ws/dtg-community-anchored-proof-adr.html
+
+  - id: EV-C7-3
+    maturity: candidate
+    repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+    revision: "55771f2f2927876c1498059e53d830070b97482d"
+    artifact:
+      kind: path
+      locator: docs/implementation-guide/conformance/composed-presentation-test-matrix.csv
+    evidence_kind: adversarial
+    supports:
+      - target_type: requirement
+        target_id: C7-R2
+      - target_type: requirement
+        target_id: C7-R8
+      - target_type: privacy-claim
+        target_id: C7-PC-4
+      - target_type: test
+        target_id: C7-T3
+      - target_type: test
+        target_id: C7-T7
+    scope:
+      subject: contextual-graph
+      statement: >-
+        Asymmetric-edge composed-presentation cases demonstrate that proof-level hiding or
+        validity cannot be promoted to relationship or contextual unlinkability when a public
+        reciprocal half, reusable binder, or joinable graph context broadens effective correlation.
+    limitations:
+      - This evidence constrains over-claiming; it does not prove that a concrete C7 presentation is unlinkable.
+      - Cross-verifier PASS requires observations from independently generated concrete presentations.
+    owner_normative_status: experimental
+    provenance:
+      captured_from: "dtgwg-zkp-tf issue #13 pressure test"
+      notes: >-
+        These cases are deliberately reusable by C7 because ADR P4/P5 require cross-verifier
+        unlinkability and outcome-only disclosure at the composed interaction boundary.
