@@ -6,6 +6,18 @@ implementation:
   version: "0.1"
   deployment: RF-001-RUN-001 non-normative executed fixture
 
+human_summary:
+  outcome: Privacy is partly protected, but important linkage remains
+  explanation: >-
+    The ordinary verifier does not see the private relationship identifiers, but
+    public relationship state and privileged operator/device indexes can still
+    link contexts. We also do not yet have enough upstream Trust Task and ZKP
+    evidence to claim production-level private-identifier unlinkability.
+  action: >-
+    Keep the private-half protections, do not claim end-to-end unlinkability,
+    and obtain immutable upstream binding/construction evidence before upgrading
+    the unresolved privacy claim.
+
 test_results:
   - test_id: C3-T1
     status: PASS

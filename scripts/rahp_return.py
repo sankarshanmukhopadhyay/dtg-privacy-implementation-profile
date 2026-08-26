@@ -25,6 +25,13 @@ RAHP_TRANSIENT = (
     "assurance:dpip-open",
 )
 CONCLUSIONS = {"PASS", "FAIL", "CONSTRAINED", "INDETERMINATE", "NOT_APPLICABLE"}
+DEFAULT_HUMAN_OUTCOMES = {
+    "PASS": "Privacy expectation met",
+    "FAIL": "Privacy expectation not met",
+    "CONSTRAINED": "Privacy works, but with important limitations",
+    "INDETERMINATE": "We do not have enough evidence to decide yet",
+    "NOT_APPLICABLE": "This privacy test does not apply here",
+}
 
 
 def api(method: str, repo: str, path: str, token: str, payload: Any | None = None) -> Any:
@@ -68,7 +75,6 @@ def source_record(body: str) -> dict[str, Any]:
 
 
 def examination_record(comments: list[dict[str, Any]]) -> dict[str, Any]:
-    # Prefer the newest structured conclusion so a corrected disposition wins.
     for comment in reversed(comments):
         for block in yaml_blocks(comment.get("body") or ""):
             examination = block.get("dpip_examination")
@@ -91,7 +97,35 @@ def validate_examination(examination: dict[str, Any]) -> list[str]:
         errors.append("evidence_summary is required")
     if not str(examination.get("action", "")).strip():
         errors.append("action is required")
+    human = examination.get("human_summary")
+    if human is not None:
+        if not isinstance(human, dict):
+            errors.append("human_summary must be an object when present")
+        else:
+            for field in ("outcome", "explanation", "action"):
+                if not str(human.get(field, "")).strip():
+                    errors.append(f"human_summary.{field} is required when human_summary is present")
     return errors
+
+
+def human_summary(examination: dict[str, Any]) -> dict[str, str]:
+    supplied = examination.get("human_summary")
+    if isinstance(supplied, dict):
+        return {
+            "outcome": str(supplied["outcome"]).strip(),
+            "explanation": str(supplied["explanation"]).strip(),
+            "action": str(supplied["action"]).strip(),
+        }
+    conclusion = str(examination["conclusion"])
+    explanation = str(examination["evidence_summary"]).strip()
+    residual = str(examination.get("residual_correlation", "")).strip()
+    if residual:
+        explanation = f"{explanation} Remaining limitation: {residual}"
+    return {
+        "outcome": DEFAULT_HUMAN_OUTCOMES[conclusion],
+        "explanation": explanation,
+        "action": str(examination["action"]).strip(),
+    }
 
 
 def has_label(issue: dict[str, Any], name: str) -> bool:
@@ -111,11 +145,13 @@ def return_marker(dpip_repo: str, issue_number: int) -> str:
 
 
 def disposition_body(dpip_repo: str, issue: dict[str, Any], examination: dict[str, Any]) -> str:
+    plain = human_summary(examination)
     payload: dict[str, Any] = {
         "dpip_disposition": {
             "dpip_issue": issue["number"],
             "applicability": examination["applicability"],
             "conclusion": examination["conclusion"],
+            "human_summary": plain,
         }
     }
     disposition = payload["dpip_disposition"]
@@ -137,19 +173,18 @@ def disposition_body(dpip_repo: str, issue: dict[str, Any], examination: dict[st
     return (
         f"{marker}\n## DPIP disposition returned\n\n"
         f"DPIP examination: {issue['html_url']}\n\n"
+        f"### Plain-language result: {plain['outcome']}\n\n"
+        f"{plain['explanation']}\n\n"
+        f"**What to do:** {plain['action']}\n\n"
+        "<details><summary>Structured DPIP disposition</summary>\n\n"
         f"```yaml\n{yaml.safe_dump(payload, sort_keys=False).rstrip()}\n```\n\n"
+        "</details>\n\n"
         "DPIP owns the technical conclusion above; this comment closes only the DPIP handoff subflow. "
         "Any wider RAHP/security assessment remains independently governed."
     )
 
 
-def process_issue(
-    dpip_repo: str,
-    default_rahp_repo: str,
-    issue: dict[str, Any],
-    dpip_token: str,
-    rahp_token: str,
-) -> bool:
+def process_issue(dpip_repo: str, default_rahp_repo: str, issue: dict[str, Any], dpip_token: str, rahp_token: str) -> bool:
     if not (has_label(issue, SOURCE_LABEL) and has_label(issue, COMPLETE_LABEL)):
         print(f"SKIP {dpip_repo}#{issue.get('number')}: not a completed RAHP-originated intake")
         return False
@@ -161,21 +196,13 @@ def process_issue(
     problems = validate_examination(examination)
     if problems:
         raise ValueError("; ".join(problems))
-
     marker = return_marker(dpip_repo, issue["number"])
     source_comments = api("GET", rahp_repo, f"issues/{rahp_issue}/comments?per_page=100", rahp_token) or []
     if any(marker in (comment.get("body") or "") for comment in source_comments):
         print(f"EXISTS return for {dpip_repo}#{issue['number']} on {rahp_repo}#{rahp_issue}")
     else:
-        api(
-            "POST",
-            rahp_repo,
-            f"issues/{rahp_issue}/comments",
-            rahp_token,
-            {"body": disposition_body(dpip_repo, issue, examination)},
-        )
+        api("POST", rahp_repo, f"issues/{rahp_issue}/comments", rahp_token, {"body": disposition_body(dpip_repo, issue, examination)})
         print(f"RETURNED {dpip_repo}#{issue['number']} to {rahp_repo}#{rahp_issue}")
-
     api("POST", rahp_repo, f"issues/{rahp_issue}/labels", rahp_token, {"labels": [RAHP_COMPLETE]})
     for label in RAHP_TRANSIENT:
         try:
@@ -186,13 +213,7 @@ def process_issue(
     return True
 
 
-def run(
-    dpip_repo: str,
-    rahp_repo: str,
-    dpip_token: str,
-    rahp_token: str,
-    issue_number: int | None,
-) -> int:
+def run(dpip_repo: str, rahp_repo: str, dpip_token: str, rahp_token: str, issue_number: int | None) -> int:
     failures = 0
     for issue in get_candidates(dpip_repo, dpip_token, issue_number):
         try:
@@ -209,14 +230,8 @@ source:
   system: RAHP
   repository: example/rahp
   issue: 42
-  portfolio_monitor:
-    fingerprint: abc123
-  changed_artifact:
-    repository: example/source
-    revision: deadbeef
 ```"""
-    source = source_record(body)
-    assert source["issue"] == 42
+    assert source_record(body)["issue"] == 42
     comments = [{"body": """```yaml
 dpip_examination:
   applicability: applicable
@@ -224,11 +239,17 @@ dpip_examination:
   affected_interactions: [C3]
   evidence_summary: Runtime evidence is missing.
   residual_correlation: Envelope fingerprinting remains unresolved.
-  action: evidence-gap
+  action: Obtain a runtime trace before making the privacy claim.
+  human_summary:
+    outcome: We do not have enough evidence to decide yet
+    explanation: The change is privacy-relevant, but the required runtime trace is missing.
+    action: Capture the runtime trace and rerun this examination.
 ```"""}]
     examination = examination_record(comments)
     assert not validate_examination(examination)
-    assert examination["conclusion"] == "INDETERMINATE"
+    assert human_summary(examination)["outcome"].startswith("We do not")
+    rendered = disposition_body("example/dpip", {"number": 7, "html_url": "https://example.invalid/7"}, examination)
+    assert "Plain-language result" in rendered and "Structured DPIP disposition" in rendered
     bad = dict(examination)
     bad["applicability"] = "not-applicable"
     assert validate_examination(bad)

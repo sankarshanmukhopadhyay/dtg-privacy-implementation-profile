@@ -17,6 +17,16 @@
         "deployment": {"type": "string"}
       }
     },
+    "human_summary": {
+      "type": "object",
+      "required": ["outcome", "explanation", "action"],
+      "properties": {
+        "outcome": {"type": "string", "minLength": 1},
+        "explanation": {"type": "string", "minLength": 1},
+        "action": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
     "test_results": {
       "type": "array",
       "items": {
