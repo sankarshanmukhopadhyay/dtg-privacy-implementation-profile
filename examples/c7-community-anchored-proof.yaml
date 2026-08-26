@@ -47,23 +47,23 @@ components:
 
 privacy_claims:
   - id: C7-PC-1
-    property: non-disclosure
-    subject: relationship-identifier
-    scope: verifier observation
+    property: non-disclosure-relationship-identifier
+    subject: identifier
+    scope: relationship identifier at verifier observation
     expected_status: PASS
     rationale: ADR P1 requires no relationship identifier to be revealed.
     invariants: [P1, P3, P4]
   - id: C7-PC-2
-    property: non-disclosure
-    subject: counterparty-identifier
-    scope: verifier observation
+    property: non-disclosure-counterparty-identifier
+    subject: identifier
+    scope: counterparty identifier at verifier observation
     expected_status: PASS
     rationale: ADR P2 requires the counterparty identity to remain hidden.
     invariants: [P1, P3, P4]
   - id: C7-PC-3
-    property: non-disclosure
-    subject: holder-identifier
-    scope: verifier observation beyond deliberate disclosure
+    property: non-disclosure-holder-identifier
+    subject: identifier
+    scope: holder identifier beyond deliberate disclosure
     expected_status: PASS
     rationale: ADR P3 permits only attributes deliberately disclosed by the holder.
     invariants: [P1, P3, P4]
@@ -76,15 +76,15 @@ privacy_claims:
     invariants: [P2, P4, P5]
   - id: C7-PC-5
     property: data-minimisation
-    subject: composed-interaction
-    scope: verifier and registry observations
+    subject: contextual-graph
+    scope: complete verifier and registry observation context
     expected_status: PASS
     rationale: ADR P5 requires the verifier to learn the outcome and deliberate disclosures only.
     invariants: [P1, P3, P4, P5]
   - id: C7-PC-6
     property: status-privacy
-    subject: currentness-check
-    scope: registry/status interaction
+    subject: contextual-graph
+    scope: registry and status interaction context
     expected_status: PASS
     rationale: ADR C3 requires currentness checks not to identify the holder.
     invariants: [P2, P4, P7]
@@ -212,7 +212,7 @@ tests:
     claims: [C7-PC-4]
     expected: PASS only if no proof, transport, registry, status, or surrounding observation provides a reusable join key.
   - id: C7-T4
-    type: lifecycle
+    type: negative
     description: CURRENT — counterparty membership is revoked and the published propagation bound expires.
     requirements: [C7-R4, C7-R7]
     invariants: [P4, P6, P7]
