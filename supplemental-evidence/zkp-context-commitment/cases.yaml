@@ -1,0 +1,50 @@
+source:
+  repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+  revision: 3b6b3f2e76005d6f579d076ee2833ef56d599b65
+  locator: proof-of-liveness-requirements.md — context definition and LIV-SES-01 transcript commitments
+semantic_binding:
+  surface: zkp-context-commitment
+  interaction: C3
+  claims: [C3-PC-2]
+  invariants: [P2, P4]
+  proposition: >-
+    A ZKP context identifier is intentionally linkability-bearing inside its declared
+    purpose-and-governance-bounded domain. Reuse across unrelated verifier contexts
+    widens effective correlation scope beyond those context boundaries.
+judgment_boundary:
+  evidence_scope: controlled-calibration-only
+  deployment_privacy_judgment: not-made
+  runtime_gap_replaced: false
+  source_pin_replacement: false
+  human_acceptance_required: true
+cases:
+  - id: ZKP-CTX-NEG-001
+    kind: controlled-adversarial-calibration
+    contexts:
+      - id: A
+        verifier: verifier-a
+        relationship: unrelated
+        context_id: zkp-controlled-context-reuse-001
+      - id: B
+        verifier: verifier-b
+        relationship: unrelated
+        context_id: zkp-controlled-context-reuse-001
+    expected_join: joined
+    expected_disposition: correlation-scope-widening-pattern-detected
+  - id: ZKP-CTX-POS-001
+    kind: controlled-compliant-calibration
+    contexts:
+      - id: A
+        verifier: verifier-a
+        relationship: unrelated
+        context_id: zkp-controlled-context-a
+      - id: B
+        verifier: verifier-b
+        relationship: unrelated
+        context_id: zkp-controlled-context-b
+    expected_join: not-joined
+    expected_disposition: context-reuse-pattern-not-detected
+    limitation: >-
+      A non-join in this controlled context-id fixture establishes only that this
+      particular context identifier is not reused; it does not establish global
+      unlinkability, transcript confidentiality, or absence of other correlators.
