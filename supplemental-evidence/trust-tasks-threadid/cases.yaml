@@ -1,0 +1,47 @@
+source:
+  repository: trustoverip/dtgwg-trust-tasks-spec
+  revision: 6425a74136c1d2dfa7115889abe0b3521700e887
+  locator: spec/body.md — threadId member and privacy/correlation requirements
+semantic_binding:
+  surface: trust-task-envelope
+  interaction: C3
+  claims: [C3-PC-2]
+  invariants: [P2, P4]
+  proposition: >-
+    threadId is exchange-scoped. Reusing the same threadId across separate unrelated
+    exchanges creates a protocol-specific cross-context correlation handle.
+judgment_boundary:
+  evidence_scope: controlled-calibration-only
+  deployment_privacy_judgment: not-made
+  runtime_gap_replaced: false
+  human_acceptance_required: true
+cases:
+  - id: TT-THREAD-NEG-001
+    kind: controlled-adversarial-calibration
+    contexts:
+      - id: A
+        exchange: exchange-a
+        relationship: unrelated
+        thread_id: tt-controlled-reuse-001
+      - id: B
+        exchange: exchange-b
+        relationship: unrelated
+        thread_id: tt-controlled-reuse-001
+    expected_join: joined
+    expected_disposition: falsification-pattern-detected
+  - id: TT-THREAD-POS-001
+    kind: controlled-compliant-calibration
+    contexts:
+      - id: A
+        exchange: exchange-a
+        relationship: unrelated
+        thread_id: tt-controlled-fresh-a
+      - id: B
+        exchange: exchange-b
+        relationship: unrelated
+        thread_id: tt-controlled-fresh-b
+    expected_join: not-joined
+    expected_disposition: prohibited-reuse-pattern-not-detected
+    limitation: >-
+      A non-join in this controlled fixture establishes only absence of threadId reuse
+      in the fixture; it does not establish global cross-context unlinkability.
