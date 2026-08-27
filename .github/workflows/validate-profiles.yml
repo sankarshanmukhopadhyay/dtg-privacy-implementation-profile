@@ -50,6 +50,8 @@ jobs:
         run: python scripts/examination_setup.py --self-test
       - name: Validate evidence acquisition planning
         run: python scripts/evidence_plan.py --self-test
+      - name: Validate deterministic evidence collectors
+        run: python scripts/evidence_acquire.py --self-test
       - name: Validate repository-native examination execution
         run: python scripts/examination_execute.py --self-test
       - name: Validate RAHP return transport
