@@ -10,7 +10,14 @@ supported_proposition: >-
   verification, and status privacy as material parts of the presentation flow. This establishes
   that status evaluation is a privacy-relevant evidence surface and must avoid unnecessary
   disclosure/linkage. It does not establish a credential status lookup identifier, request,
-  response, cache entry, or log actually observed in context A. The unresolved Credential
-  Specification hash tracked in #91 is not used as provenance for this record.
+  response, cache entry, or log actually observed in context A.
 declared_scope: status-evaluation-surface-by-pinned-zkp-requirements
 observable_scope: source-defined-not-runtime-observed
+runtime_observation:
+  state: unavailable
+  reason: >-
+    The pinned ZKP material defines status/privacy requirements but does not provide an
+    attributable context-A status request/response, lookup handle, cache key, or verifier log.
+  dependency: >-
+    A context-A implementation trace from the credential/status verifier path, including the
+    lookup request, response/currentness decision, and any retained identifier or cache/log key.
