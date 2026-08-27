@@ -171,28 +171,28 @@ def publish(repo: str, issue: dict[str, Any], token: str) -> None:
     evidence = build_execution(number, setup)
     digest = evidence["execution_evidence"]["execution_digest"]
     marker = f"<!-- dpip-execution-evidence:{number}:{digest} -->"
-    if any(marker in (c.get("body") or "") for c in existing):
-        print(f"UNCHANGED #{number}")
-        return
+    execution_exists = any(marker in (comment.get("body") or "") for comment in existing)
     status = evidence["execution_evidence"]["status"]
-    body = (
-        f"{marker}\n## DPIP repository-native execution — {status}\n\n"
-        "This stage executes only mechanically available repository evidence. Missing evidence remains explicit; this comment is **not** the DPIP privacy disposition.\n\n"
-        f"```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
-    )
-    api("POST", repo, f"issues/{number}/comments", token, {"body": body})
+    if not execution_exists:
+        body = (
+            f"{marker}\n## DPIP repository-native execution — {status}\n\n"
+            "This stage executes only mechanically available repository evidence. Missing evidence remains explicit; this comment is **not** the DPIP privacy disposition.\n\n"
+            f"```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
+        )
+        api("POST", repo, f"issues/{number}/comments", token, {"body": body})
     conclusion = conclusion_from_execution(evidence)
     if conclusion is not None:
         conclusion_digest = hashlib.sha256(
             json.dumps(conclusion, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()[:16]
         conclusion_marker = f"<!-- dpip-examination:{number}:{conclusion_digest} -->"
-        conclusion_body = (
-            f"{conclusion_marker}\n## DPIP scoped conclusion — {conclusion['dpip_examination']['conclusion']}\n\n"
-            "This is the DPIP disposition for the evidence currently available. It preserves missing-evidence boundaries rather than converting them into a privacy pass.\n\n"
-            f"```yaml\n{yaml.safe_dump(conclusion, sort_keys=False).rstrip()}\n```"
-        )
-        api("POST", repo, f"issues/{number}/comments", token, {"body": conclusion_body})
+        if not any(conclusion_marker in (comment.get("body") or "") for comment in existing):
+            conclusion_body = (
+                f"{conclusion_marker}\n## DPIP scoped conclusion — {conclusion['dpip_examination']['conclusion']}\n\n"
+                "This is the DPIP disposition for the evidence currently available. It preserves missing-evidence boundaries rather than converting them into a privacy pass.\n\n"
+                f"```yaml\n{yaml.safe_dump(conclusion, sort_keys=False).rstrip()}\n```"
+            )
+            api("POST", repo, f"issues/{number}/comments", token, {"body": conclusion_body})
         api("POST", repo, f"issues/{number}/labels", token, {"labels": ["run:complete"]})
         try:
             api("DELETE", repo, f"issues/{number}/labels/run%3Ain-progress", token)
