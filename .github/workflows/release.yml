@@ -1,0 +1,121 @@
+name: Cut governed DPIP release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic release tag (vX.Y.Z)
+        required: true
+        type: string
+      release_notes:
+        description: Human release judgment / notable changes
+        required: true
+        type: string
+      dry_run:
+        description: Validate and select codename without creating release
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Validate release governance
+        run: python scripts/release_governance.py validate --version '${{ inputs.version }}'
+      - name: Run full DPIP validation
+        shell: bash
+        run: |
+          python scripts/validate_profiles.py
+          python scripts/validate_observations.py
+          python scripts/validate_observations.py --self-test
+          python scripts/validate_evidence.py
+          python scripts/validate_results.py
+          python scripts/validate_reference_flows.py
+          python scripts/validate_findings_readiness.py
+          python scripts/validate_change_impact.py
+          python scripts/rahp_intake.py --self-test
+          python scripts/examination_setup.py --self-test
+          python scripts/evidence_plan.py --self-test
+          python scripts/evidence_acquire.py --self-test
+          python scripts/examination_execute.py --self-test
+          python scripts/rahp_return.py --self-test
+      - name: Refuse existing tag
+        shell: bash
+        run: |
+          if git rev-parse '${{ inputs.version }}' >/dev/null 2>&1; then
+            echo 'Tag already exists: ${{ inputs.version }}' >&2
+            exit 1
+          fi
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record previously used lake codenames
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release list --limit 100 --json name --jq '.[].name' | sed 's/^.* — //' > /tmp/used-codenames.txt || true
+      - name: Select unused lake codename
+        id: lake
+        run: python scripts/release_governance.py select --version '${{ inputs.version }}' --used-file /tmp/used-codenames.txt
+      - name: Prepare release notes
+        env:
+          VERSION: ${{ inputs.version }}
+          CODENAME: ${{ steps.lake.outputs.codename }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          TARGET_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          cat > /tmp/release-notes.md <<EOF
+          ## DPIP ${VERSION} — ${CODENAME}
+
+          **Target SHA:** \`${TARGET_SHA}\`
+          **Validation:** full repository validation passed in this workflow.
+          **Codename source:** pinned \`release/lake-codenames.txt\`, derived from Wikipedia's List of lakes of India.
+
+          ### Human release judgment
+
+          ${RELEASE_NOTES}
+
+          ### Governance boundary
+
+          The semantic version is authoritative. The lake codename is memorable release metadata and does not alter conformance or assurance semantics.
+          EOF
+      - name: Dry-run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo 'Validated ${{ inputs.version }}'
+          echo 'Selected codename: ${{ steps.lake.outputs.codename }}'
+          cat /tmp/release-notes.md
+      - name: Create GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release view '${{ inputs.version }}' >/dev/null 2>&1 && { echo 'Release already exists' >&2; exit 1; } || true
+          gh release create '${{ inputs.version }}' \
+            --target '${{ github.sha }}' \
+            --title '${{ inputs.version }} — ${{ steps.lake.outputs.codename }}' \
+            --notes-file /tmp/release-notes.md
