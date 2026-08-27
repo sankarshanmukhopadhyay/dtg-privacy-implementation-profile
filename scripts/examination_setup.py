@@ -57,8 +57,34 @@ def canonical_catalog() -> dict[str, dict[str, Any]]:
 
 
 def extract_source_pins(body: str) -> list[dict[str, str]]:
+    """Parse immutable source pins, preserving repository namespace when supplied.
+
+    Preferred form::
+
+        - Credential Specification [repo=trustoverip/dtgwg-cred-spec]: `40hex...`
+
+    Legacy ``- Label: `40hex...` `` remains supported byte-for-byte so older
+    assurance records do not acquire a new setup digest merely because this
+    parser learned a stronger provenance form.
+    """
     pins: list[dict[str, str]] = []
-    for match in re.finditer(r"^-\s+([^:\n]+):\s+`([0-9a-f]{40})`\s*$", body or "", re.MULTILINE | re.IGNORECASE):
+    qualified_ranges: list[tuple[int, int]] = []
+    qualified = re.compile(
+        r"^-\s+([^\[\n]+?)\s+\[repo=([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\]:\s+`([0-9a-f]{40})`\s*$",
+        re.MULTILINE | re.IGNORECASE,
+    )
+    for match in qualified.finditer(body or ""):
+        pins.append({
+            "label": match.group(1).strip(),
+            "repository": match.group(2),
+            "revision": match.group(3),
+        })
+        qualified_ranges.append(match.span())
+
+    legacy = re.compile(r"^-\s+([^:\n]+):\s+`([0-9a-f]{40})`\s*$", re.MULTILINE | re.IGNORECASE)
+    for match in legacy.finditer(body or ""):
+        if any(start <= match.start() < end for start, end in qualified_ranges):
+            continue
         pins.append({"label": match.group(1).strip(), "revision": match.group(2)})
     return pins
 
@@ -212,6 +238,20 @@ requested_examination:
     assert set(setup["candidate_interactions"]) == {"C3", "C5"}
     assert set(setup["candidate_profiles"]) == {"PP-4", "PP-2"}
     assert setup["privacy_judgment"] == "not-made"
+    assert setup["source_pins"] == [{"label": "Trust Tasks Framework v0.5.0", "revision": "6425a74136c1d2dfa7115889abe0b3521700e887"}]
+
+    qualified_body = body.replace(
+        "- Trust Tasks Framework v0.5.0: `6425a74136c1d2dfa7115889abe0b3521700e887`",
+        "- Trust Tasks Framework v0.5.0 [repo=trustoverip/dtgwg-trust-tasks-spec]: `6425a74136c1d2dfa7115889abe0b3521700e887`",
+    )
+    qualified = build_setup(67, qualified_body, registry, catalog)["examination_setup"]
+    assert qualified["status"] == "ready", qualified
+    assert qualified["source_pins"] == [{
+        "label": "Trust Tasks Framework v0.5.0",
+        "repository": "trustoverip/dtgwg-trust-tasks-spec",
+        "revision": "6425a74136c1d2dfa7115889abe0b3521700e887",
+    }]
+
     bad = body.replace("credential-proof-trust-task-consequential-execution", "unknown-interaction")
     blocked = build_setup(66, bad, registry, catalog)["examination_setup"]
     assert blocked["status"] == "needs-review"
@@ -227,11 +267,21 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_test:
         return self_test()
-    token = os.environ.get("GITHUB_TOKEN", "")
+    if not args.issue_number:
+        print("--issue-number is required for runtime publication", file=sys.stderr)
+        return 2
+    token = os.getenv("GITHUB_TOKEN", "")
     if not token:
-        sys.exit("GITHUB_TOKEN is required")
-    repo = os.environ.get("DPIP_REPOSITORY", DEFAULT_REPO)
-    return run(repo, token, args.issue_number)
+        print("GITHUB_TOKEN is required", file=sys.stderr)
+        return 2
+    issue = api("GET", os.getenv("DPIP_REPOSITORY", DEFAULT_REPO), f"issues/{args.issue_number}", token)
+    registry = load_registry()
+    catalog = canonical_catalog()
+    if eligible(issue):
+        publish(os.getenv("DPIP_REPOSITORY", DEFAULT_REPO), issue, token, registry, catalog)
+    else:
+        print(f"SKIP #{args.issue_number}: not an admitted RAHP run")
+    return 0
 
 
 if __name__ == "__main__":
