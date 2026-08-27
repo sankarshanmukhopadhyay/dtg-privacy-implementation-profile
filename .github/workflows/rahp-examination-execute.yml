@@ -4,6 +4,7 @@ on:
   issue_comment:
     types: [created]
   schedule:
+    # Recovery reconciliation; normal progression is explicitly dispatched.
     - cron: '37 * * * *'
   workflow_dispatch:
     inputs:
@@ -15,6 +16,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: write
 
 concurrency:
   group: dpip-examination-execute-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
@@ -37,17 +39,42 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Validate execution harness
         run: python scripts/examination_execute.py --self-test
-      - name: Execute admitted examination evidence
+      - name: Resolve execution targets
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+          GH_TOKEN: ${{ github.token }}
           EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
         shell: bash
         run: |
+          set -euo pipefail
           issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          : > /tmp/dpip-execute-targets.txt
           if [ -n "$issue_number" ]; then
-            python scripts/examination_execute.py --issue-number "$issue_number"
+            printf '%s\n' "$issue_number" >> /tmp/dpip-execute-targets.txt
           else
-            python scripts/examination_execute.py
+            gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=run%3Ain-progress&per_page=100" --jq '.[].number' > /tmp/dpip-execute-targets.txt
           fi
+      - name: Execute admitted examination evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r number; do
+            [ -n "$number" ] || continue
+            python scripts/examination_execute.py --issue-number "$number"
+          done < /tmp/dpip-execute-targets.txt
+      - name: Dispatch return for terminal dispositions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r number; do
+            [ -n "$number" ] || continue
+            labels="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${number}" --jq '[.labels[].name] | join(",")')"
+            if [[ ",$labels," == *,run:complete,* ]]; then
+              gh workflow run rahp-return.yml -f issue_number="$number"
+            fi
+          done < /tmp/dpip-execute-targets.txt
