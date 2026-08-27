@@ -1,0 +1,61 @@
+version: 1
+purpose: >-
+  Map examination evidence-surface language to deterministic acquisition tasks. These
+  rules describe what must be observed and by whom; they do not assert that an observation
+  exists and do not determine privacy outcome.
+
+contexts:
+  - id: A
+    role: relying-context-a
+    relationship: unrelated
+  - id: B
+    role: relying-context-b
+    relationship: unrelated
+
+surface_rules:
+  "trust-task id/threadId/ceremony.enactment":
+    component: Trust Tasks
+    observer: relying-party
+    collector: trust-task-envelope
+    retention_stage: post-task-retained
+    falsification_purpose: Determine whether task/thread/ceremony values are stable or reusable across unrelated relying contexts.
+  "timestamps and freshness metadata":
+    component: Trust Tasks / lifecycle layer
+    observer: relying-party-or-status-source
+    collector: temporal-freshness
+    retention_stage: post-task-retained
+    falsification_purpose: Determine whether timing/freshness observations create a reliable cross-context correlation path.
+  "proof transcript context commitment":
+    component: ZKP presentation
+    observer: verifier
+    collector: zkp-context-commitment
+    retention_stage: presentation-and-retained-proof
+    falsification_purpose: Determine whether proof-visible binding material is reusable or joinable across unrelated relying contexts.
+  "credential/status lookup evidence":
+    component: Credential/status layer
+    observer: status-source-or-verifier
+    collector: credential-status
+    retention_stage: lookup-and-log-retention
+    falsification_purpose: Determine whether status/freshness lookup handles correlate presentations across unrelated relying contexts.
+  "retained Trust Task documents":
+    component: Trust Tasks
+    observer: relying-party-or-operator
+    collector: trust-task-retention
+    retention_stage: retained-document
+    falsification_purpose: Determine whether retained task documents preserve stable values that collapse declared pairwise scope.
+  "outcome receipts and audit evidence":
+    component: outcome/audit layer
+    observer: relying-party-or-operator
+    collector: outcome-audit
+    retention_stage: post-outcome-audit
+    falsification_purpose: Determine whether outcome or audit records contain a durable join key across unrelated relying contexts.
+
+join_policy:
+  contexts: [A, B]
+  basis: Compare normalized observations for stable/reusable values or deterministic derivations across unrelated relying contexts.
+  expected_question: Does the observed surface permit the same subject or relationship to be joined across A and B beyond its declared scope?
+
+judgment_boundary:
+  applicability: not-made
+  privacy_judgment: not-made
+  human_acceptance_required: true
