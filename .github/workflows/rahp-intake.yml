@@ -1,0 +1,53 @@
+name: Admit RAHP privacy examination requests
+
+on:
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Optional DPIP issue number to reconcile
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dpip-rahp-intake-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'issues' && github.event.label.name == 'run:requested')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Validate intake processor
+        run: python scripts/rahp_intake.py --self-test
+      - name: Admit requested RAHP intake
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+          EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          if [ -n "$issue_number" ]; then
+            python scripts/rahp_intake.py --issue-number "$issue_number"
+          else
+            python scripts/rahp_intake.py
+          fi
