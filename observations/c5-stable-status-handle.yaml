@@ -1,0 +1,57 @@
+version: "2"
+interaction_id: C5
+implementation:
+  name: dpip-correlation-fixture
+  version: "0.1"
+  deployment: two-unrelated-verifier-contexts
+provenance:
+  - id: dpip117
+    source: sankarshanmukhopadhyay/dtg-privacy-implementation-profile#117
+contexts:
+  - id: A
+    relationship: unrelated
+    description: verifier context A
+  - id: B
+    relationship: unrelated
+    description: verifier context B
+observed_surfaces:
+  - id: obs-a-status-handle
+    task_id: EA-STATUS-POLICY-DISCOVERY
+    context_id: A
+    observer: status-source
+    component: lifecycle status
+    surface: status_query_handle
+    state: observed
+    value_digest: sha256:stable-status-handle-example
+    stability: cross-context-stable
+    retention_stage: retained-status-log
+    declared_scope: decision-or-verifier
+    observable_scope: status-source
+    effective_scope: cross-context
+    provenance_ids: [dpip117]
+  - id: obs-b-status-handle
+    task_id: EA-STATUS-POLICY-DISCOVERY
+    context_id: B
+    observer: status-source
+    component: lifecycle status
+    surface: status_query_handle
+    state: observed
+    value_digest: sha256:stable-status-handle-example
+    stability: cross-context-stable
+    retention_stage: retained-status-log
+    declared_scope: decision-or-verifier
+    observable_scope: status-source
+    effective_scope: cross-context
+    provenance_ids: [dpip117]
+join_attempts:
+  - id: join-stable-status-handle
+    context_ids: [A, B]
+    input_observation_ids: [obs-a-status-handle, obs-b-status-handle]
+    basis: identical retained stable status-handle digest across unrelated verifier contexts
+    result: joined
+    evidence: [obs-a-status-handle, obs-b-status-handle]
+    explanation: The fixture deliberately falsifies status-query unlinkability by exposing the same stable status handle in A and B.
+vectors:
+  - id: stable-status-handle-reuse
+    test_id: C5-T3
+    crypto_verified: true
