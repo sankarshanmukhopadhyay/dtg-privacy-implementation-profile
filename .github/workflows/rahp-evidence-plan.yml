@@ -15,7 +15,7 @@ permissions:
   issues: write
 
 jobs:
-  plan:
+  plan-and-acquire:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'dpip-examination-setup:'))
@@ -30,13 +30,28 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Validate evidence-plan compiler
         run: python scripts/evidence_plan.py --self-test
-      - name: Compile acquisition plan
+      - name: Validate deterministic acquisition runner
+        run: python scripts/evidence_acquire.py --self-test
+      - name: Resolve issue number
+        id: issue
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
           EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
         shell: bash
         run: |
           issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
-          python scripts/evidence_plan.py --issue-number "$issue_number"
+          if [ -z "$issue_number" ]; then
+            echo 'No issue number resolved' >&2
+            exit 2
+          fi
+          echo "number=$issue_number" >> "$GITHUB_OUTPUT"
+      - name: Compile and publish acquisition plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+        run: python scripts/evidence_plan.py --issue-number '${{ steps.issue.outputs.number }}'
+      - name: Acquire evidence from the published plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+        run: python scripts/evidence_acquire.py --issue-number '${{ steps.issue.outputs.number }}'
