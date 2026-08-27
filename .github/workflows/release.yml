@@ -70,6 +70,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Refuse existing GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view '${{ inputs.version }}' >/dev/null 2>&1; then
+            echo 'Release already exists: ${{ inputs.version }}' >&2
+            exit 1
+          fi
       - name: Record previously used lake codenames
         env:
           GH_TOKEN: ${{ github.token }}
@@ -114,7 +124,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release view '${{ inputs.version }}' >/dev/null 2>&1 && { echo 'Release already exists' >&2; exit 1; } || true
           gh release create '${{ inputs.version }}' \
             --target '${{ github.sha }}' \
             --title '${{ inputs.version }} — ${{ steps.lake.outputs.codename }}' \
