@@ -170,7 +170,8 @@ def self_test() -> int:
     assert first == second
     assert first["status"] == "ready"
     assert len(first["contexts"]) == 2 and all(c["relationship"] == "unrelated" for c in first["contexts"])
-    assert len(first["acquisition_tasks"]) == 6
+    assert len(first["acquisition_tasks"]) == len(rules["surface_rules"])
+    assert len(first["acquisition_tasks"]) >= 6
     assert all(t["availability"] == "missing" for t in first["acquisition_tasks"])
     assert first["judgment_boundary"]["privacy_judgment"] == "not-made"
 
