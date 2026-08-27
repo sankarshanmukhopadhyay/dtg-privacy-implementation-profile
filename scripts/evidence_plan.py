@@ -152,10 +152,11 @@ def self_test() -> int:
     assert all(t["availability"] == "missing" for t in first["acquisition_tasks"])
     assert first["judgment_boundary"]["privacy_judgment"] == "not-made"
     bad = dict(setup)
-    bad["evidence_surfaces"] = ["unknown surface"]
+    bad["evidence_surfaces"] = [setup["evidence_surfaces"][0], "unknown surface"]
     blocked = build_plan(bad, rules)
     assert blocked["status"] == "needs-review"
-    assert "unmapped evidence surface" in blocked["unresolved_requirements"][0]
+    assert len(blocked["acquisition_tasks"]) == 1
+    assert any("unmapped evidence surface" in x for x in blocked["unresolved_requirements"])
     print("PASS evidence_plan self-test")
     return 0
 
