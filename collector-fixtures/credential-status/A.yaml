@@ -1,0 +1,16 @@
+state: source-backed
+evidence_class: specification
+source_provenance:
+  repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+  revision: 3b6b3f2e76005d6f579d076ee2833ef56d599b65
+  locator: proof-of-liveness-requirements.md — LIV-STAT-01 through LIV-STAT-05
+supported_proposition: >-
+  At the exact ZKP revision pinned by #65, the profile requirements define status evaluation,
+  revocation/suspension/expiry semantics, accreditation-change timing, historical/as-of
+  verification, and status privacy as material parts of the presentation flow. This establishes
+  that status evaluation is a privacy-relevant evidence surface and must avoid unnecessary
+  disclosure/linkage. It does not establish a credential status lookup identifier, request,
+  response, cache entry, or log actually observed in context A. The unresolved Credential
+  Specification hash tracked in #91 is not used as provenance for this record.
+declared_scope: status-evaluation-surface-by-pinned-zkp-requirements
+observable_scope: source-defined-not-runtime-observed
