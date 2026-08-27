@@ -1,0 +1,18 @@
+state: source-backed
+evidence_class: specification-and-revision-tree
+source_provenance:
+  repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+  revision: 3b6b3f2e76005d6f579d076ee2833ef56d599b65
+  locator: proof-of-liveness-requirements.md — §6.1 and LIV-SES-01; repository tree at same revision
+supported_proposition: >-
+  At the exact ZKP revision pinned by #65, the requirements define context as a bounded
+  intentional linkability domain and require presentations to bind a canonical,
+  domain-separated transcript that commits to audience, challenge/nonce, session where
+  defined, requested predicates, policy/freshness boundaries, context/scope where linkability
+  is used, and proof-suite identity. The repository tree at this same revision contains the
+  requirements document but no later conformance-fixture or composed-presentation executable
+  evidence tree. This establishes a source-defined transcript/context correlation surface and
+  an executable-evidence version gap; it does not establish the transcript commitments actually
+  observed by verifier context B.
+declared_scope: purpose-and-governance-bounded-context-by-pinned-requirements
+observable_scope: source-defined-no-executable-two-context-fixture-at-pin
