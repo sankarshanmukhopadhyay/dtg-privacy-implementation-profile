@@ -1,0 +1,14 @@
+state: source-backed
+evidence_class: specification
+source_provenance:
+  repository: trustoverip/dtgwg-trust-tasks-spec
+  revision: 6425a74136c1d2dfa7115889abe0b3521700e887
+  locator: spec/body.md — privacy and correlation
+supported_proposition: >-
+  At the pinned Trust Tasks revision, a Trust Task document is explicitly treated as a durable
+  clear record that can name parties, and the privacy requirements constrain party identifiers
+  and correlation values to avoid unintended durable linkage. This establishes that retained
+  Trust Task documents are a specification-recognized privacy/correlation surface; it does not
+  establish which documents or values were actually retained by relying context A.
+declared_scope: durable-task-record-with-scoped-identifiers-by-specification
+observable_scope: source-defined-not-runtime-observed
