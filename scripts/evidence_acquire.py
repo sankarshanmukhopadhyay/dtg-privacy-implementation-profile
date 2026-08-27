@@ -32,7 +32,29 @@ def fixture_value(collector: str, context: str) -> dict[str,Any] | None:
     return yaml.safe_load(path.read_text()) if path.exists() else None
 
 
+def blocked_acquisition(plan: dict[str,Any]) -> dict[str,Any]:
+    reasons=list(plan.get("unresolved_requirements",[]) or [])
+    if not reasons:
+        reasons=[f"evidence plan status is {plan.get('status','unknown')!r}, not 'ready'"]
+    result={"evidence_acquisition":{
+        "status":"acquisition-blocked",
+        "source_issue":plan["source_issue"],
+        "setup_digest":plan["setup_digest"],
+        "contexts":plan.get("contexts",[]),
+        "observed_surfaces":[],
+        "join_attempts":[],
+        "acquisition_gaps":[{"reason":reason} for reason in reasons],
+        "source_pins":plan.get("source_pins",[]),
+        "privacy_judgment":"not-made",
+        "human_acceptance_required":True,
+    }}
+    result["evidence_acquisition"]["acquisition_digest"]=hashlib.sha256(json.dumps(result,sort_keys=True,separators=(",",":")).encode()).hexdigest()[:16]
+    return result
+
+
 def acquire(plan: dict[str,Any], fixture_loader=fixture_value) -> dict[str,Any]:
+    if plan.get("status","ready") != "ready":
+        return blocked_acquisition(plan)
     observations=[]; gaps=[]; by_task={}
     for task in plan.get("acquisition_tasks",[]):
         obs_ids=[]
@@ -78,13 +100,17 @@ def publish(repo:str,number:int,token:str)->None:
 
 
 def self_test()->int:
-    plan={"source_issue":65,"setup_digest":"x","contexts":[{"id":"A","role":"a","relationship":"unrelated"},{"id":"B","role":"b","relationship":"unrelated"}],"source_pins":[],"acquisition_tasks":[{"id":"EA-X","surface":"stable handle","component":"status","observer":"status-source","contexts":["A","B"],"retention_stage":"retained","availability":"missing","falsification_purpose":"join","collector":"status"}],"join_attempts":[{"id":"JOIN-X","task_ids":["EA-X"],"contexts":["A","B"],"basis":"identical handle","expected_question":"join?"}]}
+    plan={"status":"ready","source_issue":65,"setup_digest":"x","contexts":[{"id":"A","role":"a","relationship":"unrelated"},{"id":"B","role":"b","relationship":"unrelated"}],"source_pins":[],"acquisition_tasks":[{"id":"EA-X","surface":"stable handle","component":"status","observer":"status-source","contexts":["A","B"],"retention_stage":"retained","availability":"missing","falsification_purpose":"join","collector":"status"}],"join_attempts":[{"id":"JOIN-X","task_ids":["EA-X"],"contexts":["A","B"],"basis":"identical handle","expected_question":"join?"}]}
     def same(_c,ctx): return {"state":"observed","value_digest":"sha256:same","stability":"stable"}
     joined=acquire(plan,same)["evidence_acquisition"]
     assert joined["status"]=="acquired" and joined["join_attempts"][0]["result"]=="joined"
     missing=acquire(plan,lambda _c,_x:None)["evidence_acquisition"]
     assert missing["status"]=="acquisition-incomplete" and len(missing["acquisition_gaps"])==2
-    assert missing["privacy_judgment"]=="not-made"
+    blocked_plan=dict(plan); blocked_plan["status"]="needs-review"; blocked_plan["unresolved_requirements"]=["unmapped evidence surface: unknown"]
+    blocked=acquire(blocked_plan,same)["evidence_acquisition"]
+    assert blocked["status"]=="acquisition-blocked"
+    assert not blocked["observed_surfaces"] and "unmapped evidence surface" in blocked["acquisition_gaps"][0]["reason"]
+    assert blocked["privacy_judgment"]=="not-made"
     print("PASS evidence_acquire self-test"); return 0
 
 
