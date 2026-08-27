@@ -1,0 +1,16 @@
+state: source-backed
+evidence_class: specification
+source_provenance:
+  repository: trustoverip/dtgwg-trust-tasks-spec
+  revision: 6425a74136c1d2dfa7115889abe0b3521700e887
+  locator: spec/appendix.md — v0.5.0 lifecycle, retention and response-disposition changelog; illustrative retained-result example
+supported_proposition: >-
+  At the pinned Trust Tasks revision, the framework defines explicit lifecycle/response
+  dispositions and retention semantics, and its informative example illustrates a verification
+  result retained for later compliance reliance with a proof because transport integrity alone
+  is insufficient. This establishes that post-outcome receipts, retained results and related
+  lifecycle evidence are protocol-recognized durable surfaces. It does not establish any
+  receipt identifier, audit key, operator log, compliance record or retained outcome actually
+  present in context B.
+declared_scope: post-outcome-lifecycle-and-retention-surface-by-specification
+observable_scope: source-defined-not-runtime-observed
