@@ -12,3 +12,11 @@ supported_proposition: >-
   establish which documents or values were actually retained by relying context A.
 declared_scope: durable-task-record-with-scoped-identifiers-by-specification
 observable_scope: source-defined-not-runtime-observed
+runtime_observation:
+  state: unavailable
+  reason: >-
+    Schema/specification durability does not establish that context A retained the document or
+    any particular id, threadId, ceremony, party, proof, timestamp, or derived correlation value.
+  dependency: >-
+    An attributable context-A implementation/operator retention trace identifying which Trust
+    Task fields survived execution, their retention horizon, and the observer permitted to read them.

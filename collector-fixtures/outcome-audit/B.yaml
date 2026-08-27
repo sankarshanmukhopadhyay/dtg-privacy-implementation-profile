@@ -14,3 +14,11 @@ supported_proposition: >-
   present in context B.
 declared_scope: post-outcome-lifecycle-and-retention-surface-by-specification
 observable_scope: source-defined-not-runtime-observed
+runtime_observation:
+  state: unavailable
+  reason: >-
+    The pinned source defines outcome/retention semantics but provides no attributable context-B
+    receipt, audit entry, operator log, compliance record, or retained decision artifact.
+  dependency: >-
+    A context-B outcome/audit trace identifying the retained result or receipt fields, any audit
+    identifiers/keys, retention horizon, and the observer permitted to correlate them.
