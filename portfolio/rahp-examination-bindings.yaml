@@ -1,0 +1,49 @@
+version: 1
+status: candidate-binding-registry
+purpose: >-
+  Provide explicit, reviewable mappings from RAHP-originated privacy examination language
+  to existing DPIP interactions, profiles, invariants and scoped claims. These mappings
+  identify candidate examination setup only; they do not establish applicability or a
+  privacy disposition.
+
+invariant_aliases:
+  no-unnecessary-cross-context-correlation: [P2, P4]
+  correlation-scope-does-not-expand-through-composition: [P2, P4, P5]
+  retained-evidence-does-not-defeat-selective-disclosure: [P3, P4, P5, P6]
+
+interaction_aliases:
+  credential-proof-trust-task-consequential-execution:
+    canonical: [C3, C5]
+    rationale: >-
+      C3 covers cross-context/composed relationship and presentation correlation; C5
+      covers Trust Task freshness, status-query privacy, retained lifecycle state and
+      historical correlation. Neither mapping extends DPIP into RAHP authority or replay
+      findings.
+
+reference_flow_aliases:
+  "DTG Credential -> ZKP presentation -> Trust Task -> retained outcome evidence":
+    canonical: [RF-001, RF-003]
+    rationale: >-
+      RF-001 covers relationship establishment/proof composition; RF-003 covers lifecycle,
+      freshness, status and retained-history privacy. These are candidate reference-flow
+      anchors, not evidence that the requested interaction is already fully instantiated.
+
+claim_aliases:
+  pairwise-identifiers-preserve-declared-correlation-scope:
+    canonical: [C3-PC-2, C5-PC-2]
+  zero-knowledge-disclosure-remains-private-after-task-wrapping:
+    canonical: [C3-PC-4, C3-PC-5]
+  retained-task-proof-status-and-outcome-evidence-do-not-enable-unintended-linkage:
+    canonical: [C3-PC-5, C5-PC-2, C5-PC-4]
+
+profile_derivation:
+  from_interactions: true
+  rule: >-
+    Candidate profiles are the target_profile values of all canonically mapped interactions.
+    Multiple resulting profiles remain multiple candidates and MUST NOT be collapsed into a
+    single applicability decision by the setup processor.
+
+judgment_boundary:
+  privacy_judgment: not-made
+  applicability: not-made
+  human_acceptance_required: true
