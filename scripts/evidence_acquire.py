@@ -52,6 +52,33 @@ def blocked_acquisition(plan: dict[str,Any]) -> dict[str,Any]:
     return result
 
 
+def normalized_observation(task: dict[str,Any], ctx: str, data: dict[str,Any] | None) -> tuple[dict[str,Any], dict[str,Any] | None]:
+    oid=f"OBS-{task['id']}-{ctx}"
+    base={"id":oid,"task_id":task["id"],"context_id":ctx,"observer":task["observer"],"component":task["component"],"surface":task["surface"],"retention_stage":task["retention_stage"]}
+    if not data:
+        return ({**base,"state":"not-available","evidence_class":"none"},
+                {"task_id":task["id"],"collector":task.get("collector"),"component":task["component"],"observer":task["observer"],"context":ctx,"reason":"collector fixture/runtime access unavailable"})
+
+    state=data.get("state","observed")
+    evidence_class=data.get("evidence_class", "runtime-or-executable-fixture" if state=="observed" else "source")
+    observation={**base,"state":state,"evidence_class":evidence_class,
+                 "value_digest":data.get("value_digest"),"stability":data.get("stability"),
+                 "declared_scope":data.get("declared_scope"),"observable_scope":data.get("observable_scope")}
+    if data.get("source_provenance") is not None:
+        observation["source_provenance"]=data["source_provenance"]
+    if data.get("supported_proposition") is not None:
+        observation["supported_proposition"]=data["supported_proposition"]
+
+    if state=="source-backed":
+        provenance=observation.get("source_provenance")
+        proposition=observation.get("supported_proposition")
+        if not isinstance(provenance,dict) or not provenance.get("revision") or not provenance.get("locator") or not proposition:
+            raise ValueError(f"source-backed evidence for {task['id']}:{ctx} lacks attributable revision/locator/proposition")
+        return observation,{"task_id":task["id"],"collector":task.get("collector"),"component":task["component"],"observer":task["observer"],"context":ctx,"reason":"runtime observation unavailable; attributable source evidence present"}
+
+    return observation,None
+
+
 def acquire(plan: dict[str,Any], fixture_loader=fixture_value) -> dict[str,Any]:
     if plan.get("status","ready") != "ready":
         return blocked_acquisition(plan)
@@ -59,14 +86,10 @@ def acquire(plan: dict[str,Any], fixture_loader=fixture_value) -> dict[str,Any]:
     for task in plan.get("acquisition_tasks",[]):
         obs_ids=[]
         for ctx in task.get("contexts",[]):
-            data=fixture_loader(task.get("collector",""),ctx)
-            oid=f"OBS-{task['id']}-{ctx}"
-            if not data:
-                observations.append({"id":oid,"task_id":task["id"],"context_id":ctx,"observer":task["observer"],"component":task["component"],"surface":task["surface"],"state":"not-available","retention_stage":task["retention_stage"]})
-                gaps.append({"task_id":task["id"],"collector":task.get("collector"),"component":task["component"],"observer":task["observer"],"context":ctx,"reason":"collector fixture/runtime access unavailable"})
-            else:
-                observations.append({"id":oid,"task_id":task["id"],"context_id":ctx,"observer":task["observer"],"component":task["component"],"surface":task["surface"],"state":data.get("state","observed"),"value_digest":data.get("value_digest"),"stability":data.get("stability"),"retention_stage":task["retention_stage"],"declared_scope":data.get("declared_scope"),"observable_scope":data.get("observable_scope")})
-            obs_ids.append(oid)
+            observation,gap=normalized_observation(task,ctx,fixture_loader(task.get("collector",""),ctx))
+            observations.append(observation)
+            if gap: gaps.append(gap)
+            obs_ids.append(observation["id"])
         by_task[task["id"]]=obs_ids
     joins=[]
     obs_map={o["id"]:o for o in observations}
@@ -74,6 +97,7 @@ def acquire(plan: dict[str,Any], fixture_loader=fixture_value) -> dict[str,Any]:
         ids=[]
         for tid in j.get("task_ids",[]): ids.extend(by_task.get(tid,[]))
         available=[obs_map[i] for i in ids if obs_map[i].get("state")=="observed" and obs_map[i].get("value_digest")]
+        source_backed=[obs_map[i] for i in ids if obs_map[i].get("state")=="source-backed"]
         result="not-run"; evidence=[]; explanation="Required runtime observations are unavailable."
         if len(available)>=2:
             digests={o["value_digest"] for o in available}
@@ -82,6 +106,9 @@ def acquire(plan: dict[str,Any], fixture_loader=fixture_value) -> dict[str,Any]:
                 result="joined"; explanation="Identical normalized stable value observed across required contexts."
             else:
                 result="not-joined"; explanation="Available normalized values differ; this non-join does not establish global unlinkability."
+        elif source_backed:
+            evidence=[o["id"] for o in source_backed]
+            explanation="Attributable source evidence is present, but source evidence is not an A/B runtime observation; the join remains not-run."
         joins.append({"id":j["id"],"context_ids":j["contexts"],"input_observation_ids":ids,"basis":j["basis"],"result":result,"evidence":evidence or ["runtime evidence unavailable"],"explanation":explanation})
     status="acquired" if observations and not gaps else "acquisition-incomplete"
     result={"evidence_acquisition":{"status":status,"source_issue":plan["source_issue"],"setup_digest":plan["setup_digest"],"contexts":plan["contexts"],"observed_surfaces":observations,"join_attempts":joins,"acquisition_gaps":gaps,"source_pins":plan.get("source_pins",[]),"privacy_judgment":"not-made","human_acceptance_required":True}}
@@ -95,7 +122,7 @@ def publish(repo:str,number:int,token:str)->None:
     marker=f"<!-- dpip-evidence-acquisition:{number}:{digest} -->"
     if any(marker in (c.get("body") or "") for c in comments): return
     status=result["evidence_acquisition"]["status"]
-    body=f"{marker}\n## DPIP deterministic evidence acquisition — {status}\n\nCollectors record only available evidence; unavailable runtime access remains explicit. This is **not** a privacy disposition.\n\n```yaml\n{yaml.safe_dump(result,sort_keys=False).rstrip()}\n```"
+    body=f"{marker}\n## DPIP deterministic evidence acquisition — {status}\n\nCollectors distinguish runtime/executable observations from attributable source-backed evidence. Source evidence can narrow the evidence model but cannot by itself produce an A/B join result. This is **not** a privacy disposition.\n\n```yaml\n{yaml.safe_dump(result,sort_keys=False).rstrip()}\n```"
     api("POST",repo,f"issues/{number}/comments",token,{"body":body})
 
 
@@ -106,6 +133,21 @@ def self_test()->int:
     assert joined["status"]=="acquired" and joined["join_attempts"][0]["result"]=="joined"
     missing=acquire(plan,lambda _c,_x:None)["evidence_acquisition"]
     assert missing["status"]=="acquisition-incomplete" and len(missing["acquisition_gaps"])==2
+
+    source={"state":"source-backed","evidence_class":"specification","source_provenance":{"repository":"example/spec","revision":"abc123","locator":"spec.md#field"},"supported_proposition":"The field is defined by the pinned specification."}
+    source_only=acquire(plan,lambda _c,_x:source)["evidence_acquisition"]
+    assert source_only["status"]=="acquisition-incomplete"
+    assert all(o["state"]=="source-backed" for o in source_only["observed_surfaces"])
+    assert source_only["join_attempts"][0]["result"]=="not-run"
+    assert "not an A/B runtime observation" in source_only["join_attempts"][0]["explanation"]
+    assert all("source evidence present" in g["reason"] for g in source_only["acquisition_gaps"])
+
+    def mixed(_c,ctx):
+        return same(_c,ctx) if ctx=="A" else source
+    mixed_result=acquire(plan,mixed)["evidence_acquisition"]
+    assert mixed_result["join_attempts"][0]["result"]=="not-run"
+    assert len([o for o in mixed_result["observed_surfaces"] if o["state"]=="observed"])==1
+
     blocked_plan=dict(plan); blocked_plan["status"]="needs-review"; blocked_plan["unresolved_requirements"]=["unmapped evidence surface: unknown"]
     blocked=acquire(blocked_plan,same)["evidence_acquisition"]
     assert blocked["status"]=="acquisition-blocked"
