@@ -1,0 +1,60 @@
+version: "2"
+interaction_id: C3
+implementation:
+  name: dpip-correlation-fixture
+  version: "0.1"
+  deployment: two-unrelated-relying-contexts
+provenance:
+  - id: pr90-corpus
+    source: sankarshanmukhopadhyay/rahp-toolkit#90
+    version: main-after-pr-90
+  - id: dpip65
+    source: sankarshanmukhopadhyay/dtg-privacy-implementation-profile#65
+contexts:
+  - id: A
+    relationship: unrelated
+    description: relying context A
+  - id: B
+    relationship: unrelated
+    description: relying context B
+observed_surfaces:
+  - id: obs-a-binder
+    task_id: EA-PROOF-TRANSCRIPT-CONTEXT-COMMITMENT
+    context_id: A
+    observer: verifier-a
+    component: ZKP presentation
+    surface: reciprocal_relationship_binding
+    state: observed
+    value_digest: sha256:stable-binder-example
+    stability: cross-context-stable
+    retention_stage: retained-proof
+    declared_scope: presentation-scoped
+    observable_scope: verifier-presentation
+    effective_scope: cross-context
+    provenance_ids: [pr90-corpus, dpip65]
+  - id: obs-b-binder
+    task_id: EA-PROOF-TRANSCRIPT-CONTEXT-COMMITMENT
+    context_id: B
+    observer: verifier-b
+    component: ZKP presentation
+    surface: reciprocal_relationship_binding
+    state: observed
+    value_digest: sha256:stable-binder-example
+    stability: cross-context-stable
+    retention_stage: retained-proof
+    declared_scope: presentation-scoped
+    observable_scope: verifier-presentation
+    effective_scope: cross-context
+    provenance_ids: [pr90-corpus, dpip65]
+join_attempts:
+  - id: join-stable-binder
+    context_ids: [A, B]
+    input_observation_ids: [obs-a-binder, obs-b-binder]
+    basis: identical retained stable binder digest across unrelated contexts
+    result: joined
+    evidence: [obs-a-binder, obs-b-binder]
+    explanation: The fixture deliberately falsifies cross-context unlinkability by exposing the same retained binding value in A and B.
+vectors:
+  - id: retained-binder-reuse
+    test_id: C3-T4
+    crypto_verified: true
