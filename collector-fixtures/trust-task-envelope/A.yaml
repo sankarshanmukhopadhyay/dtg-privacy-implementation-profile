@@ -1,0 +1,16 @@
+state: source-backed
+evidence_class: specification
+source_provenance:
+  repository: trustoverip/dtgwg-trust-tasks-spec
+  revision: 6425a74136c1d2dfa7115889abe0b3521700e887
+  locator: spec/body.md — Trust Task Object; id; threadId; ceremony.enactment; privacy and correlation
+supported_proposition: >-
+  At the pinned Trust Tasks revision, a Trust Task is a protocol-visible JSON document;
+  id identifies a document instance, threadId correlates documents in one logical exchange,
+  and ceremony.enactment scopes a ceremony. Correlation identifiers are required to be fresh
+  and unguessable, must not be derived from durable subject/account/session/transaction values,
+  and threadId must not be carried across separate exchanges. This supports the existence and
+  intended scope of the envelope correlation surface, not any claim about values actually
+  emitted in relying context A.
+declared_scope: exchange-or-ceremony-scoped-by-specification
+observable_scope: source-defined-not-runtime-observed
