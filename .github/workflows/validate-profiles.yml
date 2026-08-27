@@ -56,3 +56,5 @@ jobs:
         run: python scripts/examination_execute.py --self-test
       - name: Validate RAHP return transport
         run: python scripts/rahp_return.py --self-test
+      - name: Validate release governance and lake pool
+        run: python scripts/release_governance.py self-test
