@@ -6,6 +6,17 @@ on:
   schedule:
     # Recovery reconciliation; normal progression is explicitly dispatched.
     - cron: '27 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rahp-examination-setup.yml'
+      - '.github/workflows/rahp-evidence-plan.yml'
+      - '.github/workflows/rahp-examination-execute.yml'
+      - '.github/workflows/rahp-return.yml'
+      - 'scripts/examination_setup.py'
+      - 'scripts/evidence_plan.py'
+      - 'scripts/evidence_acquire.py'
+      - 'scripts/examination_execute.py'
   workflow_dispatch:
     inputs:
       issue_number:
@@ -27,6 +38,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
+      github.event_name == 'push' ||
       (github.event_name == 'issues' && github.event.label.name == 'run:in-progress')
     runs-on: ubuntu-latest
     steps:
