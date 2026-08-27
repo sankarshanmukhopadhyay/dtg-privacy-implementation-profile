@@ -2,8 +2,9 @@ name: Admit RAHP privacy examination requests
 
 on:
   issues:
-    types: [labeled]
+    types: [opened, labeled]
   schedule:
+    # Recovery reconciliation; normal intake is event-driven.
     - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
@@ -25,7 +26,8 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
-      (github.event_name == 'issues' && github.event.label.name == 'run:requested')
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'run:requested') ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'run:requested'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
