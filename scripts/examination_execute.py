@@ -119,6 +119,44 @@ def build_execution(issue_number: int, setup: dict[str, Any]) -> dict[str, Any]:
     return execution
 
 
+def conclusion_from_execution(execution: dict[str, Any]) -> dict[str, Any] | None:
+    record = execution["execution_evidence"]
+    status = record.get("status")
+    if status == "evidence-incomplete":
+        missing = [str(item) for item in record.get("missing_evidence", []) if str(item).strip()]
+        summary = (
+            "DPIP confirmed the requested privacy scope is applicable and resolved, but the available "
+            "repository/source evidence is insufficient to make the requested privacy claim. "
+            + ("Missing executable/runtime evidence: " + "; ".join(missing) if missing else
+               "Required executable/runtime evidence is unavailable.")
+        )
+        action = (
+            "Obtain the missing runtime/executable evidence identified by this examination, "
+            "then rerun the DPIP examination before asserting the composed privacy claim."
+        )
+        return {
+            "dpip_examination": {
+                "applicability": "applicable",
+                "conclusion": "INDETERMINATE",
+                "affected_interactions": record.get("candidate_interactions", []),
+                "affected_claims": [],
+                "affected_invariants": [],
+                "evidence_summary": summary,
+                "residual_correlation": "Cross-context correlation cannot be ruled in or out from source-backed evidence alone.",
+                "action": action,
+                "human_summary": {
+                    "outcome": "We do not have enough evidence to decide yet",
+                    "explanation": summary,
+                    "action": action,
+                },
+                "source_pins": record.get("source_pins", []),
+                "execution_digest": record.get("execution_digest"),
+                "human_acceptance_required": True,
+            }
+        }
+    return None
+
+
 def comments(repo: str, number: int, token: str) -> list[dict[str, Any]]:
     return api("GET", repo, f"issues/{number}/comments?per_page=100", token) or []
 
@@ -143,6 +181,23 @@ def publish(repo: str, issue: dict[str, Any], token: str) -> None:
         f"```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
     )
     api("POST", repo, f"issues/{number}/comments", token, {"body": body})
+    conclusion = conclusion_from_execution(evidence)
+    if conclusion is not None:
+        conclusion_digest = hashlib.sha256(
+            json.dumps(conclusion, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()[:16]
+        conclusion_marker = f"<!-- dpip-examination:{number}:{conclusion_digest} -->"
+        conclusion_body = (
+            f"{conclusion_marker}\n## DPIP scoped conclusion — {conclusion['dpip_examination']['conclusion']}\n\n"
+            "This is the DPIP disposition for the evidence currently available. It preserves missing-evidence boundaries rather than converting them into a privacy pass.\n\n"
+            f"```yaml\n{yaml.safe_dump(conclusion, sort_keys=False).rstrip()}\n```"
+        )
+        api("POST", repo, f"issues/{number}/comments", token, {"body": conclusion_body})
+        api("POST", repo, f"issues/{number}/labels", token, {"labels": ["run:complete"]})
+        try:
+            api("DELETE", repo, f"issues/{number}/labels/run%3Ain-progress", token)
+        except Exception:
+            pass
     print(f"EXECUTION #{number}: {status}")
 
 
@@ -176,6 +231,10 @@ def self_test() -> int:
     assert any("C3" in item for item in incomplete["missing_evidence"])
     assert any("C5" in item for item in incomplete["missing_evidence"])
     assert incomplete["privacy_judgment"] == "not-made"
+    incomplete_conclusion = conclusion_from_execution({"execution_evidence": incomplete})
+    assert incomplete_conclusion["dpip_examination"]["conclusion"] == "INDETERMINATE"
+    assert incomplete_conclusion["dpip_examination"]["applicability"] == "applicable"
+    assert "missing" in incomplete_conclusion["dpip_examination"]["evidence_summary"].lower()
 
     ready = build_execution(63, {
         "setup_digest": "protected-access",
