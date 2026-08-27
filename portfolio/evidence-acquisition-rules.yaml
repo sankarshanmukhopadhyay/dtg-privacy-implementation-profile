@@ -49,6 +49,30 @@ surface_rules:
     collector: outcome-audit
     retention_stage: post-outcome-audit
     falsification_purpose: Determine whether outcome or audit records contain a durable join key across unrelated relying contexts.
+  "relationship DID and edge identifiers":
+    component: Credential / relationship edge layer
+    observer: relying-party-or-verifier
+    collector: credential-status
+    retention_stage: presentation-and-retained-relationship
+    falsification_purpose: Determine whether relationship DID or edge identifiers expose a stable or reusable value that joins unrelated relying contexts beyond declared correlation scope.
+  "status and policy discovery traffic":
+    component: Credential/status/policy discovery layer
+    observer: status-source-or-verifier
+    collector: credential-status
+    retention_stage: lookup-and-log-retention
+    falsification_purpose: Determine whether status or policy-discovery requests, handles, or responses create a reliable cross-context correlation path.
+  "retained relationship evidence":
+    component: Relationship / Trust Tasks evidence layer
+    observer: relying-party-or-operator
+    collector: trust-task-retention
+    retention_stage: retained-document
+    falsification_purpose: Determine whether retained relationship evidence preserves stable identifiers or metadata that collapses declared pairwise scope.
+  "deliberate-correlation mechanisms":
+    component: Relationship / presentation layer
+    observer: verifier-or-relying-party
+    collector: zkp-context-commitment
+    retention_stage: presentation-and-retained-proof
+    falsification_purpose: Determine whether the deliberate-correlation mechanism remains bounded to its declared context or becomes reusable across unrelated relying contexts.
 
 join_policy:
   contexts: [A, B]
