@@ -30,10 +30,51 @@ def semantic_errors(fixture: dict, profile: dict) -> list[str]:
         seen_vectors.add(vid)
         if vector["test_id"] not in tests:
             errors.append(f"{vid}: unknown test {vector['test_id']}")
+
+    context_ids = [c["id"] for c in fixture.get("contexts", [])]
+    if len(context_ids) != len(set(context_ids)):
+        errors.append("duplicate context id")
+    observation_ids: set[str] = set()
+    for obs in fixture.get("observed_surfaces", []):
+        oid = obs["id"]
+        if oid in observation_ids:
+            errors.append(f"duplicate observation id {oid}")
+        observation_ids.add(oid)
+        if context_ids and obs["context_id"] not in context_ids:
+            errors.append(f"{oid}: unknown context {obs['context_id']}")
+        if obs["state"] != "observed" and ("value" in obs or "value_digest" in obs):
+            errors.append(f"{oid}: non-observed surface must not carry observed value material")
+
+    for join in fixture.get("join_attempts", []):
+        missing = [oid for oid in join["input_observation_ids"] if oid not in observation_ids]
+        if missing:
+            errors.append(f"{join['id']}: unknown input observations {', '.join(missing)}")
+        if join["result"] == "joined" and len(join["input_observation_ids"]) < 2:
+            errors.append(f"{join['id']}: joined result requires at least two observation inputs")
+        if join["result"] == "joined" and not join.get("basis"):
+            errors.append(f"{join['id']}: joined result requires basis")
+        if join["result"] == "joined" and not join.get("evidence"):
+            errors.append(f"{join['id']}: joined result requires evidence")
     return errors
 
 
+def self_test() -> int:
+    profile = {"tests": [{"id": "C3-T4"}]}
+    bad = {
+        "vectors": [{"id": "v", "test_id": "C3-T4"}],
+        "contexts": [{"id": "A", "relationship": "unrelated"}, {"id": "B", "relationship": "unrelated"}],
+        "observed_surfaces": [{"id": "o1", "task_id": "EA-X", "context_id": "A", "observer": "v", "component": "c", "surface": "s", "state": "observed", "retention_stage": "retained"}],
+        "join_attempts": [{"id": "j", "context_ids": ["A", "B"], "input_observation_ids": ["o1"], "basis": "same stable handle", "result": "joined", "evidence": ["o1"]}],
+    }
+    problems = semantic_errors(bad, profile)
+    assert any("at least two observation inputs" in p for p in problems)
+    print("PASS observation semantic self-test")
+    return 0
+
+
 def main() -> int:
+    if "--self-test" in sys.argv:
+        return self_test()
     schema = json.loads(SCHEMA.read_text())
     validator = Draft202012Validator(schema)
     failed = False
