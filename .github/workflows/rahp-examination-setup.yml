@@ -1,0 +1,53 @@
+name: Prepare admitted RAHP privacy examinations
+
+on:
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: '27 * * * *'
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Optional admitted DPIP issue number to prepare
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dpip-examination-setup-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'issues' && github.event.label.name == 'run:in-progress')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Validate examination setup processor
+        run: python scripts/examination_setup.py --self-test
+      - name: Prepare admitted examination
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+          EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          if [ -n "$issue_number" ]; then
+            python scripts/examination_setup.py --issue-number "$issue_number"
+          else
+            python scripts/examination_setup.py
+          fi
