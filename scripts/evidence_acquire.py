@@ -111,6 +111,12 @@ def self_test()->int:
     assert blocked["status"]=="acquisition-blocked"
     assert not blocked["observed_surfaces"] and "unmapped evidence surface" in blocked["acquisition_gaps"][0]["reason"]
     assert blocked["privacy_judgment"]=="not-made"
+
+    # Exercise the actual producer -> Markdown/YAML transport -> consumer contract.
+    from evidence_plan import render_plan_comment
+    rendered=render_plan_comment(65,plan)
+    recovered=latest_plan([{"body":rendered}])
+    assert recovered==plan
     print("PASS evidence_acquire self-test"); return 0
 
 
