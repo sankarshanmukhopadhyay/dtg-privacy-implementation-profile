@@ -108,6 +108,26 @@ def build_plan(setup: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
     return plan
 
 
+def plan_digest(plan: dict[str, Any]) -> str:
+    return hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
+
+
+def render_plan_comment(number: int, plan: dict[str, Any]) -> str:
+    """Render the exact machine-readable issue-comment handoff consumed downstream."""
+    marker = f"<!-- dpip-evidence-plan:{number}:{plan_digest(plan)} -->"
+    payload = {"evidence_plan": plan}
+    rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True).rstrip()
+    # Assert the serialized transport is itself executable before publication.
+    parsed = yaml.safe_load(rendered)
+    if not isinstance(parsed, dict) or parsed.get("evidence_plan") != plan:
+        raise ValueError("rendered evidence-plan payload does not round-trip")
+    return (
+        f"{marker}\n## DPIP evidence acquisition plan — {plan['status']}\n\n"
+        "This is an executable acquisition contract. It identifies evidence to obtain; it does **not** assert that the evidence exists or make a privacy disposition.\n\n"
+        f"```yaml\n{rendered}\n```"
+    )
+
+
 def comments(repo: str, number: int, token: str) -> list[dict[str, Any]]:
     return api("GET", repo, f"issues/{number}/comments?per_page=100", token) or []
 
@@ -117,16 +137,18 @@ def publish(repo: str, number: int, token: str) -> None:
     setup = latest_setup(current)
     rules = yaml.safe_load(RULES.read_text())
     plan = build_plan(setup, rules)
-    digest = hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
+    digest = plan_digest(plan)
     marker = f"<!-- dpip-evidence-plan:{number}:{digest} -->"
-    if any(marker in (c.get("body") or "") for c in current):
-        print(f"UNCHANGED #{number}")
-        return
-    body = (
-        f"{marker}\n## DPIP evidence acquisition plan — {plan['status']}\n\n"
-        "This is an executable acquisition contract. It identifies evidence to obtain; it does **not** assert that the evidence exists or make a privacy disposition.\n\n"
-        f"```yaml\nevidence_plan:\n{yaml.safe_dump(plan, sort_keys=False).rstrip().replace(chr(10), chr(10) + '  ')}\n```"
-    )
+    existing = next((c for c in current if marker in (c.get("body") or "")), None)
+    if existing:
+        # Old malformed comments with the same semantic digest must not prevent a
+        # corrected transport record from being published.
+        blocks = yaml_blocks(existing.get("body") or "")
+        if any(isinstance(block.get("evidence_plan"), dict) and block["evidence_plan"] == plan for block in blocks):
+            print(f"UNCHANGED #{number}")
+            return
+        print(f"REPAIR #{number}: existing marker is not a valid round-trip evidence plan")
+    body = render_plan_comment(number, plan)
     api("POST", repo, f"issues/{number}/comments", token, {"body": body})
     print(f"PLANNED #{number}: {plan['status']}")
 
@@ -151,6 +173,13 @@ def self_test() -> int:
     assert len(first["acquisition_tasks"]) == 6
     assert all(t["availability"] == "missing" for t in first["acquisition_tasks"])
     assert first["judgment_boundary"]["privacy_judgment"] == "not-made"
+
+    rendered = render_plan_comment(65, first)
+    blocks = yaml_blocks(rendered)
+    assert len(blocks) == 1
+    assert blocks[0]["evidence_plan"] == first
+    assert f"dpip-evidence-plan:65:{plan_digest(first)}" in rendered
+
     bad = dict(setup)
     bad["evidence_surfaces"] = [setup["evidence_surfaces"][0], "unknown surface"]
     blocked = build_plan(bad, rules)
