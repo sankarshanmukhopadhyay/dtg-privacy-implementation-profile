@@ -14,3 +14,12 @@ supported_proposition: >-
   emitted in relying context B.
 declared_scope: exchange-or-ceremony-scoped-by-specification
 observable_scope: source-defined-not-runtime-observed
+runtime_observation:
+  state: unavailable
+  reason: >-
+    The pinned Trust Tasks source defines the envelope and scoping rules but DPIP has no
+    attributable context-B document trace showing the actual id, threadId, ceremony.enactment,
+    or related protocol-visible correlation values emitted to the relying party.
+  dependency: >-
+    A context-B Trust Task execution trace containing the emitted envelope fields visible to
+    the relying party, with enough provenance to distinguish exchange/ceremony scope from reuse.
