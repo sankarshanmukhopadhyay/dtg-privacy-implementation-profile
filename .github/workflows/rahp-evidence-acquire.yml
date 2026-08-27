@@ -1,0 +1,42 @@
+name: Acquire DPIP evidence from acquisition plans
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: DPIP issue number with an evidence_plan record
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  acquire:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'dpip-evidence-plan:'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Validate evidence collector runner
+        run: python scripts/evidence_acquire.py --self-test
+      - name: Acquire available evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
+          EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          python scripts/evidence_acquire.py --issue-number "$issue_number"

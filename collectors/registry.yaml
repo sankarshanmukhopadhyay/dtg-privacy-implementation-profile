@@ -1,0 +1,32 @@
+version: 1
+contract:
+  input: evidence-plan acquisition task plus context id
+  output_states: [observed, absent, not-available]
+  rule: >-
+    A collector MUST NOT manufacture runtime values. Source-backed or fixture-backed
+    collectors without runtime access return not-available with provenance/gap metadata.
+collectors:
+  trust-task-envelope:
+    component: Trust Tasks
+    purpose: Observe task id, threadId, ceremony/enactment and retained envelope metadata.
+    initial_mode: fixture-or-source-backed
+  temporal-freshness:
+    component: Trust Tasks / lifecycle layer
+    purpose: Observe timestamp and freshness metadata at the required retention stage.
+    initial_mode: fixture-or-source-backed
+  zkp-context-commitment:
+    component: ZKP presentation
+    purpose: Observe proof-visible context/binding material and its stability.
+    initial_mode: fixture-or-source-backed
+  credential-status:
+    component: Credential/status layer
+    purpose: Observe status lookup handles and status-source visibility.
+    initial_mode: fixture-or-source-backed
+  trust-task-retention:
+    component: Trust Tasks
+    purpose: Observe retained Trust Task document fields after task execution.
+    initial_mode: fixture-or-source-backed
+  outcome-audit:
+    component: outcome/audit layer
+    purpose: Observe retained outcome receipts and audit join keys.
+    initial_mode: fixture-or-source-backed
