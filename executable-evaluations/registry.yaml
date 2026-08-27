@@ -1,0 +1,12 @@
+version: "0.1"
+interactions:
+  C3:
+    claims:
+      C3-PC-2:
+        rule: cross_context_join_rejection
+        join_id: join-stable-binder
+  C5:
+    claims:
+      C5-PC-2:
+        rule: cross_context_join_rejection
+        join_id: join-stable-status-handle
