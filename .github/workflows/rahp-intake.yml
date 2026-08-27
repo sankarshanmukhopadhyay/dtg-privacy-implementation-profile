@@ -16,6 +16,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: write
 
 concurrency:
   group: dpip-rahp-intake-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
@@ -52,4 +53,24 @@ jobs:
             python scripts/rahp_intake.py --issue-number "$issue_number"
           else
             python scripts/rahp_intake.py
+          fi
+      - name: Dispatch examination setup for admitted work
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
+          if [ -n "$issue_number" ]; then
+            labels="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue_number}" --jq '[.labels[].name] | join(",")')"
+            if [[ ",$labels," == *,run:in-progress,* ]]; then
+              gh workflow run rahp-examination-setup.yml -f issue_number="$issue_number"
+            fi
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=run%3Ain-progress&per_page=100" --jq '.[].number' |
+              while read -r number; do
+                [ -n "$number" ] && gh workflow run rahp-examination-setup.yml -f issue_number="$number"
+              done
           fi

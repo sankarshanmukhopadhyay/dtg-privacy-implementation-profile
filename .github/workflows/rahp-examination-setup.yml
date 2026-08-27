@@ -4,6 +4,7 @@ on:
   issues:
     types: [labeled]
   schedule:
+    # Recovery reconciliation; normal progression is explicitly dispatched.
     - cron: '27 * * * *'
   workflow_dispatch:
     inputs:
@@ -15,6 +16,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: write
 
 concurrency:
   group: dpip-examination-setup-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
@@ -37,17 +39,39 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Validate examination setup processor
         run: python scripts/examination_setup.py --self-test
-      - name: Prepare admitted examination
+      - name: Prepare admitted examination and collect targets
+        id: targets
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
           EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
         shell: bash
         run: |
+          set -euo pipefail
           issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
           if [ -n "$issue_number" ]; then
             python scripts/examination_setup.py --issue-number "$issue_number"
+            printf '%s\n' "$issue_number" > /tmp/dpip-setup-targets.txt
           else
-            python scripts/examination_setup.py
+            : > /tmp/dpip-setup-targets.txt
+            gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=run%3Ain-progress&per_page=100" --jq '.[].number' |
+              while read -r number; do
+                [ -n "$number" ] || continue
+                python scripts/examination_setup.py --issue-number "$number"
+                printf '%s\n' "$number" >> /tmp/dpip-setup-targets.txt
+              done
           fi
+      - name: Dispatch evidence planning for prepared examinations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r number; do
+            [ -n "$number" ] || continue
+            if gh api "repos/${GITHUB_REPOSITORY}/issues/${number}/comments?per_page=100" --jq '.[].body' | grep -q 'dpip-examination-setup:'; then
+              gh workflow run rahp-evidence-plan.yml -f issue_number="$number"
+            fi
+          done < /tmp/dpip-setup-targets.txt

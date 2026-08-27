@@ -3,21 +3,30 @@ name: Compile DPIP evidence acquisition plans
 on:
   issue_comment:
     types: [created]
+  schedule:
+    # Recovery reconciliation; normal progression is explicitly dispatched.
+    - cron: '32 * * * *'
   workflow_dispatch:
     inputs:
       issue_number:
         description: DPIP issue number with an examination_setup record
-        required: true
+        required: false
         type: string
 
 permissions:
   contents: read
   issues: write
+  actions: write
+
+concurrency:
+  group: dpip-evidence-plan-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
+  cancel-in-progress: false
 
 jobs:
   plan-and-acquire:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'dpip-examination-setup:'))
     runs-on: ubuntu-latest
     steps:
@@ -32,26 +41,47 @@ jobs:
         run: python scripts/evidence_plan.py --self-test
       - name: Validate deterministic acquisition runner
         run: python scripts/evidence_acquire.py --self-test
-      - name: Resolve issue number
+      - name: Resolve candidate issue numbers
         id: issue
         env:
+          GH_TOKEN: ${{ github.token }}
           EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
         shell: bash
         run: |
+          set -euo pipefail
           issue_number="${EVENT_ISSUE_NUMBER:-${INPUT_ISSUE_NUMBER:-}}"
-          if [ -z "$issue_number" ]; then
-            echo 'No issue number resolved' >&2
-            exit 2
+          : > /tmp/dpip-evidence-targets.txt
+          if [ -n "$issue_number" ]; then
+            printf '%s\n' "$issue_number" >> /tmp/dpip-evidence-targets.txt
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=run%3Ain-progress&per_page=100" --jq '.[].number' |
+              while read -r number; do
+                [ -n "$number" ] || continue
+                if gh api "repos/${GITHUB_REPOSITORY}/issues/${number}/comments?per_page=100" --jq '.[].body' | grep -q 'dpip-examination-setup:'; then
+                  printf '%s\n' "$number" >> /tmp/dpip-evidence-targets.txt
+                fi
+              done
           fi
-          echo "number=$issue_number" >> "$GITHUB_OUTPUT"
-      - name: Compile and publish acquisition plan
+      - name: Compile and acquire evidence
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
-        run: python scripts/evidence_plan.py --issue-number '${{ steps.issue.outputs.number }}'
-      - name: Acquire evidence from the published plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r number; do
+            [ -n "$number" ] || continue
+            python scripts/evidence_plan.py --issue-number "$number"
+            python scripts/evidence_acquire.py --issue-number "$number"
+          done < /tmp/dpip-evidence-targets.txt
+      - name: Dispatch examination execution
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          DPIP_REPOSITORY: sankarshanmukhopadhyay/dtg-privacy-implementation-profile
-        run: python scripts/evidence_acquire.py --issue-number '${{ steps.issue.outputs.number }}'
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r number; do
+            [ -n "$number" ] || continue
+            gh workflow run rahp-examination-execute.yml -f issue_number="$number"
+          done < /tmp/dpip-evidence-targets.txt
