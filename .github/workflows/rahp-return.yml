@@ -3,6 +3,9 @@ name: Return completed DPIP dispositions to RAHP
 on:
   issues:
     types: [labeled]
+  schedule:
+    # Recovery reconciliation; normal return is event-driven from run:complete.
+    - cron: '47 * * * *'
   workflow_dispatch:
     inputs:
       issue_number:
@@ -22,6 +25,7 @@ jobs:
   return-disposition:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'issues' && github.event.label.name == 'run:complete')
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +38,15 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Validate return transport
         run: python scripts/rahp_return.py --self-test
+      - name: Require RAHP return credential
+        env:
+          RAHP_HANDOFF_TOKEN: ${{ secrets.RAHP_HANDOFF_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "${RAHP_HANDOFF_TOKEN:-}" ]; then
+            echo '::error::RAHP_HANDOFF_TOKEN is not configured; completed DPIP dispositions would be stranded.'
+            exit 2
+          fi
       - name: Return completed disposition
         env:
           GITHUB_TOKEN: ${{ github.token }}
