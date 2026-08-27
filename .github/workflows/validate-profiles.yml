@@ -42,5 +42,7 @@ jobs:
         run: python scripts/validate_findings_readiness.py
       - name: Validate portfolio change-impact metadata
         run: python scripts/validate_change_impact.py
+      - name: Validate RAHP intake admission transport
+        run: python scripts/rahp_intake.py --self-test
       - name: Validate RAHP return transport
         run: python scripts/rahp_return.py --self-test
