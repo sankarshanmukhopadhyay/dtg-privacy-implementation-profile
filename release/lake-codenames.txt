@@ -1,0 +1,54 @@
+# DPIP release codename pool
+# Source: https://en.wikipedia.org/wiki/List_of_lakes_of_India
+# Pinned/reviewed: 2026-08-27
+# Codenames are presentation metadata only; semantic versions remain authoritative.
+Kolleru Lake
+Pulicat Lake
+Ganga Lake
+Sangetsar Lake
+Chandubi Lake
+Deepor Beel
+Son Beel
+Sukhna Lake
+Sanjay Lake
+Mayem Lake
+Nanda Lake
+Kankaria Lake
+Nal Sarovar
+Narayan Sarovar
+Thol Lake
+Vastrapur Lake
+Badkhal Lake
+Damdama Lake
+Karna Lake
+Bhrigu Lake
+Chandra Taal
+Gobind Sagar
+Kareri Lake
+Khajjiar Lake
+Manimahesh Lake
+Nako Lake
+Prashar Lake
+Renuka Lake
+Rewalsar Lake
+Suraj Tal
+Anchar Lake
+Dal Lake
+Gadsar Lake
+Gangabal Lake
+Manasbal Lake
+Mansar Lake
+Sheshnag Lake
+Pangong Lake
+Tsomoriri
+Umiam Lake
+Loktak Lake
+Chilika Lake
+Nakki Lake
+Pushkar Lake
+Kodaikanal Lake
+Emerald Lake
+Hussain Sagar
+Vembanad Lake
+Naini Lake
+Gurudongmar Lake

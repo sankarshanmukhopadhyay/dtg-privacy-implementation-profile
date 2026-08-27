@@ -1,0 +1,46 @@
+name: Monthly DPIP release readiness review
+
+on:
+  schedule:
+    - cron: '17 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open monthly release readiness review when absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          month="$(date -u +%Y-%m)"
+          title="Release readiness review — ${month}"
+          existing="$(gh issue list --repo '${{ github.repository }}' --state open --search "${title} in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "Review issue already open: #${existing}"
+            exit 0
+          fi
+          cat > /tmp/body.md <<'EOF'
+          ## Purpose
+
+          Monthly checkpoint to decide whether DPIP has reached a coherent assurance-capability boundary worth releasing. The calendar creates the review; it does **not** compel a release.
+
+          ## Review questions
+
+          - What propositions/capabilities have landed since the last release?
+          - Which judgments and pressure tests are visible in merged Issue → PR history?
+          - Is `main` green and are migrations/compatibility impacts documented?
+          - Are any current `INDETERMINATE` results caused by missing machinery that should block a release?
+          - Does the increment provide a coherent adopter-visible capability boundary?
+          - If yes, what semantic version is appropriate and what human release judgment should be supplied to the governed release workflow?
+
+          ## Decision
+
+          Record **release / defer** and the reasoning. If releasing, invoke **Cut governed DPIP release** with the chosen semantic version. The workflow will select and persist an Indian lake codename.
+          EOF
+          gh issue create --repo '${{ github.repository }}' --title "$title" --body-file /tmp/body.md --label enhancement --assignee sankarshanmukhopadhyay
