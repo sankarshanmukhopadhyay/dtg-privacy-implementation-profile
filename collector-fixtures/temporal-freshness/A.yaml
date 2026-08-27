@@ -12,3 +12,11 @@ supported_proposition: >-
   observations actually visible in relying context A.
 declared_scope: task-lifecycle-by-specification
 observable_scope: source-defined-not-runtime-observed
+runtime_observation:
+  state: unavailable
+  reason: >-
+    The pinned Trust Tasks source is a specification and DPIP has no attributable execution
+    trace for the issuedAt/expiresAt/freshness values exposed to relying context A.
+  dependency: >-
+    An implementation/runtime trace for context A recording the protocol-visible timestamps,
+    freshness/currentness decision, and any retained temporal metadata.
