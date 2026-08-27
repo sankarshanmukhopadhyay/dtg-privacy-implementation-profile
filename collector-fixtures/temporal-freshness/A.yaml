@@ -1,0 +1,14 @@
+state: source-backed
+evidence_class: specification
+source_provenance:
+  repository: trustoverip/dtgwg-trust-tasks-spec
+  revision: 6425a74136c1d2dfa7115889abe0b3521700e887
+  locator: spec/body.md — issuedAt/expiresAt members; privacy and correlation
+supported_proposition: >-
+  At the pinned Trust Tasks revision, issuedAt is a protocol time surface and expiresAt may
+  bound validity; the privacy guidance explicitly recognizes that full timestamp precision
+  can fingerprint or join activity and permits coarsening where appropriate. This establishes
+  a specification-defined temporal correlation surface, not the timestamps or freshness
+  observations actually visible in relying context A.
+declared_scope: task-lifecycle-by-specification
+observable_scope: source-defined-not-runtime-observed
