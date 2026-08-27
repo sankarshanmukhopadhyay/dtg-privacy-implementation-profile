@@ -16,3 +16,11 @@ supported_proposition: >-
   observed by verifier context B.
 declared_scope: purpose-and-governance-bounded-context-by-pinned-requirements
 observable_scope: source-defined-no-executable-two-context-fixture-at-pin
+runtime_observation:
+  state: unavailable
+  reason: >-
+    The exact #65 ZKP pin predates the later executable composed-presentation fixtures and does
+    not provide an attributable verifier-context-B transcript or context-commitment trace.
+  dependency: >-
+    A context-B verifier execution trace produced from an implementation compatible with the
+    #65 semantics, recording the transcript/context commitment and protocol-visible binding inputs.
