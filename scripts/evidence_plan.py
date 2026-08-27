@@ -180,6 +180,23 @@ def self_test() -> int:
     assert blocks[0]["evidence_plan"] == first
     assert f"dpip-evidence-plan:65:{plan_digest(first)}" in rendered
 
+    relationship_setup = dict(setup)
+    relationship_setup["evidence_surfaces"] = [
+        "relationship DID and edge identifiers",
+        "status and policy discovery traffic",
+        "retained relationship evidence",
+        "deliberate-correlation mechanisms",
+    ]
+    relationship_plan = build_plan(relationship_setup, rules)
+    assert relationship_plan["status"] == "ready"
+    assert len(relationship_plan["acquisition_tasks"]) == 4
+    assert not relationship_plan["unresolved_requirements"]
+    collectors = {task["surface"]: task["collector"] for task in relationship_plan["acquisition_tasks"]}
+    assert collectors["relationship DID and edge identifiers"] == "credential-status"
+    assert collectors["status and policy discovery traffic"] == "credential-status"
+    assert collectors["retained relationship evidence"] == "trust-task-retention"
+    assert collectors["deliberate-correlation mechanisms"] == "zkp-context-commitment"
+
     bad = dict(setup)
     bad["evidence_surfaces"] = [setup["evidence_surfaces"][0], "unknown surface"]
     blocked = build_plan(bad, rules)
