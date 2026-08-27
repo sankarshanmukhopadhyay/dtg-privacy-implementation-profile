@@ -1,0 +1,1 @@
+{"fixture_id":"INT-005","scenario_id":"UC-052","kind":"privacy-linkage","expected":"reject","reason":"stable-cross-context-handle","contexts":["service-a","service-b"],"shared_handle":"link-constant-001"}

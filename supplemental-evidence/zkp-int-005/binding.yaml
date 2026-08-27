@@ -1,0 +1,36 @@
+id: SE-ZKP-INT-005
+kind: supplemental-executable-calibration
+source:
+  repository: sankarshanmukhopadhyay/dtgwg-zkp-tf
+  revision: e49d0b4cda23fe5f113f4075668730ca4218488b
+  locator: docs/implementation-guide/conformance/fixtures/interoperability/invalid-cross-context-linkage.json
+  fixture_id: INT-005
+  source_blob_sha: b4fa641af157dd9eff07e60e02d220d2bcff9cae
+semantic_binding:
+  interaction: C3
+  test: C3-T4
+  claims: [C3-PC-2]
+  invariants: [P2, P4]
+  external_test: CP-PRIV-005
+  proposition: >-
+    A common durable correlation value reused across two unrelated contexts is joinable
+    and therefore falsifies the stronger cross-context unlinkability claim represented
+    by C3-T4. This calibration does not identify which production protocol surface
+    carried such a value.
+contexts:
+  - source_context: service-a
+    normalized_context: A
+    relationship: unrelated
+  - source_context: service-b
+    normalized_context: B
+    relationship: unrelated
+expected:
+  source_fixture_disposition: reject
+  join_result: joined
+  calibration_disposition: falsification-pattern-detected
+judgment_boundary:
+  evidence_scope: calibration-only
+  specific_surface_attribution: not-made
+  deployment_privacy_judgment: not-made
+  source_pin_replacement: false
+  human_acceptance_required: true
