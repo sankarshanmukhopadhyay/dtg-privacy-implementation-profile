@@ -19,23 +19,22 @@ DEFAULT_REPO = "sankarshanmukhopadhyay/dtg-privacy-implementation-profile"
 SOURCE_LABEL = "source:rahp"
 REQUESTED = "run:requested"
 IN_PROGRESS = "run:in-progress"
+CANONICAL_KEYS = (
+    "interaction_ids", "reference_flow_ids", "invariant_ids", "claim_ids",
+    "profile_ids", "evidence_requirement_ids",
+)
 
 
 def api(method: str, repo: str, path: str, token: str, payload: Any | None = None) -> Any:
     url = f"https://api.github.com/repos/{repo}/{path.lstrip('/')}"
     data = None if payload is None else json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "dpip-rahp-intake/1.0",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Authorization": f"Bearer {token}",
-            **({"Content-Type": "application/json"} if data is not None else {}),
-        },
-    )
+    req = urllib.request.Request(url, data=data, method=method, headers={
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "dpip-rahp-intake/1.1",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": f"Bearer {token}",
+        **({"Content-Type": "application/json"} if data is not None else {}),
+    })
     with urllib.request.urlopen(req, timeout=30) as response:
         raw = response.read()
     return json.loads(raw) if raw else None
@@ -68,6 +67,20 @@ def intake_payload(body: str) -> tuple[dict[str, Any], dict[str, Any]]:
     return source, requested
 
 
+def canonical_scope(requested: dict[str, Any]) -> dict[str, list[str]]:
+    raw = requested.get("canonical")
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[str]] = {}
+    for key in CANONICAL_KEYS:
+        value = raw.get(key, [])
+        if isinstance(value, list):
+            values = [str(item).strip() for item in value if str(item).strip()]
+            if values:
+                out[key] = values
+    return out
+
+
 def validate(source: dict[str, Any], requested: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if source.get("system") != "RAHP":
@@ -82,6 +95,9 @@ def validate(source: dict[str, Any], requested: dict[str, Any]) -> list[str]:
         for key in ("repository", "revision"):
             if not str(changed.get(key, "")).strip():
                 errors.append(f"source.changed_artifact.{key} is required")
+    pins = source.get("source_pins", [])
+    if pins is not None and not isinstance(pins, list):
+        errors.append("source.source_pins must be a list")
 
     targets: list[str] = []
     for key in ("interactions", "reference_flows", "invariants", "claims"):
@@ -90,8 +106,10 @@ def validate(source: dict[str, Any], requested: dict[str, Any]) -> list[str]:
             errors.append(f"requested_examination.{key} must be a list")
         elif isinstance(value, list):
             targets.extend(str(item).strip() for item in value if str(item).strip())
+    for values in canonical_scope(requested).values():
+        targets.extend(values)
     if not targets:
-        errors.append("requested_examination must identify at least one interaction, reference flow, invariant, or claim")
+        errors.append("requested_examination must identify at least one legacy or canonical DPIP target")
     if not str(requested.get("question", "")).strip():
         errors.append("requested_examination.question is required")
     return errors
@@ -129,45 +147,24 @@ def admit(repo: str, issue: dict[str, Any], token: str) -> None:
         problems = validate(source, requested)
         marker, digest = admission_identity(number, source, requested)
         if problems:
-            post_once(
-                repo,
-                number,
-                marker,
-                "## DPIP intake admission blocked\n\n"
-                + "The request remains `run:requested`; no privacy conclusion has been made.\n\n"
-                + "Problems:\n"
-                + "\n".join(f"- {p}" for p in problems),
-                token,
-            )
+            post_once(repo, number, marker, "## DPIP intake admission blocked\n\nThe request remains `run:requested`; no privacy conclusion has been made.\n\nProblems:\n" + "\n".join(f"- {p}" for p in problems), token)
             print(f"BLOCKED #{number}: {'; '.join(problems)}")
             return
 
-        requested_targets = {
-            key: requested.get(key, [])
-            for key in ("interactions", "reference_flows", "invariants", "claims", "suspected_surfaces")
-            if requested.get(key)
-        }
-        admission = {
-            "dpip_admission": {
-                "status": "admitted",
-                "intake_digest": digest,
-                "source_system": "RAHP",
-                "requested_scope": requested_targets,
-                "question": requested["question"],
-                "next_state": "run:in-progress",
-                "privacy_judgment": "not-made",
-                "next_action": "DPIP applicability, profile/claim binding, evidence selection, and scoped examination",
-            }
-        }
-        post_once(
-            repo,
-            number,
-            marker,
-            "## DPIP intake admitted\n\n"
-            "The RAHP referral is structurally sufficient to begin DPIP examination. Admission validates the request boundary only; it does **not** establish applicability, evidence sufficiency, or a PASS/FAIL result.\n\n"
-            f"```yaml\n{yaml.safe_dump(admission, sort_keys=False).rstrip()}\n```",
-            token,
-        )
+        requested_targets = {key: requested.get(key, []) for key in ("interactions", "reference_flows", "invariants", "claims", "suspected_surfaces") if requested.get(key)}
+        if canonical_scope(requested):
+            requested_targets["canonical"] = canonical_scope(requested)
+        admission = {"dpip_admission": {
+            "status": "admitted",
+            "intake_digest": digest,
+            "source_system": "RAHP",
+            "requested_scope": requested_targets,
+            "question": requested["question"],
+            "next_state": "run:in-progress",
+            "privacy_judgment": "not-made",
+            "next_action": "DPIP applicability, canonical binding, evidence sufficiency, and scoped examination",
+        }}
+        post_once(repo, number, marker, "## DPIP intake admitted\n\nThe RAHP referral is structurally sufficient to begin DPIP examination. Admission validates the request boundary only; it does **not** establish applicability, evidence sufficiency, or a PASS/FAIL result.\n\n" + f"```yaml\n{yaml.safe_dump(admission, sort_keys=False).rstrip()}\n```", token)
         api("POST", repo, f"issues/{number}/labels", token, {"labels": [IN_PROGRESS]})
         try:
             api("DELETE", repo, f"issues/{number}/labels/{urllib.parse.quote(REQUESTED, safe='')}", token)
@@ -177,14 +174,7 @@ def admit(repo: str, issue: dict[str, Any], token: str) -> None:
         print(f"ADMITTED #{number}")
     except Exception as exc:
         marker = f"<!-- dpip-rahp-admission-error:{number} -->"
-        post_once(
-            repo,
-            number,
-            marker,
-            "## DPIP intake admission blocked\n\n"
-            f"The request remains `run:requested`; no privacy conclusion has been made.\n\nError: `{exc}`",
-            token,
-        )
+        post_once(repo, number, marker, "## DPIP intake admission blocked\n\nThe request remains `run:requested`; no privacy conclusion has been made.\n\n" + f"Error: `{exc}`", token)
         print(f"BLOCKED #{number}: {exc}", file=sys.stderr)
 
 
@@ -209,23 +199,29 @@ def self_test() -> int:
 source:
   system: RAHP
   repository: example/rahp
-  issue: 1
+  issue: 225
   changed_artifact:
-    repository: example/spec
-    revision: abc123
+    repository: OpenVTC/verifiable-trust-infrastructure
+    revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
+  source_pins:
+    - label: Changed artifact
+      repository: OpenVTC/verifiable-trust-infrastructure
+      revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
 ```
 ```yaml
 requested_examination:
-  interactions: [C3]
-  invariants: [P2]
+  canonical:
+    interaction_ids: [C3, C5]
+    reference_flow_ids: [RF-001, RF-003]
+    evidence_requirement_ids: [ER-REL-DID-AB, ER-STATUS-AB]
   question: Does the composed interaction preserve the declared privacy scope?
 ```"""
     source, requested = intake_payload(body)
     assert validate(source, requested) == []
-    marker, digest = admission_identity(1, source, requested)
+    assert canonical_scope(requested)["interaction_ids"] == ["C3", "C5"]
+    marker, digest = admission_identity(120, source, requested)
     assert digest in marker
-    bad = dict(requested)
-    bad["question"] = ""
+    bad = dict(requested); bad["question"] = ""
     assert "requested_examination.question is required" in validate(source, bad)
     print("PASS rahp_intake self-test")
     return 0
