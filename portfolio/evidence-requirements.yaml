@@ -1,0 +1,30 @@
+version: 1
+purpose: >-
+  Stable evidence-requirement identifiers for deterministic RAHP-originated DPIP examinations.
+  These requirements describe evidence classes; they do not fabricate observations or imply PASS.
+
+requirements:
+  ER-REL-DID-AB:
+    title: Cross-context relationship identifier observations
+    summary: Capture attributable A/B runtime observations showing whether relationship DIDs, edge identifiers or equivalent binders remain stable or become joinable across contexts.
+    interactions: [C3]
+    source_lineage: ["RAHP #137", "Interop Lab #31"]
+    evidence_kind: runtime-ab-observation
+  ER-STATUS-AB:
+    title: Cross-context status and policy-discovery observations
+    summary: Capture attributable A/B runtime observations for status queries and policy-discovery behavior, including any stable handles or metadata that permit unintended joining.
+    interactions: [C5]
+    source_lineage: ["RAHP #138", "Interop Lab #31"]
+    evidence_kind: runtime-ab-observation
+  ER-TASK-AB:
+    title: Cross-context retained Trust Task evidence observations
+    summary: Capture attributable A/B runtime observations showing whether retained Trust Task or relationship evidence creates a durable cross-context correlation surface.
+    interactions: [C3, C5]
+    source_lineage: ["RAHP #139", "Interop Lab #31"]
+    evidence_kind: runtime-ab-observation
+  ER-VERIFIER-AB:
+    title: Verifier transcript and deliberate-correlation observations
+    summary: Capture attributable A/B verifier transcripts and deliberate-correlation attempts to determine whether composed evidence enables linkage beyond the declared scope.
+    interactions: [C3, C5]
+    source_lineage: ["RAHP #140", "Interop Lab #31"]
+    evidence_kind: runtime-ab-observation

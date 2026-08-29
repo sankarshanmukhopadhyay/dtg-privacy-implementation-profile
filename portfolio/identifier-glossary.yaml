@@ -1,0 +1,76 @@
+version: 1
+purpose: >-
+  Resolve stable DPIP machine identifiers to reviewer-facing names and concise explanations.
+  Automation keys remain the IDs; generated human output MUST NOT require a reviewer to
+  infer the meaning of opaque identifiers.
+
+interactions:
+  C1:
+    title: Privacy-preserving personhood presentation
+    summary: Demonstrate a personhood predicate without unnecessary identity or attribute disclosure or surrounding protocol correlation.
+  C2:
+    title: Privacy-preserving relationship proof
+    summary: Prove relationship semantics without introducing an unnecessary durable relationship or holder binder.
+  C3:
+    title: Asymmetric cross-community relationship privacy
+    summary: Test asymmetric privacy postures across reciprocal relationship halves and prevent private-half proof evidence from being promoted into broader unlinkability claims.
+  C4:
+    title: Privacy-preserving policy discovery
+    summary: Evaluate pre-flight policy discovery while limiting requester-handle, endpoint, timing, rejection-log and relationship-intent correlation.
+  C5:
+    title: Privacy-preserving lifecycle evaluation and precedence
+    summary: Evaluate lifecycle state across composed artifacts without unnecessary identity, relationship, status-query or historical-context exposure.
+
+invariants:
+  P1:
+    title: Data minimisation
+    summary: Disclose no more than required for the trust purpose.
+  P2:
+    title: Contextual unlinkability
+    summary: Avoid mandatory reuse of stable identifiers across unrelated contexts.
+  P3:
+    title: Selective provability
+    summary: Permit predicate proof without unnecessary source-attribute disclosure when the decision depends only on the predicate.
+  P4:
+    title: Compositional privacy
+    summary: Composition must not silently introduce a correlator that defeats the claimed privacy property.
+  P5:
+    title: Protocol-envelope privacy
+    summary: Treat routing, endpoint, status, timing, session and transcript metadata as part of the privacy boundary.
+  P6:
+    title: Storage minimisation
+    summary: Treat retained state and privileged observability as part of the privacy result.
+  P7:
+    title: Lifecycle privacy
+    summary: Preserve privacy while evaluating withdrawal, revocation and broader lifecycle state such as expiry, suspension, supersession and restoration.
+  P8:
+    title: User-visible disclosure context
+    summary: Make material recipient, purpose, disclosure and linkability consequences understandable at authorization time.
+
+profiles:
+  PP-1:
+    title: Disclosure Minimised
+    summary: Minimise disclosed information for the selected interaction and decision purpose.
+  PP-2:
+    title: Pairwise Private
+    summary: Preserve pairwise privacy across the selected interaction and its observable surfaces.
+  PP-3:
+    title: Unlinkable Presentation
+    summary: Limit unintended linkage across presentations and presentation contexts.
+  PP-4:
+    title: Composed Unlinkability
+    summary: Preserve unlinkability across the complete composed interaction rather than only within one component.
+  PP-5:
+    title: Adversarial Privacy
+    summary: Evaluate privacy under deliberately adversarial observation and correlation conditions.
+
+reference_flows:
+  RF-001:
+    title: Relationship establishment and proof
+    summary: Reference composition for establishing and proving a relationship across participating DTG components.
+  RF-002:
+    title: Pre-flight policy discovery
+    summary: Reference composition for discovering admissibility or policy before relationship establishment.
+  RF-003:
+    title: Lifecycle privacy and precedence
+    summary: Reference composition for evaluating freshness, status, lifecycle state and precedence while controlling correlation.
