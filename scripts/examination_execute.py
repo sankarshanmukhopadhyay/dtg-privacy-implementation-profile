@@ -36,6 +36,7 @@ REQUIRED_RUNTIME_PROVENANCE = (
     "producer", "run_id", "observed_at", "implementation_repository",
     "implementation_revision", "context_a_run", "context_b_run",
 )
+MATERIAL_RUNTIME_CLASSIFICATIONS = {"identical", "derivably-related", "fresh"}
 
 
 def yaml_docs(text: str) -> list[dict[str, Any]]:
@@ -91,6 +92,24 @@ def required_ids(setup: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(inferred))
 
 
+def materially_observed_surfaces(surfaces: dict[str, Any]) -> list[str]:
+    """Return surfaces carrying concrete A/B runtime observations.
+
+    `absent` and `not-evidenced` preserve a bounded evidence gap. They are useful
+    observations about the selected execution path, but they do not discharge a
+    requirement whose proposition was not actually exercised. A materially observed
+    surface therefore needs an observation-bearing classification and at least one
+    concrete context value.
+    """
+    return [
+        name
+        for name, surface in surfaces.items()
+        if isinstance(surface, dict)
+        and str(surface.get("classification") or "") in MATERIAL_RUNTIME_CLASSIFICATIONS
+        and ("context_a" in surface or "context_b" in surface)
+    ]
+
+
 def assess_supplied_evidence(setup: dict[str, Any], req_catalog: dict[str, dict[str, Any]]) -> tuple[list[str], list[dict[str, Any]]]:
     """Return accepted requirement IDs plus reviewer-readable sufficiency failures."""
     accepted: list[str] = []
@@ -136,12 +155,25 @@ def assess_supplied_evidence(setup: dict[str, Any], req_catalog: dict[str, dict[
                 "explanation": f"{rid} has incomplete or mutable runtime provenance: {', '.join(missing_provenance)}.",
             })
             continue
-        if not isinstance(binding.get("surfaces"), dict) or not str(binding.get("observation_summary") or "").strip():
+        surfaces = binding.get("surfaces")
+        if not isinstance(surfaces, dict) or not str(binding.get("observation_summary") or "").strip():
             failures.append({
                 "requirement_id": rid,
                 "evidence_class": evidence_class or None,
                 "reason_code": "malformed-evidence-observation",
                 "explanation": f"{rid} must include an observation_summary and surfaces mapping.",
+            })
+            continue
+        material = materially_observed_surfaces(surfaces)
+        if not material:
+            failures.append({
+                "requirement_id": rid,
+                "evidence_class": evidence_class or None,
+                "reason_code": "no-material-runtime-observation",
+                "explanation": (
+                    f"{rid} has attributable runtime provenance but no concrete A/B surface observation; "
+                    "all-absent/all-not-evidenced bindings preserve the evidence gap rather than satisfy it."
+                ),
             })
             continue
         if rid not in accepted:
@@ -265,8 +297,11 @@ def conclusion_from_execution(execution: dict[str, Any]) -> dict[str, Any] | Non
     if named:
         explanation += "Missing or provenance-insufficient evidence: " + "; ".join(named) + ". "
     wrong_class = [f for f in record.get("evidence_sufficiency_failures", []) or [] if f.get("reason_code") == "wrong-evidence-class"]
+    no_material = [f for f in record.get("evidence_sufficiency_failures", []) or [] if f.get("reason_code") == "no-material-runtime-observation"]
     if wrong_class:
         explanation += "At least one supplied binding has the wrong evidence provenance class. "
+    if no_material:
+        explanation += "At least one attributable runtime binding contains no concrete A/B observation for its named requirement. "
     explanation += "Repository-native fixtures may exercise DPIP rules but do not prove upstream runtime behaviour."
     action = "Produce the named attributable runtime evidence in an accepted provenance class and create a pinned comparable DPIP rerun."
     return {"dpip_examination": {
@@ -397,6 +432,28 @@ def self_test() -> int:
     runtime_record = build_execution(124, runtime)["execution_evidence"]
     assert set(runtime_record["satisfied_evidence_requirement_ids"]) == set(setup["evidence_requirement_ids"])
     assert runtime_record["required_evidence"] == []
+
+    all_absent = json.loads(json.dumps(setup))
+    absent_binding = _binding("ER-STATUS-AB")
+    absent_binding["surfaces"] = {"status_handle": {"classification": "absent"}}
+    unknown_binding = _binding("ER-TASK-AB")
+    unknown_binding["surfaces"] = {"task_identifier": {"classification": "not-evidenced"}}
+    all_absent["provided_evidence"] = [absent_binding, unknown_binding]
+    absent_record = build_execution(126, all_absent)["execution_evidence"]
+    assert not absent_record["satisfied_evidence_requirement_ids"]
+    assert {f["reason_code"] for f in absent_record["evidence_sufficiency_failures"]} == {"no-material-runtime-observation"}
+    assert {r["id"] for r in absent_record["required_evidence"]} == set(setup["evidence_requirement_ids"])
+
+    mixed = json.loads(json.dumps(setup))
+    observed = _binding("ER-REL-DID-AB")
+    observed["surfaces"] = {
+        "relationship_did": {"classification": "absent"},
+        "equivalent_relationship_binder": {"classification": "identical", "context_a": "same", "context_b": "same"},
+    }
+    mixed["provided_evidence"] = [observed]
+    mixed_record = build_execution(126, mixed)["execution_evidence"]
+    assert mixed_record["satisfied_evidence_requirement_ids"] == ["ER-REL-DID-AB"]
+    assert "ER-REL-DID-AB" not in {r["id"] for r in mixed_record["required_evidence"]}
 
     malformed = json.loads(json.dumps(setup))
     malformed["provided_evidence"] = [_binding("ER-REL-DID-AB", revision="main")]
