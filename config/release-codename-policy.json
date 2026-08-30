@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "minimumPoolSize": 20,
-  "pool": "config/release-codenames.txt",
+  "pool": "release/lake-codenames.txt",
   "source": {
     "name": "List of lakes of India",
     "url": "https://en.wikipedia.org/wiki/List_of_lakes_of_India",
-    "retrieved": "2026-08-30",
-    "selectionBasis": "Reviewed notable lake names represented on the source page"
+    "retrieved": "2026-08-27",
+    "selectionBasis": "Reviewed repository-maintained lake-name pool derived from the source page"
   },
   "identity": {
     "authoritative": "semantic version/tag",
