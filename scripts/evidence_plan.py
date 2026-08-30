@@ -54,6 +54,7 @@ def build_plan(setup: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
     surface_rules = rules.get("surface_rules", {})
     contexts = rules.get("contexts", [])
     context_ids = [str(c["id"]) for c in contexts]
+    supplied_evidence = setup.get("provided_evidence", []) or []
 
     for surface in setup.get("evidence_surfaces", []) or []:
         rule = surface_rules.get(str(surface))
@@ -83,8 +84,8 @@ def build_plan(setup: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
                 "basis": str(join.get("basis", "")),
                 "expected_question": str(join.get("expected_question", "")),
             })
-    else:
-        unresolved.append("no acquisition tasks could be compiled")
+    elif not supplied_evidence:
+        unresolved.append("no acquisition tasks could be compiled and no supplied evidence is available")
 
     plan = {
         "version": "1",
@@ -117,13 +118,12 @@ def render_plan_comment(number: int, plan: dict[str, Any]) -> str:
     marker = f"<!-- dpip-evidence-plan:{number}:{plan_digest(plan)} -->"
     payload = {"evidence_plan": plan}
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True).rstrip()
-    # Assert the serialized transport is itself executable before publication.
     parsed = yaml.safe_load(rendered)
     if not isinstance(parsed, dict) or parsed.get("evidence_plan") != plan:
         raise ValueError("rendered evidence-plan payload does not round-trip")
     return (
         f"{marker}\n## DPIP evidence acquisition plan — {plan['status']}\n\n"
-        "This is an executable acquisition contract. It identifies evidence to obtain; it does **not** assert that the evidence exists or make a privacy disposition.\n\n"
+        "This is an executable acquisition contract. It identifies evidence to obtain; it does **not** assert that the evidence exists or make a privacy disposition. A zero-task ready plan means evidence was already supplied with the examination and must still pass downstream sufficiency evaluation.\n\n"
         f"```yaml\n{rendered}\n```"
     )
 
@@ -141,8 +141,6 @@ def publish(repo: str, number: int, token: str) -> None:
     marker = f"<!-- dpip-evidence-plan:{number}:{digest} -->"
     existing = next((c for c in current if marker in (c.get("body") or "")), None)
     if existing:
-        # Old malformed comments with the same semantic digest must not prevent a
-        # corrected transport record from being published.
         blocks = yaml_blocks(existing.get("body") or "")
         if any(isinstance(block.get("evidence_plan"), dict) and block["evidence_plan"] == plan for block in blocks):
             print(f"UNCHANGED #{number}")
@@ -197,6 +195,26 @@ def self_test() -> int:
     assert collectors["status and policy discovery traffic"] == "credential-status"
     assert collectors["retained relationship evidence"] == "trust-task-retention"
     assert collectors["deliberate-correlation mechanisms"] == "zkp-context-commitment"
+
+    supplied = dict(setup)
+    supplied["evidence_surfaces"] = []
+    supplied["provided_evidence"] = [{
+        "requirement_id": "ER-REL-DID-AB",
+        "evidence_class": "runtime-upstream-observation",
+    }]
+    supplied_plan = build_plan(supplied, rules)
+    assert supplied_plan["status"] == "ready"
+    assert supplied_plan["acquisition_tasks"] == []
+    assert supplied_plan["join_attempts"] == []
+    assert supplied_plan["unresolved_requirements"] == []
+
+    empty = dict(setup)
+    empty["evidence_surfaces"] = []
+    empty["provided_evidence"] = []
+    empty_plan = build_plan(empty, rules)
+    assert empty_plan["status"] == "needs-review"
+    assert empty_plan["acquisition_tasks"] == []
+    assert any("no acquisition tasks" in x for x in empty_plan["unresolved_requirements"])
 
     bad = dict(setup)
     bad["evidence_surfaces"] = [setup["evidence_surfaces"][0], "unknown surface"]
