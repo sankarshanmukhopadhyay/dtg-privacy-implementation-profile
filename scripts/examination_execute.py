@@ -349,13 +349,23 @@ def evidence_ready_judgment(record: dict[str, Any], setup: dict[str, Any]) -> di
         action = "No remediation is required for this scoped proposition; preserve the evidence package and reassess on material change."
 
     return {
+        "schema": "rahp-assessor-result/v1",
+        "assessor": "dpip",
+        "assessment_id": f"dpip:{record.get('source_issue')}",
         "outcome": outcome,
         "reason_code": reason,
         "evidence_used": evidence_used,
         "residual_risk": residual,
         "action_required": action,
-        "uninterpretable_evidence": uninterpretable,
-        "failed_evidence_requirements": failures,
+        "source_pins": record.get("source_pins", []),
+        "provenance": {
+            "execution_digest": record.get("execution_digest"),
+            "setup_digest": record.get("setup_digest"),
+        },
+        "details": {
+            "uninterpretable_evidence": uninterpretable,
+            "failed_evidence_requirements": failures,
+        },
     }
 
 
@@ -404,6 +414,21 @@ def conclusion_from_execution(execution: dict[str, Any], setup: dict[str, Any] |
         explanation += "At least one attributable runtime binding contains no concrete A/B observation for its named requirement. "
     explanation += "Repository-native fixtures may exercise DPIP rules but do not prove upstream runtime behaviour."
     action = "Produce the named attributable runtime evidence in an accepted provenance class and create a pinned comparable DPIP rerun."
+    assessor_result = {
+        "schema": "rahp-assessor-result/v1",
+        "assessor": "dpip",
+        "assessment_id": f"dpip:{record.get('source_issue')}",
+        "outcome": "INDETERMINATE",
+        "reason_code": "evidence-required",
+        "evidence_used": record.get("satisfied_evidence_requirement_ids", []),
+        "residual_risk": "Cross-context correlation cannot be ruled in or out until the evidence contract is satisfied.",
+        "action_required": action,
+        "source_pins": record.get("source_pins", []),
+        "provenance": {
+            "execution_digest": record.get("execution_digest"),
+            "setup_digest": record.get("setup_digest"),
+        },
+    }
     return {"dpip_examination": {
         "applicability": "applicable",
         "conclusion": "INDETERMINATE",
@@ -414,6 +439,7 @@ def conclusion_from_execution(execution: dict[str, Any], setup: dict[str, Any] |
         "residual_correlation": "Cross-context correlation cannot be ruled in or out until the evidence contract is satisfied.",
         "action": action,
         "evidence_remediation_plan": remediation_plan(record),
+        "assessor_result": assessor_result,
         "human_summary": {"outcome": "INDETERMINATE — more evidence is required", "explanation": explanation, "action": action},
         "source_pins": record.get("source_pins", []),
         "execution_digest": record.get("execution_digest"),
@@ -543,6 +569,9 @@ def self_test() -> int:
     assert runtime_conclusion["conclusion"] == "PASS"
     assert runtime_conclusion["reason_code"] == "evidence-supported-no-prohibited-correlation"
     assert runtime_conclusion["human_acceptance_required"] is False
+    assert runtime_conclusion["assessor_result"]["schema"] == "rahp-assessor-result/v1"
+    assert runtime_conclusion["assessor_result"]["assessor"] == "dpip"
+    assert runtime_conclusion["assessor_result"]["assessment_id"] == "dpip:124"
     assert set(runtime_conclusion["assessor_result"]["evidence_used"]) == set(setup["evidence_requirement_ids"])
 
     failed = json.loads(json.dumps(runtime))
