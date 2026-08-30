@@ -1,0 +1,33 @@
+name: Release Codename Policy
+
+on:
+  pull_request:
+    paths:
+      - 'release/lake-codenames.txt'
+      - 'config/release-codename-*.json'
+      - 'scripts/release_governance.py'
+      - 'docs/release-governance.md'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-codename-policy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'release/lake-codenames.txt'
+      - 'config/release-codename-*.json'
+      - 'scripts/release_governance.py'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/release-codename-policy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/release_governance.py validate
+      - run: python scripts/release_governance.py self-test
