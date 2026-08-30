@@ -10,8 +10,18 @@ invariant_aliases:
   no-unnecessary-cross-context-correlation: [P2, P4]
   correlation-scope-does-not-expand-through-composition: [P2, P4, P5]
   retained-evidence-does-not-defeat-selective-disclosure: [P3, P4, P5, P6]
+  metadata-does-not-expand-declared-correlation-scope: [P2, P4, P5, P6]
 
 interaction_aliases:
+  device-presence-and-metadata:
+    canonical: [C5]
+    rationale: >-
+      Device heartbeat/presence is a lifecycle/presence interaction whose privacy
+      question is whether protocol-envelope and retained operational metadata become
+      a reusable correlator. C5 already owns lifecycle/status metadata, protocol-envelope
+      privacy and retained-state correlation surfaces; this mapping does not turn
+      device presence into credential status semantics.
+
   credential-proof-trust-task-consequential-execution:
     canonical: [C3, C5]
     rationale: >-
@@ -21,6 +31,13 @@ interaction_aliases:
       findings.
 
 reference_flow_aliases:
+  "device/install -> heartbeat or presence update -> retained service metadata":
+    canonical: [RF-003]
+    rationale: >-
+      RF-003 is the existing lifecycle/freshness composition anchor. The mapping is
+      limited to privacy-relevant observation and retention surfaces, not authority
+      or device-registration semantics.
+
   "DTG Credential -> ZKP presentation -> Trust Task -> retained outcome evidence":
     canonical: [RF-001, RF-003]
     rationale: >-
@@ -29,6 +46,9 @@ reference_flow_aliases:
       anchors, not evidence that the requested interaction is already fully instantiated.
 
 claim_aliases:
+  device-metadata-is-bounded-to-the-declared-operational-scope:
+    canonical: [C5-PC-5]
+
   pairwise-identifiers-preserve-declared-correlation-scope:
     canonical: [C3-PC-2, C5-PC-2]
   zero-knowledge-disclosure-remains-private-after-task-wrapping:

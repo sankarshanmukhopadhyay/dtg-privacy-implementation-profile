@@ -59,6 +59,16 @@ privacy_claims:
     expected_status: INDETERMINATE
     rationale: Correctness depends on precedence semantics owned by the participating specifications and deployment policy.
     invariants: [P4, P7]
+  - id: C5-PC-5
+    property: operational-metadata-boundedness
+    subject: contextual-graph
+    scope: device heartbeat/presence metadata within one declared operational relationship
+    expected_status: PASS
+    rationale: >-
+      Human-readable or stable operational metadata may be necessary for device
+      management, but its audience, retention and reuse must remain bounded to the
+      declared operational relationship rather than becoming a cross-context join key.
+    invariants: [P2, P4, P5, P6]
   - id: C5-PC-4
     property: historical-context-unlinkability
     subject: contextual-graph
@@ -194,6 +204,13 @@ tests:
     invariants: [P4, P7]
     claims: [C5-PC-3]
     expected: FAIL or INDETERMINATE depending on whether the owning Trust Task lifecycle semantics define the stale artifact's effect.
+  - id: C5-T7
+    type: adversarial
+    description: A stable human-readable device or install metadata value is emitted or retained across unrelated operational contexts and permits observers to join the same installation beyond the declared device relationship.
+    requirements: [C5-R5, C5-R6]
+    invariants: [P2, P4, P5, P6]
+    claims: [C5-PC-5]
+    expected: FAIL when the metadata creates an unnecessary cross-context join; PASS only when audience, reuse and retention remain bounded to the declared operational scope.
 
 exceptions:
   - description: DPIP may record an unresolved precedence dependency without deciding the outcome; such a result is INDETERMINATE until the owning semantics or deployment policy are evidenced.

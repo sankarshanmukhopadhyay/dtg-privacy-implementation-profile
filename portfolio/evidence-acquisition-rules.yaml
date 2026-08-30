@@ -74,6 +74,26 @@ surface_rules:
     retention_stage: presentation-and-retained-proof
     falsification_purpose: Determine whether the deliberate-correlation mechanism remains bounded to its declared context or becomes reusable across unrelated relying contexts.
 
+
+  "device or install display metadata":
+    component: Device presence / heartbeat layer
+    observer: presence-service-or-operator
+    collector: device-presence
+    retention_stage: heartbeat-and-retained-binding
+    falsification_purpose: Determine whether a human-readable device/install name is stable or reusable across unrelated operational contexts.
+  "heartbeat payloads":
+    component: Device presence / heartbeat layer
+    observer: presence-service
+    collector: device-presence
+    retention_stage: protocol-envelope
+    falsification_purpose: Determine whether heartbeat-visible metadata creates a stable cross-context join path beyond the declared device binding.
+  "retained presence records":
+    component: Device presence / retained state
+    observer: operator-or-presence-service
+    collector: device-presence
+    retention_stage: retained-presence-record
+    falsification_purpose: Determine whether retained presence metadata is reused or exposed across contexts beyond its operational purpose.
+
 join_policy:
   contexts: [A, B]
   basis: Compare normalized observations for stable/reusable values or deterministic derivations across unrelated relying contexts.
