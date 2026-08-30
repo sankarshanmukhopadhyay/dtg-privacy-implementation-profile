@@ -37,6 +37,18 @@ def examination_record(comments):
             if isinstance(examination,dict): return examination
     raise ValueError("no structured `dpip_examination:` conclusion found in DPIP comments")
 
+def validate_assessor_result(result):
+    errors=[]
+    if not isinstance(result,dict): return ["assessor_result must be a mapping"]
+    if result.get("schema")!="rahp-assessor-result/v1": errors.append("assessor_result.schema must be rahp-assessor-result/v1")
+    if not str(result.get("assessor","")).strip(): errors.append("assessor_result.assessor is required")
+    if not str(result.get("assessment_id","")).strip(): errors.append("assessor_result.assessment_id is required")
+    if result.get("outcome") not in {"PASS","FAIL","INDETERMINATE","NOT_APPLICABLE"}: errors.append("assessor_result.outcome is not portable")
+    for key in ("reason_code","residual_risk","action_required"):
+        if not str(result.get(key,"")).strip(): errors.append(f"assessor_result.{key} is required")
+    if not isinstance(result.get("evidence_used"),list): errors.append("assessor_result.evidence_used must be a list")
+    return errors
+
 def validate_examination(e):
     errors=[]; applicability=str(e.get("applicability","")).strip(); conclusion=str(e.get("conclusion","")).strip()
     if applicability not in {"applicable","not-applicable"}: errors.append("applicability must be applicable or not-applicable")
@@ -47,6 +59,10 @@ def validate_examination(e):
     if conclusion=="INDETERMINATE":
         plan=e.get("evidence_remediation_plan")
         if not isinstance(plan,dict) or not plan.get("requirements"): errors.append("INDETERMINATE requires a non-empty evidence_remediation_plan")
+    if e.get("assessor_result") is not None:
+        errors.extend(validate_assessor_result(e.get("assessor_result")))
+        if e["assessor_result"].get("outcome") != conclusion:
+            errors.append("assessor_result.outcome must equal DPIP conclusion")
     return errors
 
 def human_summary(e):
@@ -76,6 +92,7 @@ def disposition_body(dpip_repo,issue,e):
     if e.get("residual_correlation"): disposition["residual_correlation"]=e["residual_correlation"]
     disposition["action"]=e["action"]
     if isinstance(e.get("evidence_remediation_plan"),dict): disposition["evidence_remediation_plan"]=compact_plan(e["evidence_remediation_plan"])
+    if isinstance(e.get("assessor_result"),dict): disposition["assessor_result"]=e["assessor_result"]
     payload={"dpip_disposition":disposition}; marker=return_marker(dpip_repo,issue["number"])
     remediation=""
     if disposition.get("evidence_remediation_plan"):
@@ -106,7 +123,7 @@ def run(dpip_repo,rahp_repo,dpip_token,rahp_token,number):
 
 def self_test():
     body="""```yaml\nsource:\n  system: RAHP\n  repository: example/rahp\n  issue: 42\n```"""; assert source_record(body)["issue"]==42
-    examination={"applicability":"applicable","conclusion":"INDETERMINATE","affected_interactions":["C3"],"evidence_summary":"Runtime evidence is missing.","residual_correlation":"Unresolved.","action":"Supply bounded evidence and rerun.","human_summary":{"outcome":"We do not have enough evidence to decide yet","explanation":"Runtime evidence is missing.","action":"Supply bounded evidence and rerun."},"evidence_remediation_plan":{"plan_digest":"abc","requirements":[{"id":"R1","proposition":"test joinability","producer":"implementation","routing_target":"upstream-runtime"}],"rerun_policy":"new pinned run"}}
+    examination={"applicability":"applicable","conclusion":"INDETERMINATE","affected_interactions":["C3"],"evidence_summary":"Runtime evidence is missing.","residual_correlation":"Unresolved.","action":"Supply bounded evidence and rerun.","assessor_result":{"schema":"rahp-assessor-result/v1","assessor":"dpip","assessment_id":"dpip:7","outcome":"INDETERMINATE","reason_code":"evidence-required","evidence_used":[],"residual_risk":"Unresolved.","action_required":"Supply bounded evidence and rerun."},"human_summary":{"outcome":"We do not have enough evidence to decide yet","explanation":"Runtime evidence is missing.","action":"Supply bounded evidence and rerun."},"evidence_remediation_plan":{"plan_digest":"abc","requirements":[{"id":"R1","proposition":"test joinability","producer":"implementation","routing_target":"upstream-runtime"}],"rerun_policy":"new pinned run"}}
     assert not validate_examination(examination); rendered=disposition_body("example/dpip",{"number":7,"html_url":"https://example.invalid/7"},examination); assert "evidence_remediation_plan" in rendered and "Evidence remediation required" in rendered
     missing=dict(examination); missing.pop("evidence_remediation_plan"); assert validate_examination(missing)
     print("PASS rahp_return self-test"); return 0
