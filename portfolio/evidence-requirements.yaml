@@ -43,3 +43,14 @@ requirements:
     source_lineage: ["RAHP #140", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
+
+  ER-DEVICE-METADATA-AB:
+    title: Cross-context device heartbeat/presence metadata observations
+    summary: >-
+      Capture attributable A/B runtime observations showing whether device/install
+      display metadata, heartbeat envelopes or retained presence records expose a
+      stable reusable value beyond the declared operational relationship.
+    interactions: [C5]
+    source_lineage: ["RAHP #273", "RAHP stabilization #276"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
