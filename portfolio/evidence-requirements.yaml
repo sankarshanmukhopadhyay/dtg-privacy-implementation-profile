@@ -1,30 +1,45 @@
-version: 1
+version: 2
 purpose: >-
   Stable evidence-requirement identifiers for deterministic RAHP-originated DPIP examinations.
   These requirements describe evidence classes; they do not fabricate observations or imply PASS.
+
+evidence_classes:
+  runtime-upstream-observation:
+    title: Attributable upstream runtime observation
+    summary: Evidence produced by an identified runtime/composition producer against immutable implementation revisions.
+  synthetic-fixture-self-test:
+    title: Synthetic fixture or self-test
+    summary: Repository-native or generated evidence that may test evaluator mechanics but cannot prove upstream runtime behaviour.
+  derived-analysis-artifact:
+    title: Derived analysis artifact
+    summary: Evidence derived from other observations; admissibility depends on the requirement and lineage retained.
 
 requirements:
   ER-REL-DID-AB:
     title: Cross-context relationship identifier observations
     summary: Capture attributable A/B runtime observations showing whether relationship DIDs, edge identifiers or equivalent binders remain stable or become joinable across contexts.
     interactions: [C3]
-    source_lineage: ["RAHP #137", "Interop Lab #31"]
+    source_lineage: ["RAHP #137", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
   ER-STATUS-AB:
     title: Cross-context status and policy-discovery observations
     summary: Capture attributable A/B runtime observations for status queries and policy-discovery behavior, including any stable handles or metadata that permit unintended joining.
     interactions: [C5]
-    source_lineage: ["RAHP #138", "Interop Lab #31"]
+    source_lineage: ["RAHP #138", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
   ER-TASK-AB:
     title: Cross-context retained Trust Task evidence observations
     summary: Capture attributable A/B runtime observations showing whether retained Trust Task or relationship evidence creates a durable cross-context correlation surface.
     interactions: [C3, C5]
-    source_lineage: ["RAHP #139", "Interop Lab #31"]
+    source_lineage: ["RAHP #139", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
   ER-VERIFIER-AB:
     title: Verifier transcript and deliberate-correlation observations
     summary: Capture attributable A/B verifier transcripts and deliberate-correlation attempts to determine whether composed evidence enables linkage beyond the declared scope.
     interactions: [C3, C5]
-    source_lineage: ["RAHP #140", "Interop Lab #31"]
+    source_lineage: ["RAHP #140", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
