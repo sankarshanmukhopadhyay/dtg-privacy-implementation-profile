@@ -288,8 +288,108 @@ def remediation_plan(record: dict[str, Any]) -> dict[str, Any]:
     return plan
 
 
-def conclusion_from_execution(execution: dict[str, Any]) -> dict[str, Any] | None:
+def evidence_ready_judgment(record: dict[str, Any], setup: dict[str, Any]) -> dict[str, Any]:
+    """Return a finite scoped judgment from accepted supplied runtime evidence.
+
+    The judgment uses the evidence producer's explicit experiment contract. Repository-
+    native mechanical fixtures remain diagnostic only and are never promoted into
+    runtime proof.
+    """
+    accepted = set(record.get("satisfied_evidence_requirement_ids", []) or [])
+    required = set(required_ids(setup))
+    bindings = {
+        str(item.get("requirement_id")): item
+        for item in setup.get("provided_evidence", []) or []
+        if isinstance(item, dict) and str(item.get("requirement_id") or "") in accepted
+    }
+    evidence_used = sorted(required & set(bindings))
+    uninterpretable: list[str] = []
+    failures: list[str] = []
+    for rid in evidence_used:
+        experiment = bindings[rid].get("experiment")
+        if not isinstance(experiment, dict):
+            uninterpretable.append(f"{rid}: missing experiment contract")
+            continue
+        expected = str(experiment.get("expected_join") or "").strip()
+        observed = str(experiment.get("observed_join") or "").strip()
+        if expected == "must-not-emerge":
+            if observed == "not-detected":
+                continue
+            if observed in {"detected", "emerged"}:
+                failures.append(rid)
+            else:
+                uninterpretable.append(f"{rid}: observed_join={observed or '<missing>'}")
+        elif expected == "must-emerge":
+            if observed in {"detected", "emerged"}:
+                continue
+            if observed == "not-detected":
+                failures.append(rid)
+            else:
+                uninterpretable.append(f"{rid}: observed_join={observed or '<missing>'}")
+        else:
+            uninterpretable.append(f"{rid}: expected_join={expected or '<missing>'}")
+
+    if required != set(evidence_used):
+        uninterpretable.append("accepted evidence does not cover the complete required set")
+
+    if failures:
+        outcome = "FAIL"
+        reason = "prohibited-correlation-observed"
+        residual = "At least one evidence requirement violated its declared join expectation."
+        action = "Treat the scoped privacy proposition as failed; identify and remediate the observed correlation path before a fresh pinned rerun."
+    elif uninterpretable:
+        outcome = "INDETERMINATE"
+        reason = "evidence-not-interpretable"
+        residual = "Evidence is provenance-sufficient but cannot be converted into a deterministic join/no-join judgment."
+        action = "Supply or correct explicit expected_join / observed_join experiment semantics in a fresh comparable evidence package."
+    else:
+        outcome = "PASS"
+        reason = "evidence-supported-no-prohibited-correlation"
+        residual = "No prohibited join was detected within the admitted, pinned runtime evidence scope; this does not generalize beyond that scope."
+        action = "No remediation is required for this scoped proposition; preserve the evidence package and reassess on material change."
+
+    return {
+        "outcome": outcome,
+        "reason_code": reason,
+        "evidence_used": evidence_used,
+        "residual_risk": residual,
+        "action_required": action,
+        "uninterpretable_evidence": uninterpretable,
+        "failed_evidence_requirements": failures,
+    }
+
+
+def conclusion_from_execution(execution: dict[str, Any], setup: dict[str, Any] | None = None) -> dict[str, Any] | None:
     record = execution["execution_evidence"]
+    if record.get("status") == "evidence-ready":
+        if setup is None:
+            raise ValueError("evidence-ready conclusion requires examination setup")
+        result = evidence_ready_judgment(record, setup)
+        outcome = result["outcome"]
+        explanation = (
+            f"All required attributable runtime evidence was accepted. Scoped evidence judgment: {outcome}. "
+            + result["residual_risk"]
+        )
+        return {"dpip_examination": {
+            "applicability": "applicable",
+            "conclusion": outcome,
+            "reason_code": result["reason_code"],
+            "affected_interactions": record.get("candidate_interactions", []),
+            "human_scope": record.get("human_scope", []),
+            "evidence_summary": explanation,
+            "evidence_used": result["evidence_used"],
+            "residual_correlation": result["residual_risk"],
+            "action": result["action_required"],
+            "assessor_result": result,
+            "human_summary": {
+                "outcome": f"{outcome} — scoped runtime evidence judgment",
+                "explanation": explanation,
+                "action": result["action_required"],
+            },
+            "source_pins": record.get("source_pins", []),
+            "execution_digest": record.get("execution_digest"),
+            "human_acceptance_required": False,
+        }}
     if record.get("status") != "evidence-incomplete":
         return None
     named = [f"{r.get('id')} — {r.get('title')}" for r in record.get("required_evidence", []) or []]
@@ -346,7 +446,7 @@ def publish(repo: str, issue: dict[str, Any], token: str) -> None:
     if not any(marker in (comment.get("body") or "") for comment in existing):
         body = f"{marker}\n## DPIP repository-native execution — {record['status']}\n\n{_human_scope_md(record.get('human_scope', []))}\n\nMissing or wrong-class evidence remains explicit; repository fixtures are not promoted into runtime proof.\n\n```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
         api("POST", repo, f"issues/{number}/comments", token, {"body": body})
-    conclusion = conclusion_from_execution(evidence)
+    conclusion = conclusion_from_execution(evidence, setup)
     if conclusion is not None:
         exam = conclusion["dpip_examination"]
         conclusion_digest = hashlib.sha256(json.dumps(conclusion, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
@@ -392,6 +492,12 @@ def _binding(rid: str, evidence_class: str = "runtime-upstream-observation", rev
             "context_b_run": "B-001",
         },
         "observation_summary": f"A/B runtime observation for {rid}",
+        "experiment": {
+            "kind": "unlinkability-pressure-case",
+            "expected_join": "must-not-emerge",
+            "observed_join": "not-detected",
+            "join_surfaces": [],
+        },
         "surfaces": {"example": {"classification": "fresh", "context_a": "a", "context_b": "b"}},
     }
 
@@ -429,9 +535,29 @@ def self_test() -> int:
 
     runtime = json.loads(json.dumps(setup))
     runtime["provided_evidence"] = [_binding(rid) for rid in setup["evidence_requirement_ids"]]
-    runtime_record = build_execution(124, runtime)["execution_evidence"]
+    runtime_execution = build_execution(124, runtime)
+    runtime_record = runtime_execution["execution_evidence"]
     assert set(runtime_record["satisfied_evidence_requirement_ids"]) == set(setup["evidence_requirement_ids"])
     assert runtime_record["required_evidence"] == []
+    runtime_conclusion = conclusion_from_execution(runtime_execution, runtime)["dpip_examination"]
+    assert runtime_conclusion["conclusion"] == "PASS"
+    assert runtime_conclusion["reason_code"] == "evidence-supported-no-prohibited-correlation"
+    assert runtime_conclusion["human_acceptance_required"] is False
+    assert set(runtime_conclusion["assessor_result"]["evidence_used"]) == set(setup["evidence_requirement_ids"])
+
+    failed = json.loads(json.dumps(runtime))
+    failed["provided_evidence"][0]["experiment"]["observed_join"] = "detected"
+    failed_execution = build_execution(125, failed)
+    failed_conclusion = conclusion_from_execution(failed_execution, failed)["dpip_examination"]
+    assert failed_conclusion["conclusion"] == "FAIL"
+    assert failed_conclusion["reason_code"] == "prohibited-correlation-observed"
+
+    ambiguous = json.loads(json.dumps(runtime))
+    del ambiguous["provided_evidence"][0]["experiment"]
+    ambiguous_execution = build_execution(125, ambiguous)
+    ambiguous_conclusion = conclusion_from_execution(ambiguous_execution, ambiguous)["dpip_examination"]
+    assert ambiguous_conclusion["conclusion"] == "INDETERMINATE"
+    assert ambiguous_conclusion["reason_code"] == "evidence-not-interpretable"
 
     all_absent = json.loads(json.dumps(setup))
     absent_binding = _binding("ER-STATUS-AB")
