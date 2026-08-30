@@ -59,6 +59,16 @@ privacy_claims:
     expected_status: INDETERMINATE
     rationale: Correctness depends on precedence semantics owned by the participating specifications and deployment policy.
     invariants: [P4, P7]
+  - id: C5-PC-5
+    property: operational-metadata-boundedness
+    subject: protocol-envelope
+    scope: device heartbeat/presence metadata within one declared operational relationship
+    expected_status: PASS
+    rationale: >-
+      Human-readable or stable operational metadata may be necessary for device
+      management, but its audience, retention and reuse must remain bounded to the
+      declared operational relationship rather than becoming a cross-context join key.
+    invariants: [P2, P4, P5, P6]
   - id: C5-PC-4
     property: historical-context-unlinkability
     subject: contextual-graph
