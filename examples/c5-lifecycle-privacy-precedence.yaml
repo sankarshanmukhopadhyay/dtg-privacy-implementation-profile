@@ -61,7 +61,7 @@ privacy_claims:
     invariants: [P4, P7]
   - id: C5-PC-5
     property: operational-metadata-boundedness
-    subject: protocol-envelope
+    subject: contextual-graph
     scope: device heartbeat/presence metadata within one declared operational relationship
     expected_status: PASS
     rationale: >-
