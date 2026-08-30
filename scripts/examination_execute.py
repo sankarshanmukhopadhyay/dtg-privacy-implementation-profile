@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Execute mechanically available DPIP evidence for examination-ready RAHP runs.
 
-Known missing evidence is a deterministic assurance state: INDETERMINATE / evidence-required.
-It is not a generic human-review condition and can never be converted into PASS.
+Known missing or wrong-class evidence is a deterministic assurance state:
+INDETERMINATE / evidence-required. It is not a generic human-review condition and can
+never be converted into PASS.
 """
 from __future__ import annotations
 
@@ -26,10 +27,15 @@ EXAMPLES = Path("examples")
 OBSERVATIONS = Path("observations")
 EVIDENCE_REQUIREMENTS = Path("portfolio/evidence-requirements.yaml")
 SETUP_RE = re.compile(r"```ya?ml\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
+SHA40 = re.compile(r"^[0-9a-f]{40}$", re.I)
 DEFAULT_RUNTIME_REQUIREMENTS = {
     "C3": ["ER-REL-DID-AB", "ER-TASK-AB", "ER-VERIFIER-AB"],
     "C5": ["ER-STATUS-AB", "ER-TASK-AB", "ER-VERIFIER-AB"],
 }
+REQUIRED_RUNTIME_PROVENANCE = (
+    "producer", "run_id", "observed_at", "implementation_repository",
+    "implementation_revision", "context_a_run", "context_b_run",
+)
 
 
 def yaml_docs(text: str) -> list[dict[str, Any]]:
@@ -85,19 +91,62 @@ def required_ids(setup: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(inferred))
 
 
-def supplied_ids(setup: dict[str, Any]) -> list[str]:
-    # Comparable reruns may carry explicit evidence bindings from RAHP/Interop Lab.
-    # A requirement is satisfied only when a binding states the requirement ID and
-    # supplies attributable provenance; synthetic repository fixtures do not satisfy it.
-    supplied: list[str] = []
-    for binding in setup.get("provided_evidence", []) or []:
+def assess_supplied_evidence(setup: dict[str, Any], req_catalog: dict[str, dict[str, Any]]) -> tuple[list[str], list[dict[str, Any]]]:
+    """Return accepted requirement IDs plus reviewer-readable sufficiency failures."""
+    accepted: list[str] = []
+    failures: list[dict[str, Any]] = []
+    for index, binding in enumerate(setup.get("provided_evidence", []) or []):
         if not isinstance(binding, dict):
+            failures.append({"binding_index": index, "reason_code": "malformed-evidence", "explanation": "Supplied evidence binding is not a mapping."})
             continue
         rid = str(binding.get("requirement_id") or "").strip()
+        if not rid:
+            failures.append({"binding_index": index, "reason_code": "malformed-evidence", "explanation": "Supplied evidence has no requirement_id."})
+            continue
+        meta = req_catalog.get(rid)
+        if not isinstance(meta, dict):
+            failures.append({"requirement_id": rid, "reason_code": "unknown-evidence-requirement", "explanation": f"No DPIP evidence requirement is registered for {rid}."})
+            continue
+        evidence_class = str(binding.get("evidence_class") or "").strip()
+        accepted_classes = [str(x) for x in meta.get("accepted_evidence_classes", []) or []]
+        if accepted_classes and evidence_class not in accepted_classes:
+            failures.append({
+                "requirement_id": rid,
+                "evidence_class": evidence_class or None,
+                "accepted_evidence_classes": accepted_classes,
+                "reason_code": "wrong-evidence-class",
+                "explanation": f"{rid} requires evidence class {', '.join(accepted_classes)}; supplied class is {evidence_class or '<missing>'}.",
+            })
+            continue
         provenance = binding.get("provenance")
-        if rid and provenance:
-            supplied.append(rid)
-    return list(dict.fromkeys(supplied))
+        missing_provenance: list[str] = []
+        if not isinstance(provenance, dict):
+            missing_provenance = list(REQUIRED_RUNTIME_PROVENANCE)
+        else:
+            missing_provenance = [key for key in REQUIRED_RUNTIME_PROVENANCE if not str(provenance.get(key) or "").strip()]
+            revision = str(provenance.get("implementation_revision") or "")
+            if revision and not SHA40.fullmatch(revision):
+                missing_provenance.append("implementation_revision(immutable-40-hex-required)")
+        if missing_provenance:
+            failures.append({
+                "requirement_id": rid,
+                "evidence_class": evidence_class or None,
+                "reason_code": "malformed-evidence-provenance",
+                "missing_or_invalid": missing_provenance,
+                "explanation": f"{rid} has incomplete or mutable runtime provenance: {', '.join(missing_provenance)}.",
+            })
+            continue
+        if not isinstance(binding.get("surfaces"), dict) or not str(binding.get("observation_summary") or "").strip():
+            failures.append({
+                "requirement_id": rid,
+                "evidence_class": evidence_class or None,
+                "reason_code": "malformed-evidence-observation",
+                "explanation": f"{rid} must include an observation_summary and surfaces mapping.",
+            })
+            continue
+        if rid not in accepted:
+            accepted.append(rid)
+    return accepted, failures
 
 
 def build_execution(issue_number: int, setup: dict[str, Any]) -> dict[str, Any]:
@@ -135,7 +184,8 @@ def build_execution(issue_number: int, setup: dict[str, Any]) -> dict[str, Any]:
             mechanical_results.append({"interaction": iid, "vector": result.get("_vector_id"), "test_results": result.get("test_results", []), "claim_results": result.get("claim_results", [])})
 
     required = required_ids(setup)
-    supplied = set(supplied_ids(setup))
+    accepted_ids, evidence_failures = assess_supplied_evidence(setup, req_catalog)
+    supplied = set(accepted_ids)
     missing_requirements: list[dict[str, Any]] = []
     for rid in required:
         if rid in supplied:
@@ -144,15 +194,18 @@ def build_execution(issue_number: int, setup: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(meta, dict):
             missing.append(f"unknown evidence requirement: {rid}")
             continue
+        related_failures = [failure for failure in evidence_failures if failure.get("requirement_id") == rid]
         missing_requirements.append({
             "id": rid,
             "title": meta.get("title"),
             "summary": meta.get("summary"),
             "evidence_kind": meta.get("evidence_kind"),
+            "accepted_evidence_classes": meta.get("accepted_evidence_classes", []),
             "source_lineage": meta.get("source_lineage", []),
+            **({"supplied_evidence_failures": related_failures} if related_failures else {}),
         })
     if missing_requirements:
-        missing.append("required attributable runtime evidence not supplied: " + ", ".join(item["id"] for item in missing_requirements))
+        missing.append("required attributable runtime evidence not supplied or not provenance-sufficient: " + ", ".join(item["id"] for item in missing_requirements))
 
     state = "evidence-ready" if checks and not missing else "evidence-incomplete"
     record = {
@@ -166,6 +219,7 @@ def build_execution(issue_number: int, setup: dict[str, Any]) -> dict[str, Any]:
         "mechanical_results": mechanical_results,
         "required_evidence": missing_requirements,
         "satisfied_evidence_requirement_ids": sorted(supplied),
+        "evidence_sufficiency_failures": evidence_failures,
         "missing_evidence": missing,
         "source_pins": setup.get("source_pins", []),
         "privacy_judgment": "not-made",
@@ -185,8 +239,10 @@ def remediation_plan(record: dict[str, Any]) -> dict[str, Any]:
             "title": req.get("title"),
             "summary": req.get("summary"),
             "evidence_kind": req.get("evidence_kind"),
+            "accepted_evidence_classes": req.get("accepted_evidence_classes", []),
+            "supplied_evidence_failures": req.get("supplied_evidence_failures", []),
             "producer_lineage": req.get("source_lineage", []),
-            "acceptance_criterion": "Supply attributable provenance-bound evidence for this requirement in a comparable pinned rerun.",
+            "acceptance_criterion": "Supply attributable provenance-bound evidence in an accepted evidence class for this requirement in a comparable pinned rerun.",
         })
     plan = {
         "status": "required",
@@ -204,13 +260,15 @@ def conclusion_from_execution(execution: dict[str, Any]) -> dict[str, Any] | Non
     record = execution["execution_evidence"]
     if record.get("status") != "evidence-incomplete":
         return None
-    missing = [str(item) for item in record.get("missing_evidence", []) if str(item).strip()]
     named = [f"{r.get('id')} — {r.get('title')}" for r in record.get("required_evidence", []) or []]
     explanation = "The admitted privacy proposition is understood, but the evidence contract is not satisfied. "
     if named:
-        explanation += "Missing evidence: " + "; ".join(named) + ". "
+        explanation += "Missing or provenance-insufficient evidence: " + "; ".join(named) + ". "
+    wrong_class = [f for f in record.get("evidence_sufficiency_failures", []) or [] if f.get("reason_code") == "wrong-evidence-class"]
+    if wrong_class:
+        explanation += "At least one supplied binding has the wrong evidence provenance class. "
     explanation += "Repository-native fixtures may exercise DPIP rules but do not prove upstream runtime behaviour."
-    action = "Produce the named attributable runtime evidence and create a pinned comparable DPIP rerun."
+    action = "Produce the named attributable runtime evidence in an accepted provenance class and create a pinned comparable DPIP rerun."
     return {"dpip_examination": {
         "applicability": "applicable",
         "conclusion": "INDETERMINATE",
@@ -251,7 +309,7 @@ def publish(repo: str, issue: dict[str, Any], token: str) -> None:
     digest = record["execution_digest"]
     marker = f"<!-- dpip-execution-evidence:{number}:{digest} -->"
     if not any(marker in (comment.get("body") or "") for comment in existing):
-        body = f"{marker}\n## DPIP repository-native execution — {record['status']}\n\n{_human_scope_md(record.get('human_scope', []))}\n\nMissing evidence remains explicit; repository fixtures are not promoted into runtime proof.\n\n```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
+        body = f"{marker}\n## DPIP repository-native execution — {record['status']}\n\n{_human_scope_md(record.get('human_scope', []))}\n\nMissing or wrong-class evidence remains explicit; repository fixtures are not promoted into runtime proof.\n\n```yaml\n{yaml.safe_dump(evidence, sort_keys=False).rstrip()}\n```"
         api("POST", repo, f"issues/{number}/comments", token, {"body": body})
     conclusion = conclusion_from_execution(evidence)
     if conclusion is not None:
@@ -285,6 +343,24 @@ def run(repo: str, token: str, issue_number: int | None = None) -> int:
     return 0
 
 
+def _binding(rid: str, evidence_class: str = "runtime-upstream-observation", revision: str = "cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b") -> dict[str, Any]:
+    return {
+        "requirement_id": rid,
+        "evidence_class": evidence_class,
+        "provenance": {
+            "producer": "trust-protocol-interop-lab",
+            "run_id": "runtime-ab-001",
+            "observed_at": "2026-08-30T00:00:00Z",
+            "implementation_repository": "OpenVTC/verifiable-trust-infrastructure",
+            "implementation_revision": revision,
+            "context_a_run": "A-001",
+            "context_b_run": "B-001",
+        },
+        "observation_summary": f"A/B runtime observation for {rid}",
+        "surfaces": {"example": {"classification": "fresh", "context_a": "a", "context_b": "b"}},
+    }
+
+
 def self_test() -> int:
     setup = {
         "setup_digest": "dogwood",
@@ -308,6 +384,24 @@ def self_test() -> int:
     assert "C3" in _human_scope_md(conclusion["human_scope"])
     assert "Asymmetric cross-community relationship privacy" in _human_scope_md(conclusion["human_scope"])
     assert conclusion["source_pins"][0]["revision"].startswith("cb01d0")
+
+    synthetic = json.loads(json.dumps(setup))
+    synthetic["provided_evidence"] = [_binding(rid, "synthetic-fixture-self-test") for rid in setup["evidence_requirement_ids"]]
+    synthetic_record = build_execution(124, synthetic)["execution_evidence"]
+    assert not synthetic_record["satisfied_evidence_requirement_ids"]
+    assert {f["reason_code"] for f in synthetic_record["evidence_sufficiency_failures"]} == {"wrong-evidence-class"}
+    assert {r["id"] for r in synthetic_record["required_evidence"]} == set(setup["evidence_requirement_ids"])
+
+    runtime = json.loads(json.dumps(setup))
+    runtime["provided_evidence"] = [_binding(rid) for rid in setup["evidence_requirement_ids"]]
+    runtime_record = build_execution(124, runtime)["execution_evidence"]
+    assert set(runtime_record["satisfied_evidence_requirement_ids"]) == set(setup["evidence_requirement_ids"])
+    assert runtime_record["required_evidence"] == []
+
+    malformed = json.loads(json.dumps(setup))
+    malformed["provided_evidence"] = [_binding("ER-REL-DID-AB", revision="main")]
+    malformed_record = build_execution(124, malformed)["execution_evidence"]
+    assert any(f["reason_code"] == "malformed-evidence-provenance" for f in malformed_record["evidence_sufficiency_failures"])
     print("PASS examination_execute self-test")
     return 0
 
