@@ -90,7 +90,6 @@ def structural_source_pins(source: dict[str, Any], body: str) -> list[dict[str, 
     revision = str(changed.get("revision") or "").strip()
     if repo and SHA40.fullmatch(revision) and not any(p["repository"] == repo and p["revision"].lower() == revision.lower() for p in pins):
         pins.insert(0, {"label": "Changed artifact", "repository": repo, "revision": revision})
-    # Backward-compatible Markdown pins from historical RAHP intakes.
     for match in re.finditer(r"^-\s+([^\[\n]+?)\s+\[repo=([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\]:\s+`([0-9a-f]{40})`\s*$", body or "", re.MULTILINE | re.I):
         pin = {"label": match.group(1).strip(), "repository": match.group(2), "revision": match.group(3)}
         if not any(p.get("repository") == pin["repository"] and p["revision"].lower() == pin["revision"].lower() for p in pins):
@@ -132,12 +131,27 @@ def _human_entry(identifier: str, kind: str, glossary: dict[str, Any], catalog: 
     return {"id": identifier, "kind": kind, "title": None, "summary": None}
 
 
+def _provided_evidence(requested: dict[str, Any], unresolved: list[str]) -> list[dict[str, Any]]:
+    value = requested.get("provided_evidence", [])
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        unresolved.append("requested_examination.provided_evidence must be a list")
+        return []
+    out: list[dict[str, Any]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            unresolved.append(f"provided_evidence[{index}] must be a mapping")
+            continue
+        out.append(item)
+    return out
+
+
 def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog: dict[str, Any], glossary: dict[str, Any]) -> dict[str, Any]:
     source, requested = intake_payload(body)
     canonical = canonical_scope(requested)
     unresolved: list[str] = []
 
-    # Typed canonical identifiers take precedence. Historical prose aliases remain supported.
     if canonical.get("interaction_ids"):
         interactions = _validate_ids(canonical["interaction_ids"], catalog["interactions"], "interaction", unresolved)
     else:
@@ -159,6 +173,7 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
     if not profiles:
         profiles = _dedupe([str(catalog["interactions"][iid].get("target_profile")) for iid in interactions if iid in catalog["interactions"] and catalog["interactions"][iid].get("target_profile")])
     evidence_ids = _validate_ids(canonical.get("evidence_requirement_ids", []), catalog["evidence_requirements"], "evidence requirement", unresolved)
+    supplied_evidence = _provided_evidence(requested, unresolved)
 
     pins = structural_source_pins(source, body)
     if not pins:
@@ -173,7 +188,7 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
                 unresolved.append(f"canonical {kind} identifier lacks human-readable metadata: {identifier}")
             human_scope.append(entry)
 
-    evidence_status = "evidence-required" if evidence_ids else "not-declared"
+    evidence_status = "evidence-supplied-for-evaluation" if supplied_evidence else ("evidence-required" if evidence_ids else "not-declared")
     setup = {"examination_setup": {
         "status": "ready" if not unresolved else "needs-review",
         "source_issue": issue_number,
@@ -185,6 +200,7 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
         "candidate_profiles": profiles,
         "candidate_claims": claims,
         "evidence_requirement_ids": evidence_ids,
+        "provided_evidence": supplied_evidence,
         "evidence_status": evidence_status,
         "human_scope": human_scope,
         "evidence_surfaces": requested.get("suspected_surfaces", []),
@@ -223,7 +239,7 @@ def publish(repo: str, issue: dict[str, Any], token: str, registry: dict[str, An
     if any(marker in (c.get("body") or "") for c in comments(repo, number, token)):
         print(f"UNCHANGED #{number}"); return
     status = setup["status"]
-    intro = "The setup below is deterministic candidate binding only. It does **not** establish DPIP applicability or a privacy PASS/FAIL result. Known identifiers are resolved to canonical names for human review; unknown identifiers stop the deterministic path."
+    intro = "The setup below is deterministic candidate binding only. It does **not** establish DPIP applicability, evidence sufficiency, or a privacy PASS/FAIL result. Known identifiers are resolved to canonical names for human review; unknown identifiers stop the deterministic path."
     body = f"{marker}\n## DPIP examination setup — {status}\n\n{intro}\n\n{human_markdown(setup)}\n\n```yaml\n{yaml.safe_dump(setup_doc, sort_keys=False).rstrip()}\n```"
     api("POST", repo, f"issues/{number}/comments", token, {"body": body})
     print(f"SETUP #{number}: {status}")
@@ -269,6 +285,19 @@ requested_examination:
     invariant_ids: [P2, P4, P5]
     profile_ids: [PP-4, PP-2]
     evidence_requirement_ids: [ER-REL-DID-AB, ER-STATUS-AB, ER-TASK-AB, ER-VERIFIER-AB]
+  provided_evidence:
+    - requirement_id: ER-REL-DID-AB
+      evidence_class: synthetic-fixture-self-test
+      provenance:
+        producer: trust-protocol-interop-lab
+        run_id: selftest
+        observed_at: '2026-08-30T00:00:00Z'
+        implementation_repository: OpenVTC/verifiable-trust-infrastructure
+        implementation_revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
+        context_a_run: A
+        context_b_run: B
+      observation_summary: Setup preserves this binding but does not decide sufficiency.
+      surfaces: {}
   question: Does Dogwood preserve correlation resistance across the composed privacy boundary?
 ```"""
     setup = build_setup(120, dogwood, registry, catalog, glossary)["examination_setup"]
@@ -276,7 +305,8 @@ requested_examination:
     assert setup["candidate_interactions"] == ["C3", "C5"]
     assert setup["candidate_reference_flows"] == ["RF-001", "RF-003"]
     assert setup["source_pins"][0]["revision"] == "cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b"
-    assert setup["evidence_status"] == "evidence-required"
+    assert setup["evidence_status"] == "evidence-supplied-for-evaluation"
+    assert setup["provided_evidence"][0]["evidence_class"] == "synthetic-fixture-self-test"
     assert setup["human_acceptance_required"] is False
     c3 = next(item for item in setup["human_scope"] if item["id"] == "C3")
     assert c3["title"] == "Asymmetric cross-community relationship privacy"
