@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       dry_run:
-        description: Validate and select codename without creating release
+        description: Validate release without creating tag/release
         required: true
         default: true
         type: boolean
@@ -34,7 +34,12 @@ jobs:
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - name: Validate release governance
-        run: python scripts/release_governance.py validate --version '${{ inputs.version }}'
+        run: |
+          python scripts/release_governance.py validate --version '${{ inputs.version }}'
+          python scripts/release_governance.py self-test
+      - name: Require persisted candidate codename
+        id: lake
+        run: python scripts/release_governance.py binding --version '${{ inputs.version }}'
       - name: Run full DPIP validation
         shell: bash
         run: |
@@ -59,6 +64,8 @@ jobs:
             echo 'Tag already exists: ${{ inputs.version }}' >&2
             exit 1
           fi
+    outputs:
+      codename: ${{ steps.lake.outputs.codename }}
 
   release:
     needs: validate
@@ -67,9 +74,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Refuse existing GitHub release
         if: ${{ !inputs.dry_run }}
         env:
@@ -80,19 +84,10 @@ jobs:
             echo 'Release already exists: ${{ inputs.version }}' >&2
             exit 1
           fi
-      - name: Record previously used lake codenames
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          gh release list --limit 100 --json name --jq '.[].name' | sed 's/^.* — //' > /tmp/used-codenames.txt || true
-      - name: Select unused lake codename
-        id: lake
-        run: python scripts/release_governance.py select --version '${{ inputs.version }}' --used-file /tmp/used-codenames.txt
       - name: Prepare release notes
         env:
           VERSION: ${{ inputs.version }}
-          CODENAME: ${{ steps.lake.outputs.codename }}
+          CODENAME: ${{ needs.validate.outputs.codename }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           TARGET_SHA: ${{ github.sha }}
         shell: bash
@@ -102,7 +97,7 @@ jobs:
 
           **Target SHA:** \`${TARGET_SHA}\`
           **Validation:** full repository validation passed in this workflow.
-          **Codename source:** pinned \`release/lake-codenames.txt\`, derived from Wikipedia's List of lakes of India.
+          **Codename source:** persisted repository binding backed by pinned \`release/lake-codenames.txt\` and \`config/release-codename-policy.json\`.
 
           ### Human release judgment
 
@@ -116,7 +111,7 @@ jobs:
         if: ${{ inputs.dry_run }}
         run: |
           echo 'Validated ${{ inputs.version }}'
-          echo 'Selected codename: ${{ steps.lake.outputs.codename }}'
+          echo 'Persisted codename: ${{ needs.validate.outputs.codename }}'
           cat /tmp/release-notes.md
       - name: Create GitHub release
         if: ${{ !inputs.dry_run }}
@@ -126,5 +121,5 @@ jobs:
         run: |
           gh release create '${{ inputs.version }}' \
             --target '${{ github.sha }}' \
-            --title '${{ inputs.version }} — ${{ steps.lake.outputs.codename }}' \
+            --title '${{ inputs.version }} — ${{ needs.validate.outputs.codename }}' \
             --notes-file /tmp/release-notes.md
