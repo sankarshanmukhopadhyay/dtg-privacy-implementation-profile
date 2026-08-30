@@ -10,25 +10,31 @@ The calendar creates a decision checkpoint; it does **not** require an empty rel
 
 ## Release execution
 
-Releases are created only through the **Cut governed DPIP release** GitHub Actions workflow. The workflow:
+Releases are created only through the **Cut governed DPIP release** GitHub Actions workflow. The release lifecycle is deliberately split into candidate selection and publication:
 
-1. validates semantic version syntax;
-2. runs the repository's full validation and assurance self-tests;
-3. refuses an already existing tag;
-4. selects an Indian lake codename from the pinned repository pool;
-5. prefers an unused codename while unused names remain;
-6. records the selected codename, target SHA, validation status, and human release judgment in the GitHub Release;
-7. creates the semantic tag/release only when dry-run mode is disabled.
+1. identify the semantic version for a coherent capability boundary;
+2. select an unused Indian lake codename from the pinned repository pool with `python scripts/release_governance.py select --version vX.Y.Z --persist` on a branch;
+3. review and merge the resulting `config/release-codename-history.json` candidate binding;
+4. record human release judgment for the already-known **version + codename + evidence**;
+5. dispatch the release workflow;
+6. the workflow validates semantic version syntax, repository assurance checks, pool/provenance/history policy, and the persisted binding;
+7. publication refuses an existing tag/release and consumes the persisted codename rather than selecting a new one;
+8. the semantic tag/GitHub Release is created only when dry-run mode is disabled.
 
-A human therefore decides **whether and what to release**. The workflow makes the release mechanics reproducible.
+A human therefore decides **whether and what to release**. Actions makes the mechanics reproducible and cannot silently rename an accepted candidate.
 
 ## Lake codenames
 
-The codename pool is maintained at `release/lake-codenames.txt` and is derived from:
+The authoritative codename pool remains `release/lake-codenames.txt`, derived from:
 
 <https://en.wikipedia.org/wiki/List_of_lakes_of_India>
 
-The external page is **not scraped at release time**. This prevents network availability or later edits to the source page from changing a release decision. Changes to the codename pool are ordinary reviewed repository changes.
+Additional machine-readable governance state is held in:
+
+- `config/release-codename-policy.json` — provenance, identity boundary, and selection rules;
+- `config/release-codename-history.json` — persisted `candidate` / `published` version-to-codename bindings.
+
+The external page is **not scraped at release time**. Changes to the pool are ordinary reviewed repository changes. Unused names are preferred while available; reuse is currently forbidden. An existing semantic version binding is idempotent and must not be changed to a different codename.
 
 The lake codename is presentation metadata only. It does not replace semantic versioning and has no effect on DPIP conformance, privacy claims, evidence, or assurance semantics.
 
@@ -39,6 +45,7 @@ A release-readiness decision should leave enough history to answer:
 - Which assurance propositions and capabilities changed?
 - What tests or pressure cases challenged those changes?
 - What remains uncertain, constrained, or deferred?
+- Which semantic version and codename were accepted?
 - Why did the maintainer decide that the current repository state constitutes a coherent release boundary?
 
 A release should not be used to hide unresolved assurance gaps. Where an `INDETERMINATE` result remains, release notes should state whether it is an accepted known limitation or a release blocker.
