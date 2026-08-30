@@ -25,6 +25,10 @@ test_results:
   - test_id: C5-T6
     status: INDETERMINATE
     notes: Trust Task lifecycle semantics remain externally owned.
+  - test_id: C5-T7
+    status: INDETERMINATE
+    evidence: [E-C5-6]
+    notes: Device/presence metadata scope requires attributable runtime observation across unrelated operational contexts.
 
 claim_results:
   - claim_id: C5-PC-1
@@ -42,6 +46,10 @@ claim_results:
     status: CONSTRAINED
     evidence: [E-C5-5]
     residual_correlation: Supersession and replacement chains may expose bounded historical linkage to privileged observers.
+  - claim_id: C5-PC-5
+    status: INDETERMINATE
+    evidence: [E-C5-6]
+    residual_correlation: Human-readable device or install metadata may become a reusable join key if its audience or retention extends beyond one declared operational relationship.
 
 evidence_provenance:
   - id: E-C5-1
@@ -54,3 +62,5 @@ evidence_provenance:
     source: DPIP C5 missing-precedence negative vector
   - id: E-C5-5
     source: RF-003 supersession/replacement history analysis
+  - id: E-C5-6
+    source: DPIP device/presence metadata boundedness evidence requirement; no deployment runtime observation is asserted by this illustrative baseline
