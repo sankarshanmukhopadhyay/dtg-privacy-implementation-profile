@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Execute mechanically available DPIP evidence for examination-ready RAHP runs.
+"""Execute repository-native DPIP examination logic for examination-ready RAHP runs.
 
-Known missing or wrong-class evidence is a deterministic assurance state:
-INDETERMINATE / evidence-required. It is not a generic human-review condition and can
-never be converted into PASS.
+Operational contract:
+- Reads admitted scope, planned/acquired evidence, canonical profiles, observations, and evidence requirements.
+- Computes bounded privacy dispositions using mechanically available evidence and records terminal state on the issue.
+- Missing or wrong-class evidence deterministically yields INDETERMINATE/evidence-required where applicable.
+- A successful process execution does not mean PASS; FAIL, CONSTRAINED, INDETERMINATE, and NOT_APPLICABLE are valid terminal outcomes.
 """
 from __future__ import annotations
 
