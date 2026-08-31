@@ -1,3 +1,17 @@
+# DPIP-to-RAHP disposition return workflow
+#
+# Purpose:
+#   Persist and deliver terminal DPIP dispositions back to their originating RAHP issue
+#   through the durable outbox/acknowledgement contract. Scheduled runs retry pending
+#   delivery; they do not recompute the examination.
+#
+# Side effects:
+#   Writes DPIP outbox/ack state and may update the originating RAHP issue.
+#
+# Boundary:
+#   Successful delivery means RAHP received the DPIP disposition. It does NOT imply
+#   RAHP portfolio GREEN or alter the returned privacy conclusion.
+#
 name: Return completed DPIP dispositions to RAHP
 
 on:
