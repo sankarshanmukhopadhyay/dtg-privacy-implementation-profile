@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rahp.invalid/schemas/rahp-assessor-result-v1.schema.json",
+  "title": "RAHP portable assessor result v1",
+  "type": "object",
+  "required": ["schema", "assessor", "assessment_id", "outcome", "reason_code", "evidence_used", "residual_risk", "action_required"],
+  "properties": {
+    "schema": {"const": "rahp-assessor-result/v1"},
+    "assessor": {"type": "string", "minLength": 1},
+    "assessment_id": {"type": "string", "minLength": 1},
+    "correlation_key": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["PASS", "FAIL", "INDETERMINATE", "NOT_APPLICABLE"]},
+    "reason_code": {"type": "string", "minLength": 1},
+    "evidence_used": {"type": "array", "items": {"type": ["string", "object"]}},
+    "residual_risk": {"type": "string", "minLength": 1},
+    "action_required": {"type": "string", "minLength": 1},
+    "source_pins": {"type": "array", "items": {"type": "object"}},
+    "execution_digest": {"type": "string"},
+    "boundedness": {"type": "string"},
+    "confidence": {"type": "string"}
+  },
+  "additionalProperties": true
+}
