@@ -1,3 +1,14 @@
+# DPIP repository validation workflow
+#
+# Purpose:
+#   Validate schemas, profiles, fixtures, executable calibration cases, result bounds,
+#   RAHP transport contracts, and release-governance invariants on repository changes.
+#
+# Boundary:
+#   Green validation proves repository artefacts are internally consistent with these
+#   executable checks. It does NOT prove real-world privacy behaviour or convert an
+#   INDETERMINATE/FAIL proposition into PASS.
+#
 name: Validate DPIP profiles
 
 on:
