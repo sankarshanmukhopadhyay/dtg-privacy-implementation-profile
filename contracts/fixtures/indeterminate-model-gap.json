@@ -1,0 +1,31 @@
+{
+  "assessor_result": {
+    "schema": "rahp-assessor-result/v1",
+    "assessor": "dpip",
+    "assessment_id": "dpip:149-regression",
+    "correlation_key": "rahp:309",
+    "outcome": "INDETERMINATE",
+    "reason_code": "model-gap",
+    "evidence_used": [],
+    "residual_risk": "A material credential-identifier correlation proposition has no canonical evidence-requirement binding.",
+    "action_required": "Define the evidence contract and execute a new comparable pinned examination."
+  },
+  "remediation": {
+    "schema": "rahp-evidence-remediation/v1",
+    "status": "model-gap",
+    "reason_code": "model-gap",
+    "plan_digest": "fixture-model-gap-v1",
+    "requirements": [
+      {
+        "id": "MODEL-GAP-credential-id",
+        "proposition": "Credential object identity must not expand declared cross-context correlation scope.",
+        "evidence_class": "model/evidence-contract-definition",
+        "producer": "dpip-evidence-model",
+        "context_boundary": "original pinned RAHP referral scope",
+        "acceptance_criterion": "Register a canonical evidence requirement and attributable producer, then run a new pinned comparable examination.",
+        "routing_target": "dpip-model-gap"
+      }
+    ],
+    "rerun_policy": "Create a new comparable examination after the evidence contract is registered."
+  }
+}
