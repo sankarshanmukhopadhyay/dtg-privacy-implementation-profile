@@ -10,7 +10,8 @@
 #
 # Boundary:
 #   Terminal completion may be PASS, FAIL, CONSTRAINED, INDETERMINATE, or NOT_APPLICABLE.
-#   Workflow success itself is not a privacy PASS.
+#   Workflow success itself is not a privacy PASS. Mechanism-specific FAIL also requires
+#   proposition-matching causal attribution; an observed effect alone is insufficient.
 #
 name: Execute admitted RAHP privacy examinations
 
@@ -26,6 +27,8 @@ on:
       - '.github/workflows/rahp-examination-execute.yml'
       - '.github/workflows/rahp-return.yml'
       - 'scripts/examination_execute.py'
+      - 'scripts/examination_execute_causal.py'
+      - 'scripts/causal_attribution.py'
       - 'scripts/rahp_return.py'
   workflow_dispatch:
     inputs:
@@ -59,8 +62,8 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - name: Validate execution harness
-        run: python scripts/examination_execute.py --self-test
+      - name: Validate execution harness and causal-attribution gate
+        run: python scripts/examination_execute_causal.py --self-test
       - name: Resolve execution targets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -85,7 +88,7 @@ jobs:
           set -euo pipefail
           while read -r number; do
             [ -n "$number" ] || continue
-            python scripts/examination_execute.py --issue-number "$number"
+            python scripts/examination_execute_causal.py --issue-number "$number"
           done < /tmp/dpip-execute-targets.txt
       - name: Dispatch return for terminal dispositions
         env:
