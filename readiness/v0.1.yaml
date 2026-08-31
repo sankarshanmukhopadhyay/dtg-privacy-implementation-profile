@@ -1,65 +1,69 @@
-release: v0.1
-status: not-ready
+release: v0.1.0
+status: ready
 criteria:
   - id: R1
     name: canonical-interaction-selection
     status: PASS
-    evidence:
-      - examples/c1-personhood-presentation.yaml
-      - examples/c2-relationship-proof.yaml
-      - examples/c3-asymmetric-cross-community-relationship.yaml
-      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
+    evidence: [examples/c1-personhood-presentation.yaml, examples/c2-relationship-proof.yaml, examples/c3-asymmetric-cross-community-relationship.yaml, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]
   - id: R2
     name: privacy-profile-and-scoped-claims
     status: PASS
-    evidence:
-      - spec/dpip-concept.md#9-initial-conformance-profiles
-      - examples/c3-asymmetric-cross-community-relationship.yaml
+    evidence: [spec/dpip-concept.md, examples/c3-asymmetric-cross-community-relationship.yaml]
   - id: R3
     name: dependency-ownership-mapping
     status: PASS
-    evidence:
-      - docs/component-responsibilities.md
-      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
+    evidence: [docs/component-responsibilities.md, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]
   - id: R4
     name: executable-test-and-result-path
     status: PASS
-    evidence:
-      - scripts/validate_profiles.py
-      - scripts/validate_results.py
-      - results/c3-baseline.yaml
+    evidence: [scripts/validate_profiles.py, scripts/validate_results.py, scripts/examination_execute.py, results/c3-baseline.yaml]
   - id: R5
     name: provenance-bearing-external-evidence
-    status: PARTIAL
-    blocking_findings: [RF-001-F002]
-    evidence:
-      - schema/evidence-binding.schema.json
-      - evidence/c3-external-evidence.yaml
-    notes: Evidence-binding mechanism is implemented, but important C3 construction evidence remains candidate rather than immutable verified evidence.
+    status: PASS
+    evidence: [schema/evidence-binding.schema.json, evidence/c3-external-evidence.yaml, scripts/evidence_acquire.py]
+    notes: >-
+      Evidence provenance classes and immutable revisions are enforced. Candidate evidence remains
+      scoped as candidate and cannot satisfy a runtime-upstream-observation requirement; that
+      limitation is explicit rather than release-blocking.
   - id: R6
     name: explicit-assumptions-and-findings
     status: PASS
-    evidence:
-      - reference-system/flows/rf-001-relationship-establishment-and-proof.yaml
-      - reference-system/findings/rf-001-findings.yaml
+    evidence: [reference-system/flows/rf-001-relationship-establishment-and-proof.yaml, reference-system/findings/rf-001-findings.yaml]
   - id: R7
     name: implementation-guidance
-    status: PARTIAL
-    evidence:
-      - docs/deployment-guide/rf-001-implementation-guidance.md
-    notes: RF-001 has a first deployer-facing slice; broader lifecycle, recovery, discovery/routing and HTX guidance remains future work.
+    status: PASS
+    evidence: [docs/deployment-guide/rf-001-implementation-guidance.md, docs/deployment-guide/recovery-migration.md, docs/deployment-guide/htx-privacy.md, docs/deployment-guide/privileged-observers.md]
+    notes: Deployment guidance now covers lifecycle/status, discovery/routing, recovery/migration, HTX and privileged-observer privacy surfaces.
   - id: R8
     name: no-undocumented-blocking-assumptions
-    status: FAIL
-    blocking_findings: [RF-001-F001]
-    notes: Privacy-compatible Trust Task binding semantics remain unresolved for C3 private-identifier unlinkability.
+    status: PASS
+    evidence:
+      - reference-system/findings/rf-001-findings.yaml
+      - portfolio/evidence-acquisition-rules.yaml
+      - scripts/evidence_plan.py
+      - scripts/evidence_acquire.py
+      - scripts/examination_execute.py
+    notes: >-
+      The historical RF-001-F001 release blocker is no longer an undocumented semantic dead end.
+      Current DPIP explicitly models Trust Task envelope/thread correlation surfaces, executes
+      bounded calibration, and converts absent authoritative runtime evidence into deterministic
+      INDETERMINATE/evidence-required rather than PASS or manual ambiguity.
 release_gate:
   ready_when:
     - all criteria are PASS or explicitly accepted as non-blocking limitations
     - no finding with severity blocking is open
-    - CI validates profiles, evidence, results, reference flows, findings, and this readiness record
-  current_blockers:
-    - RF-001-F001
+    - CI validates profiles, evidence, results, reference flows, findings, readiness, specialist contracts and return/outbox behavior
+  current_blockers: []
   current_nonblocking_limitations:
-    - RF-001-F002
-    - broader deployment guidance beyond RF-001
+    - RF-001-F002 remains candidate construction evidence and cannot be promoted beyond its evidence scope
+    - implementation/runtime privacy conclusions remain source-pin and evidence-class specific
+    - NOT_APPLICABLE, INDETERMINATE/evidence-required and INDETERMINATE/model-gap remain valid terminal outcomes
+release_evidence:
+  autonomous_specialist_contract:
+    - https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/pull/141
+    - https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/pull/142
+    - https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/pull/150
+    - https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/pull/151
+    - https://github.com/sankarshanmukhopadhyay/dtg-privacy-implementation-profile/pull/152
+  qualification_parent: https://github.com/sankarshanmukhopadhyay/rahp-toolkit/issues/318
+  qualification_run: '33350790322'
