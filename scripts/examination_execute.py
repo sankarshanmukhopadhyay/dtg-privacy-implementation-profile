@@ -112,6 +112,77 @@ def materially_observed_surfaces(surfaces: dict[str, Any]) -> list[str]:
     ]
 
 
+def experimental_methodology_failures(binding: dict[str, Any]) -> list[str]:
+    """Validate semantic sufficiency for experiments whose conclusion depends on A/B topology."""
+    experiment = binding.get("experiment")
+    if not isinstance(experiment, dict):
+        return []
+    if str(experiment.get("kind") or "") not in {"unlinkability-pressure-case", "cross-context-ab"}:
+        return []
+
+    design = binding.get("experimental_design")
+    if not isinstance(design, dict):
+        return ["missing experimental_design for A/B experiment"]
+
+    problems: list[str] = []
+    contexts = design.get("contexts")
+    if not isinstance(contexts, list) or len(contexts) < 2:
+        problems.append("at least two instantiated contexts are required")
+    else:
+        ids: set[str] = set()
+        observers: set[str] = set()
+        principals: set[str] = set()
+        for ctx in contexts:
+            if not isinstance(ctx, dict):
+                problems.append("context records must be mappings")
+                continue
+            cid = str(ctx.get("id") or "").strip()
+            observer = str(ctx.get("observer_id") or "").strip()
+            principal = str(ctx.get("auth_principal") or "").strip()
+            if not cid or ctx.get("instantiated") is not True:
+                problems.append("each context must have an id and instantiated=true")
+            if not observer or not principal:
+                problems.append("each context must declare observer_id and auth_principal")
+            if cid:
+                ids.add(cid)
+            if observer:
+                observers.add(observer)
+            if principal:
+                principals.add(principal)
+        if len(ids) < 2:
+            problems.append("contexts must be distinct")
+        if len(observers) < 2:
+            problems.append("observer boundaries must be distinct")
+        if len(principals) < 2:
+            problems.append("authentication principals must be distinct")
+
+    controls = design.get("controls")
+    for name, expected in (("positive", "detected"), ("negative", "not-detected")):
+        control = controls.get(name) if isinstance(controls, dict) else None
+        if not isinstance(control, dict):
+            problems.append(f"{name} control is required")
+            continue
+        if control.get("uses_same_detector") is not True or control.get("can_fail") is not True:
+            problems.append(f"{name} control must use the same detector and be capable of failure")
+        if str(control.get("result") or "") != expected:
+            problems.append(f"{name} control result must be {expected}")
+
+    if design.get("target_outcome_asserted") is not False:
+        problems.append("target_outcome_asserted must be false")
+    if str(design.get("observed_join_derivation") or "") != "computed-from-recorded-observations":
+        problems.append("observed_join must be computed from recorded observations")
+
+    surfaces = binding.get("surfaces")
+    for name in materially_observed_surfaces(surfaces if isinstance(surfaces, dict) else {}):
+        surface = surfaces[name]
+        if str(surface.get("execution_source") or "") not in {"runtime-read", "runtime-transport", "runtime-persistence"}:
+            problems.append(f"{name} lacks an actual runtime execution_source")
+        if not str(surface.get("observer") or "").strip():
+            problems.append(f"{name} lacks an observer")
+
+    return list(dict.fromkeys(problems))
+
+
 def assess_supplied_evidence(setup: dict[str, Any], req_catalog: dict[str, dict[str, Any]]) -> tuple[list[str], list[dict[str, Any]]]:
     """Return accepted requirement IDs plus reviewer-readable sufficiency failures."""
     accepted: list[str] = []
@@ -176,6 +247,16 @@ def assess_supplied_evidence(setup: dict[str, Any], req_catalog: dict[str, dict[
                     f"{rid} has attributable runtime provenance but no concrete A/B surface observation; "
                     "all-absent/all-not-evidenced bindings preserve the evidence gap rather than satisfy it."
                 ),
+            })
+            continue
+        methodology = experimental_methodology_failures(binding)
+        if methodology:
+            failures.append({
+                "requirement_id": rid,
+                "evidence_class": evidence_class or None,
+                "reason_code": "evidence-methodology-insufficient",
+                "methodology_failures": methodology,
+                "explanation": f"{rid} is structurally attributable but its A/B experimental design cannot support a terminal privacy judgment.",
             })
             continue
         if rid not in accepted:
@@ -524,9 +605,21 @@ def _binding(rid: str, evidence_class: str = "runtime-upstream-observation", rev
             "kind": "unlinkability-pressure-case",
             "expected_join": "must-not-emerge",
             "observed_join": "not-detected",
-            "join_surfaces": [],
+            "join_surfaces": ["example"],
         },
-        "surfaces": {"example": {"classification": "fresh", "context_a": "a", "context_b": "b"}},
+        "experimental_design": {
+            "contexts": [
+                {"id": "A", "instantiated": True, "observer_id": "observer-A", "auth_principal": "did:example:A"},
+                {"id": "B", "instantiated": True, "observer_id": "observer-B", "auth_principal": "did:example:B"},
+            ],
+            "controls": {
+                "positive": {"uses_same_detector": True, "can_fail": True, "result": "detected"},
+                "negative": {"uses_same_detector": True, "can_fail": True, "result": "not-detected"},
+            },
+            "target_outcome_asserted": False,
+            "observed_join_derivation": "computed-from-recorded-observations",
+        },
+        "surfaces": {"example": {"classification": "fresh", "context_a": "a", "context_b": "b", "execution_source": "runtime-read", "observer": "observer-A/observer-B"}},
     }
 
 
@@ -605,12 +698,28 @@ def self_test() -> int:
     observed = _binding("ER-REL-DID-AB")
     observed["surfaces"] = {
         "relationship_did": {"classification": "absent"},
-        "equivalent_relationship_binder": {"classification": "identical", "context_a": "same", "context_b": "same"},
+        "equivalent_relationship_binder": {"classification": "identical", "context_a": "same", "context_b": "same", "execution_source": "runtime-read", "observer": "observer-A/observer-B"},
     }
     mixed["provided_evidence"] = [observed]
     mixed_record = build_execution(126, mixed)["execution_evidence"]
     assert mixed_record["satisfied_evidence_requirement_ids"] == ["ER-REL-DID-AB"]
     assert "ER-REL-DID-AB" not in {r["id"] for r in mixed_record["required_evidence"]}
+
+    historical = _binding("ER-REL-DID-AB")
+    del historical["experimental_design"]
+    historical["surfaces"]["example"].pop("execution_source", None)
+    historical_setup = json.loads(json.dumps(setup))
+    historical_setup["provided_evidence"] = [historical]
+    historical_record = build_execution(127, historical_setup)["execution_evidence"]
+    assert not historical_record["satisfied_evidence_requirement_ids"]
+    assert any(f["reason_code"] == "evidence-methodology-insufficient" for f in historical_record["evidence_sufficiency_failures"])
+
+    malformed_control = _binding("ER-REL-DID-AB")
+    malformed_control["experimental_design"]["controls"]["positive"]["can_fail"] = False
+    malformed_setup = json.loads(json.dumps(setup))
+    malformed_setup["provided_evidence"] = [malformed_control]
+    methodology_record = build_execution(128, malformed_setup)["execution_evidence"]
+    assert any(f["reason_code"] == "evidence-methodology-insufficient" for f in methodology_record["evidence_sufficiency_failures"])
 
     malformed = json.loads(json.dumps(setup))
     malformed["provided_evidence"] = [_binding("ER-REL-DID-AB", revision="main")]
