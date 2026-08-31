@@ -1,4 +1,6 @@
 {
   "schemaVersion": 1,
-  "releases": []
+  "releases": [
+    {"version":"v0.1.0","codename":"Khajjiar Lake","status":"candidate"}
+  ]
 }
