@@ -1,54 +1,82 @@
 # DTG Privacy-Preserving Implementation Profile
 
-**DPIP answers a simple question: when several DTG components are used together, does the resulting interaction preserve the privacy properties we intended?**
+**DPIP answers a simple question: when components are used together, does the resulting interaction preserve the privacy properties we intended?**
 
-A credential, proof system, pairwise identifier or Trust Task can be privacy-capable on its own while the complete interaction still exposes a reusable identifier, graph relationship, operator lookup key, telemetry value or other correlation surface. DPIP therefore evaluates privacy over the **composed DTG interaction**, not by inference from individual components.
+A credential, proof system, pairwise identifier or Trust Task can be privacy-capable on its own while the complete interaction still exposes a reusable identifier, graph relationship, operator lookup key, telemetry value or other correlation surface. DPIP therefore evaluates privacy over the **composed interaction**, not by inference from individual components.
+
+DPIP v0.1 also operates as a **portable autonomous privacy-assurance specialist** for compatible assurance controllers. It can consume a source-pinned examination, execute or evaluate the available evidence, terminate with a finite portable result, and return that result through durable retryable outbox semantics.
 
 ```text
-DTG interaction
+composed interaction / referred proposition
       ↓
-What privacy property is expected?
+canonical privacy scope + evidence obligations
       ↓
-What information or correlation is actually observable?
+evidence planning / supplied evidence / provenance admission
       ↓
-Does the complete interaction satisfy the expectation?
+execution and bounded privacy inference
       ↓
-Evidence + scoped DPIP result
+PASS | FAIL | INDETERMINATE | NOT_APPLICABLE
+      ↓
+portable assessor result + human explanation
+      ↓
+durable return/outbox → compatible assurance controller
 ```
 
 ## Start here
 
-If DPIP is new to you, begin with [`docs/understanding-dpip.md`](docs/understanding-dpip.md). It explains the project in ordinary language, gives a correlation example, describes C1-C6 and shows how to read a DPIP result.
+If DPIP is new to you, begin with [`docs/understanding-dpip.md`](docs/understanding-dpip.md). Implementers/deployers should use [`docs/deployment-guide/`](docs/deployment-guide/); reviewers should use [`spec/dpip-v0.1-draft.md`](spec/dpip-v0.1-draft.md), [`examples/`](examples/) and [`results/`](results/); integration authors should use [`schema/`](schema/), [`evidence/`](evidence/), [`scripts/`](scripts/) and [`docs/rahp-return-operations.md`](docs/rahp-return-operations.md).
 
-Then use the repository according to your role:
+[`readiness/v0.1.yaml`](readiness/v0.1.yaml) is the authoritative v0.1 release gate.
 
-- **Implementer/deployer:** [`docs/deployment-guide/`](docs/deployment-guide/) and [`reference-system/`](reference-system/).
-- **Specification or assurance reviewer:** [`spec/dpip-v0.1-draft.md`](spec/dpip-v0.1-draft.md), [`examples/`](examples/) and [`results/`](results/).
-- **Tooling/integration author:** [`schema/`](schema/), [`evidence/`](evidence/), [`scripts/`](scripts/) and [`docs/rahp-return-operations.md`](docs/rahp-return-operations.md).
-- **Release/readiness reviewer:** [`readiness/v0.1.yaml`](readiness/v0.1.yaml), which remains authoritative for v0.1 readiness.
+## Current capability boundary
 
-The existence of a v0.1 draft does **not** mean v0.1 is release-ready. The machine-readable readiness artifact and CI remain authoritative.
+The v0.1 baseline includes:
 
-## Why this project exists
+- canonical C1-C6 privacy interactions and RF-001-RF-004 composed reference flows;
+- scoped privacy claims and declared/observable/effective correlation scope;
+- machine-readable profile, evidence, finding, result and change-impact contracts;
+- positive, negative and adversarial conformance tests;
+- implementation-backed and source-pinned evidence packages;
+- explicit evidence provenance classes separating source-backed, synthetic/calibration and attributable runtime observations;
+- deterministic evidence planning and acquisition contracts;
+- supplied-evidence examinations that do not manufacture redundant acquisition work;
+- finite evidence-ready and evidence-incomplete execution paths;
+- portable `rahp-assessor-result/v1` results;
+- deterministic `INDETERMINATE / evidence-required` remediation plans;
+- deterministic `INDETERMINATE / model-gap` behavior for unmapped evidence surfaces;
+- human-readable dispositions that remain subordinate to the formal machine result;
+- durable specialist-return outbox markers, delivery acknowledgement, automatic retry and idempotent reconciliation;
+- shared producer/consumer contract fixtures with RAHP for assessor-result and evidence-remediation shapes;
+- release governance with persisted Indian-lake codenames and machine-readable readiness.
 
-DTG components can individually support privacy while still producing a privacy failure when composed. Selective disclosure or an unlinkable proof is not sufficient if another required component introduces a durable correlator, excessive disclosure, linkable metadata, conflicting lifecycle semantics or unnecessary retained state.
+A successful cryptographic operation, component test or repository workflow is never promoted into a composed privacy PASS unless the exact privacy proposition has sufficient admissible evidence.
 
-DPIP provides a composition-level assurance layer: it states scoped privacy expectations, records what observers can actually see, binds conclusions to evidence, exercises adversarial tests and produces results that can be reviewed or automated.
+## Outcomes
+
+- **PASS:** admissible evidence supports the tested expectation for the stated scope.
+- **FAIL:** the tested expectation is not met.
+- **INDETERMINATE / evidence-required:** the proposition is understood but required evidence is absent or inadmissible; DPIP returns the smallest bounded evidence-remediation contract it can state.
+- **INDETERMINATE / model-gap:** the proposition/evidence surface is not yet mapped sufficiently to make the requested inference; the gap is terminal and actionable rather than a parser/lifecycle failure.
+- **NOT_APPLICABLE:** the referred proposition does not apply to the examined privacy scope.
+
+Historical `CONSTRAINED` conformance results remain valid where that result vocabulary is used in DPIP-native fixtures; portable specialist returns use the finite controller contract above.
 
 ## What DPIP owns — and does not own
 
-DPIP does **not** redefine DTG Credentials, Trust Tasks, ZKP constructions, relationship artifacts, agent naming, VTA behavior, DID methods, transports, wallets, discovery policy or VTN governance.
+DPIP does **not** redefine DTG Credentials, Trust Tasks, ZKP constructions, relationship artifacts, agent naming, VTA behavior, DID methods, transports, wallets, discovery policy or VTN governance. Those components own their semantics and mechanisms.
 
-Those components own their semantics and mechanisms. DPIP owns the **composition contract**: the conditions under which an implementation can make a scoped end-to-end privacy claim and the evidence needed to support that claim.
+DPIP owns the **composition privacy contract**: the conditions under which an implementation can make a scoped end-to-end privacy claim and the evidence needed to support that claim. A component PASS does not imply a composition PASS.
 
-A useful portfolio boundary is:
+A useful assurance boundary is:
 
 ```text
-Portfolio Monitor:  What changed?
-RAHP:               What could go wrong?
-DPIP:               What privacy property does the composed system actually preserve?
-Owning component:   What should change?
+change/source observer: What changed?
+RAHP or compatible controller: What could go wrong and what specialist is needed?
+DPIP: What privacy property does the composed system actually preserve?
+owning component/deployer/governance authority: What should change?
 ```
+
+DPIP is not version-locked to a particular RAHP release. Interoperability is governed by compatible versioned contracts and shared fixtures.
 
 ## Current interaction baseline
 
@@ -61,47 +89,16 @@ Owning component:   What should change?
 | **C5** | Privacy-preserving lifecycle evaluation and precedence |
 | **C6** | Privacy-preserving recovery and migration |
 
-Reference flows RF-001 through RF-004 compose these concerns into whole-system integration hypotheses. The repository also contains the first implementation-backed RF-001 fixture/run, demonstrating that a useful DPIP result can legitimately contain a mixture of PASS, FAIL, CONSTRAINED and INDETERMINATE conclusions.
+Reference flows RF-001 through RF-004 compose these concerns into whole-system integration hypotheses.
 
-## How to read results
+## Evidence discipline
 
-Do not reduce DPIP to a single green/red badge. Results are deliberately scoped.
+Specification/source evidence can establish what a conforming system is required, permitted or expected to expose. It cannot establish what two actual contexts observed. Synthetic/calibration fixtures can prove that DPIP detects a prohibited pattern; they do not prove a deployment exhibited it. Runtime evidence must carry the provenance class and immutable implementation/source identity required by the named evidence obligation.
 
-- **PASS / SATISFIED:** available evidence supports the tested expectation for the stated scope.
-- **FAIL:** the tested expectation is not met.
-- **CONSTRAINED:** intended privacy exists only with an important limitation or residual correlation.
-- **INDETERMINATE:** the question matters, but reliable evidence is insufficient to decide.
-- **NOT_APPLICABLE:** the referred change/question does not affect the DPIP scope being examined.
+Missing evidence is useful information but is never PASS.
 
-Where available, read the plain-language disposition first and use the structured result for exact scope, evidence and automation. See [`docs/understanding-dpip.md`](docs/understanding-dpip.md#reading-a-dpip-result).
+## Release status
 
-## Design posture
+**v0.1.0 — Khajjiar Lake** is the first governed release candidate. The historical RF-001 Trust Task binding blocker is no longer an unhandled semantic dead end: DPIP now models the correlation surface, can mechanically pressure-test prohibited thread/envelope reuse, and deterministically returns evidence-required when authoritative runtime observations are absent. This resolves the release blocker without claiming universal privacy success.
 
-The profile is intended to remain:
-
-- implementation-centric;
-- construction-neutral where possible;
-- compatible with evolving DTG component specifications;
-- testable at composed-interaction boundaries;
-- explicit about declared, observable and effective correlation scope;
-- capable of turning pressure-test findings into reviewed requirements/tests or upstream issues;
-- progressively translatable into machine-readable conformance and portfolio revalidation evidence.
-
-## Repository structure
-
-```text
-spec/              specification drafts and architecture history
-docs/              human-first and deployment guidance
-examples/          canonical interaction profiles and tests
-reference-system/  non-normative composed flows, findings and run material
-schema/             machine-readable artifact formats
-results/            conformance-result fixtures
-evidence/           external evidence bindings
-readiness/          release-readiness gates
-portfolio/          cross-repository change-impact metadata
-scripts/            validation and assurance tooling
-```
-
-## Status
-
-Development draft. The executable baseline is substantial, but v0.1 MUST NOT be declared until the readiness gate reports ready.
+See [`readiness/v0.1.yaml`](readiness/v0.1.yaml) and [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).

@@ -1,88 +1,64 @@
-# RAHP return-path operations
+# RAHP / compatible-controller return operations
 
-DPIP returns completed RAHP-originated examinations to their source RAHP issues using an event-driven workflow. The automation transports a conclusion; it does not create one.
+DPIP returns completed controller-originated privacy examinations through a **durable, retryable specialist-return outbox**. The automation transports an already-constructed conclusion; it does not invent one from labels, prose or issue closure.
 
-## Trigger
+## Completion invariant
 
-`Return completed DPIP dispositions to RAHP` runs when a DPIP issue receives the `run:complete` label. A manual `workflow_dispatch` mode can reconcile one issue or scan completed RAHP-originated issues.
+A specialist completion must imply a valid returnable result exists. Before `run:complete`, DPIP constructs and validates the formal examination result and, for current executions, the portable `rahp-assessor-result/v1` block.
 
-The source issue must also carry `source:rahp`, and the DPIP issue body must contain the structured RAHP provenance created by the intake contract.
-
-## Completion contract
-
-Before `run:complete` is added, the DPIP issue must contain a comment with a machine-readable `dpip_examination:` block. The return tool refuses to guess a technical conclusion from prose, labels or issue state.
-
-A completed examination may additionally carry:
-
-```yaml
-human_summary:
-  outcome: Privacy works, but with important limitations
-  explanation: >-
-    The private identifier is protected from the ordinary verifier, but an
-    operator-visible value can still link the two contexts.
-  action: >-
-    Keep the private identifier protection, but do not claim end-to-end
-    unlinkability until the remaining correlation is removed or accepted.
-```
-
-The human summary is **not** a replacement for the formal disposition. It is a faithful explanatory view of the same conclusion for specification editors, implementers and other readers who should not have to decode DPIP status vocabulary before understanding the result.
-
-When an explicit `human_summary` is absent, the return tool provides a conservative default outcome label and derives the explanation/action from the authoritative structured evidence summary, residual-correlation and action fields. It does not change the formal conclusion.
-
-## Returned RAHP comment
-
-The return comment presents information in this order:
-
-1. DPIP issue/link;
-2. **plain-language result** — outcome, explanation and what to do;
-3. a collapsible structured `dpip_disposition:` block containing the authoritative machine-readable fields;
-4. the reminder that DPIP completion closes only the privacy handoff subflow.
-
-The structured block includes:
-
-- DPIP issue number;
-- applicability;
-- formal conclusion;
-- the human summary;
-- affected interactions/reference flows/claims/invariants when present;
-- evidence summary;
-- residual correlation when present;
-- disposition/action.
-
-Typical plain-language outcome labels are:
-
-| Formal conclusion | Default plain-language outcome |
-| --- | --- |
-| `PASS` | Privacy expectation met |
-| `FAIL` | Privacy expectation not met |
-| `CONSTRAINED` | Privacy works, but with important limitations |
-| `INDETERMINATE` | We do not have enough evidence to decide yet |
-| `NOT_APPLICABLE` | This privacy test does not apply here |
-
-The comment is marked deterministically so reconciliation cannot post it twice.
-
-## Activation
-
-Configure this repository secret:
-
-- `RAHP_HANDOFF_TOKEN` — a narrowly scoped fine-grained token able to read metadata and read/write **Issues** only in `sankarshanmukhopadhyay/rahp-toolkit`.
-
-The normal repository `GITHUB_TOKEN` remains read-only for DPIP issue access. Cross-repository writes use only the dedicated token.
-
-Without `RAHP_HANDOFF_TOKEN`, the workflow validates the return tooling but exits without modifying RAHP.
-
-## RAHP lifecycle effect
-
-A successful return adds:
+Portable outcomes are finite:
 
 ```text
-assurance:dpip-complete
+PASS
+FAIL
+INDETERMINATE
+NOT_APPLICABLE
 ```
 
-and removes the transient candidate/requested/open labels if they remain.
+`INDETERMINATE` is further explained by reason codes such as `evidence-required` or `model-gap`. Missing evidence never becomes PASS.
 
-The return automation deliberately does **not** close the RAHP issue. DPIP completion may resolve only one sub-question within a wider RAHP or security assessment.
+## Durable outbox transaction
 
-## Reconciliation and retry discipline
+Cross-repository delivery is not treated as a best-effort side effect.
 
-A completed `INDETERMINATE` examination is still complete. It is not re-opened because the Portfolio Monitor sees the same source revision again. Re-examination requires the material evidence condition recorded by DPIP, a materially changed source revision, or a changed DPIP target/question.
+1. DPIP constructs the return payload.
+2. A durable outbox marker records the payload digest on the specialist examination before delivery.
+3. Delivery is attempted using the compatible controller transport.
+4. A delivery acknowledgement is recorded only after the controller disposition and lifecycle mutations succeed.
+5. If delivery fails, the pending outbox remains machine-visible and scheduled reconciliation retries it.
+6. Repeated delivery of the same payload digest is idempotent; an existing controller return marker prevents duplicate semantic returns.
+
+A missing cross-repository credential is therefore a transport failure, not a successful no-op and not a human-only transition.
+
+## Model-gap behavior
+
+A valid `INDETERMINATE` conclusion whose evidence surface is not yet mapped to canonical requirements does not fail return parsing. DPIP synthesizes a bounded `model-gap` remediation contract that identifies the evidence/model surface requiring work. This is the regression class exposed by DPIP #149 / RAHP #309 and is covered by current self-tests/shared fixtures.
+
+## Shared compatibility fixtures
+
+DPIP mirrors and validates the compatible controller-owned shapes used for:
+
+- `rahp-assessor-result/v1`;
+- `rahp-evidence-remediation/v1`.
+
+Producer and consumer validate shared-shape fixtures in CI so contract compatibility is executable rather than an assumption embedded independently in parsers. DPIP is not version-locked to RAHP; schema/contract compatibility is authoritative.
+
+## Human-readable disposition
+
+The formal result is authoritative. A `human_summary` may present the same outcome, explanation and action in ordinary language. When absent, the return tooling derives a conservative explanation from the structured evidence summary, residual correlation and action fields without changing the formal conclusion.
+
+## Evidence boundary
+
+Source-backed evidence, repository-native synthetic/calibration fixtures and attributable runtime observations remain distinct. A return can be terminal and actionable while still being INDETERMINATE because the required evidence class is absent.
+
+## Trigger and reconciliation
+
+The return workflow handles completed `source:rahp` examinations and supports explicit/scheduled reconciliation. Scheduled reconciliation is recovery, not the normal semantic authority.
+
+Configure `RAHP_HANDOFF_TOKEN` as a narrowly scoped credential able to write the compatible RAHP repository's Issues surface. The repository `GITHUB_TOKEN` remains bounded to DPIP-local operations. Without the handoff credential, cross-repository delivery must fail visibly and remain retryable.
+
+## Controller lifecycle effect
+
+A successful RAHP return applies the controller's DPIP-complete disposition and removes transient candidate/requested/open markers as appropriate. DPIP completion deliberately does not imply that the wider RAHP assessment is complete; privacy may be one specialist subflow inside a broader assurance run.
+
+A completed INDETERMINATE examination is still complete for its pinned evidence boundary. Re-examination requires materially changed evidence, source pin, target/question or governing profile rather than mutation of completed history.
