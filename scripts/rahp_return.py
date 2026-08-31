@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """Return completed RAHP-originated DPIP dispositions to their source issue.
 
-A completed DPIP examination must always be returnable. An INDETERMINATE result with
-no canonical evidence-requirement mapping is normalized into a deterministic
-model/evidence-contract gap rather than being stranded for human intervention.
-
-Cross-repository delivery is a durable outbox transaction. Before attempting delivery,
-DPIP records the exact payload digest on the source issue. Successful delivery records
-an acknowledgement. A transport failure therefore leaves machine-visible pending work
-that the scheduled reconciliation can retry idempotently.
+Operational contract:
+- Reads terminal DPIP examination state, validates/normalizes the portable return contract, and writes a durable outbox record before cross-repository delivery.
+- Delivers the exact disposition to the originating RAHP issue and records acknowledgement for idempotent retry.
+- Transport failure leaves machine-visible pending work; scheduled reconciliation may retry without recomputing the examination.
+- Successful return means RAHP received the DPIP result, not that the RAHP portfolio is GREEN.
 """
 from __future__ import annotations
 import argparse, hashlib, json, os, re, sys, urllib.error, urllib.parse, urllib.request
