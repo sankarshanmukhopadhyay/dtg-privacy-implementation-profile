@@ -1,53 +1,26 @@
 release: v0.1.0
 status: ready
 criteria:
-  - id: R1
-    name: canonical-interaction-selection
-    status: PASS
-    evidence: [examples/c1-personhood-presentation.yaml, examples/c2-relationship-proof.yaml, examples/c3-asymmetric-cross-community-relationship.yaml, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]
-  - id: R2
-    name: privacy-profile-and-scoped-claims
-    status: PASS
-    evidence: [spec/dpip-concept.md, examples/c3-asymmetric-cross-community-relationship.yaml]
-  - id: R3
-    name: dependency-ownership-mapping
-    status: PASS
-    evidence: [docs/component-responsibilities.md, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]
-  - id: R4
-    name: executable-test-and-result-path
-    status: PASS
-    evidence: [scripts/validate_profiles.py, scripts/validate_results.py, scripts/examination_execute.py, results/c3-baseline.yaml]
+  - {id: R1, name: canonical-interaction-selection, status: PASS, evidence: [examples/c1-personhood-presentation.yaml, examples/c2-relationship-proof.yaml, examples/c3-asymmetric-cross-community-relationship.yaml, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]}
+  - {id: R2, name: privacy-profile-and-scoped-claims, status: PASS, evidence: [spec/dpip-concept.md, examples/c3-asymmetric-cross-community-relationship.yaml]}
+  - {id: R3, name: dependency-ownership-mapping, status: PASS, evidence: [docs/component-responsibilities.md, reference-system/flows/rf-001-relationship-establishment-and-proof.yaml]}
+  - {id: R4, name: executable-test-and-result-path, status: PASS, evidence: [scripts/validate_profiles.py, scripts/validate_results.py, scripts/examination_execute.py, results/c3-baseline.yaml]}
   - id: R5
     name: provenance-bearing-external-evidence
     status: PASS
     evidence: [schema/evidence-binding.schema.json, evidence/c3-external-evidence.yaml, scripts/evidence_acquire.py]
-    notes: >-
-      Evidence provenance classes and immutable revisions are enforced. Candidate evidence remains
-      scoped as candidate and cannot satisfy a runtime-upstream-observation requirement; that
-      limitation is explicit rather than release-blocking.
-  - id: R6
-    name: explicit-assumptions-and-findings
-    status: PASS
-    evidence: [reference-system/flows/rf-001-relationship-establishment-and-proof.yaml, reference-system/findings/rf-001-findings.yaml]
+    notes: Candidate evidence remains scoped as candidate and cannot satisfy a runtime-upstream-observation requirement.
+  - {id: R6, name: explicit-assumptions-and-findings, status: PASS, evidence: [reference-system/flows/rf-001-relationship-establishment-and-proof.yaml, reference-system/findings/rf-001-findings.yaml]}
   - id: R7
     name: implementation-guidance
     status: PASS
-    evidence: [docs/deployment-guide/rf-001-implementation-guidance.md, docs/deployment-guide/recovery-migration.md, docs/deployment-guide/htx-privacy.md, docs/deployment-guide/privileged-observers.md]
-    notes: Deployment guidance now covers lifecycle/status, discovery/routing, recovery/migration, HTX and privileged-observer privacy surfaces.
+    evidence: [docs/deployment-guide/rf-001-implementation-guidance.md, docs/deployment-guide/lifecycle-status.md, docs/deployment-guide/policy-discovery.md, docs/deployment-guide/recovery-migration.md, docs/deployment-guide/htx-privacy-consequences.md, docs/deployment-guide/privileged-observers.md]
+    notes: Deployment guidance covers lifecycle/status, discovery/routing, recovery/migration, HTX and privileged-observer privacy surfaces.
   - id: R8
     name: no-undocumented-blocking-assumptions
     status: PASS
-    evidence:
-      - reference-system/findings/rf-001-findings.yaml
-      - portfolio/evidence-acquisition-rules.yaml
-      - scripts/evidence_plan.py
-      - scripts/evidence_acquire.py
-      - scripts/examination_execute.py
-    notes: >-
-      The historical RF-001-F001 release blocker is no longer an undocumented semantic dead end.
-      Current DPIP explicitly models Trust Task envelope/thread correlation surfaces, executes
-      bounded calibration, and converts absent authoritative runtime evidence into deterministic
-      INDETERMINATE/evidence-required rather than PASS or manual ambiguity.
+    evidence: [reference-system/findings/rf-001-findings.yaml, portfolio/evidence-acquisition-rules.yaml, scripts/evidence_plan.py, scripts/evidence_acquire.py, scripts/examination_execute.py]
+    notes: The historical RF-001-F001 blocker is now represented by executable correlation testing and deterministic evidence-required behavior rather than an undocumented semantic dead end.
 release_gate:
   ready_when:
     - all criteria are PASS or explicitly accepted as non-blocking limitations
