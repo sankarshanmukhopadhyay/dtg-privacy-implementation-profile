@@ -5,17 +5,25 @@ findings:
     title: Trust Task binding semantics remain unresolved for privacy-preserving relationship proof
     owner: DTG Trust Tasks
     repository: trustoverip/dtgwg-trust-tasks-spec
-    status: open
-    severity: blocking
+    status: resolved
+    severity: high
     dpip_impact: [C3-R2, C3-T4, C3-PC-2]
     assumptions: [A-2]
     evidence:
-      - RF-001 S-03 marks effective scope unresolved for exchange/task context
-    disposition: Keep C3 private-identifier cross-context unlinkability INDETERMINATE until a privacy-compatible binding interface is evidenced.
+      - RF-001 S-03 records the original unresolved exchange/task-context boundary
+      - Trust Tasks source-backed envelope/thread evidence is now explicitly acquired and kept distinct from runtime observation
+      - DPIP executable threadId reuse calibration proves the prohibited cross-context join is mechanically detectable
+      - missing authoritative implementation observations now terminate INDETERMINATE/evidence-required with a bounded remediation contract
+    disposition: >-
+      Resolved as a v0.1 release blocker, not as a universal privacy PASS. DPIP now has an explicit,
+      executable and fail-closed contract for the binding/correlation surface. Implementations still
+      require attributable evidence before a scoped PASS can be returned.
     promotion:
-      state: reviewed
-      target_type: upstream-issue
-      rationale: The missing binding interface is owned by Trust Tasks; DPIP retains the composition requirement and should raise upstream only when a concrete interface gap is ready to be filed.
+      state: resolved-regression
+      target_type: dpip-test
+      target_refs: [C3-T4]
+      rationale: The original semantic dead end is now represented as executable correlation testing plus deterministic evidence-required behavior.
+      regression_refs: [C3-R2, C3-T4, C3-PC-2]
   - id: RF-001-F002
     type: evidence-gap
     title: C3 proof construction evidence is candidate rather than immutable verified evidence
@@ -25,8 +33,7 @@ findings:
     severity: high
     dpip_impact: [C3-R2, C3-R4, C3-T1, C3-T6, C3-PC-1, C3-PC-2, C3-PC-4]
     assumptions: [A-3]
-    evidence:
-      - sankarshanmukhopadhyay/dtgwg-zkp-tf#13
+    evidence: [sankarshanmukhopadhyay/dtgwg-zkp-tf#13]
     disposition: Retain candidate evidence and do not promote the strongest composed-presentation claim until a commit-, test-vector-, or release-pinned artifact exists.
     promotion:
       state: candidate
@@ -56,8 +63,7 @@ findings:
     status: open
     severity: high
     dpip_impact: [P2, P4, P6, C3-R5, C3-PC-5]
-    evidence:
-      - RF-001 S-06 administrator relationship view has privileged-deployment effective scope
+    evidence: [RF-001 S-06 administrator relationship view has privileged-deployment effective scope]
     disposition: Deployment guidance must require explicit privileged-observer analysis, retention purpose, access controls, and claim scoping.
     promotion:
       state: promoted-dpip
@@ -76,7 +82,7 @@ findings:
     evidence:
       - RF-001 S-02 treats reciprocal relationship semantics as credential-layer owned
       - sankarshanmukhopadhyay/dtgwg-zkp-tf#13 records the cross-spec boundary
-    disposition: Continue testing the integration hypothesis while keeping the semantic dependency explicit; raise upstream only where DPIP needs a concrete interface or definition to evaluate conformance.
+    disposition: Continue testing the integration hypothesis while keeping the semantic dependency explicit; raise upstream only where DPIP needs a concrete unresolved interface/definition needed for conformance.
     promotion:
       state: reviewed
       target_type: upstream-issue
