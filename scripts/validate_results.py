@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate DPIP conformance result fixtures and reject scoped claim overreach."""
+"""Validate DPIP conformance-result fixtures and reject scoped claim overreach.
+
+Operational contract:
+- Checks result schema, canonical interaction/test/claim references, version alignment, and status ceilings.
+- A validated result is internally consistent with DPIP semantics; this script does not generate new runtime evidence or upgrade a result to PASS.
+"""
 from __future__ import annotations
 import json
 import sys
