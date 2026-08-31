@@ -1,3 +1,16 @@
+# DPIP evidence planning workflow
+#
+# Purpose:
+#   Compile deterministic evidence-acquisition plans from prepared examination setup,
+#   acquire mechanically available evidence, and dispatch examination execution.
+#
+# Side effects:
+#   May append structured plan/evidence records to DPIP issues and dispatch execution.
+#
+# Boundary:
+#   Planning/acquisition does NOT imply that required evidence exists or is sufficient.
+#   Missing/wrong-class evidence remains a legitimate INDETERMINATE path.
+#
 name: Compile DPIP evidence acquisition plans
 
 on:
