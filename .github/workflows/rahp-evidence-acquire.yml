@@ -1,3 +1,16 @@
+# DPIP evidence acquisition workflow
+#
+# Purpose:
+#   Execute approved deterministic collectors for a DPIP evidence plan and normalize
+#   available evidence without fabricating runtime observations.
+#
+# Side effects:
+#   May append acquired evidence records to the target DPIP issue.
+#
+# Boundary:
+#   Collector success means acquisition machinery ran; it does NOT imply evidence
+#   sufficiency, privacy PASS, or that unavailable runtime evidence may be inferred.
+#
 name: Acquire DPIP evidence from acquisition plans
 
 on:
