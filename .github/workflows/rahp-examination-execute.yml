@@ -1,3 +1,17 @@
+# DPIP privacy examination execution workflow
+#
+# Purpose:
+#   Execute admitted DPIP examinations using available repository-native evidence and
+#   dispatch the RAHP return path when a terminal disposition is reached. Scheduled
+#   runs are recovery reconciliation; they are not new independent examinations.
+#
+# Side effects:
+#   May update DPIP examination issues and dispatch return delivery.
+#
+# Boundary:
+#   Terminal completion may be PASS, FAIL, CONSTRAINED, INDETERMINATE, or NOT_APPLICABLE.
+#   Workflow success itself is not a privacy PASS.
+#
 name: Execute admitted RAHP privacy examinations
 
 on:

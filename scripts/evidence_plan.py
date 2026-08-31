@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Compile deterministic DPIP evidence acquisition plans from examination setup records."""
+"""Compile deterministic DPIP evidence-acquisition plans from examination setup records.
+
+Operational contract:
+- Reads the latest structured examination_setup record and canonical acquisition rules.
+- Produces a validated evidence_plan describing required collectors/contexts and records it on the issue.
+- A plan is a requirements contract, not evidence itself; unavailable evidence remains unavailable.
+"""
 from __future__ import annotations
 
 import argparse

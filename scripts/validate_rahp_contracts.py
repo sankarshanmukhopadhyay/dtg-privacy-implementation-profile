@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate portable RAHP↔DPIP assessor-result and evidence-remediation contract fixtures.
+
+Operational contract:
+- Validates local contract schemas and representative fixtures, including deterministic INDETERMINATE/model-gap semantics.
+- Contract validation proves producer/consumer payload compatibility only; it does not establish a privacy result or successful cross-repository delivery.
+"""
 from __future__ import annotations
 import json
 from pathlib import Path

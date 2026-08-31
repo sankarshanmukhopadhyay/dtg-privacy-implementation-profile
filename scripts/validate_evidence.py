@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate external DPIP evidence bindings and immutable provenance requirements.
+
+Operational contract:
+- Checks evidence-binding schema, target references, maturity rules, and immutable revision requirements.
+- Validation proves the binding is well-formed and correctly scoped; it does not independently verify the external system's privacy behaviour.
+"""
 from __future__ import annotations
 import json
 import sys

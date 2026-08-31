@@ -1,3 +1,12 @@
+# DPIP monthly release-readiness review workflow
+#
+# Purpose:
+#   Open one monthly governance checkpoint asking whether the current capability set
+#   forms a coherent release boundary. The calendar creates review work only.
+#
+# Boundary:
+#   A monthly checkpoint does NOT compel a release and does not alter assurance results.
+#
 name: Monthly DPIP release readiness review
 
 on:

@@ -1,3 +1,13 @@
+# DPIP release-codename governance validation
+#
+# Purpose:
+#   Validate the persisted lake-codename pool/policy and release-governance helper when
+#   release-governance inputs change.
+#
+# Boundary:
+#   Codename validity is release metadata governance only; it has no privacy/conformance
+#   semantics.
+#
 name: Release Codename Policy
 
 on:

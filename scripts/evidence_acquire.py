@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Acquire normalized evidence from DPIP evidence plans without inventing runtime observations."""
+"""Acquire normalized evidence from DPIP evidence plans without inventing runtime observations.
+
+Operational contract:
+- Executes only deterministic collectors/bindings allowed by the evidence plan.
+- Records attributable acquired evidence or explicit missing/unavailable states on the DPIP issue.
+- Collector execution must never fabricate a runtime observation or upgrade missing evidence into PASS.
+- Acquisition success is distinct from evidence sufficiency and examination outcome.
+"""
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate DPIP portfolio change-impact dependency metadata.
+
+Operational contract:
+- Checks dependency registry schema and references across interactions, requirements, tests, claims, and flows.
+- This validates impact-routing metadata; it does not itself perform a reassessment or determine privacy outcome.
+"""
 from __future__ import annotations
 import json
 import sys

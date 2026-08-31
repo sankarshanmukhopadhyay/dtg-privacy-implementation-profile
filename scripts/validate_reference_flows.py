@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate non-normative DPIP reference composed flows."""
+"""Validate non-normative DPIP reference composed flows.
+
+Operational contract:
+- Checks flow schema and references to canonical actors/components/assumptions/interactions/requirements/tests/claims.
+- Reference flows illustrate composition and traceability; validation does not make them normative or prove deployed privacy behaviour.
+"""
 from __future__ import annotations
 
 import json

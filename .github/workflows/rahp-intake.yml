@@ -1,3 +1,17 @@
+# DPIP RAHP intake workflow
+#
+# Purpose:
+#   Admit valid RAHP-originated privacy examination requests into DPIP without
+#   prejudging the privacy result. Normal progression is event-driven; the schedule
+#   exists only to reconcile/retry eligible open requests.
+#
+# Side effects:
+#   May relabel/update DPIP issues and dispatch examination setup.
+#
+# Boundary:
+#   Admission means the request is structurally/semantically acceptable for DPIP
+#   processing. It does NOT mean privacy PASS, evidence sufficiency, or RAHP GREEN.
+#
 name: Admit RAHP privacy examination requests
 
 on:

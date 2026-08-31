@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Evaluate interaction privacy claims from supplied DPIP profile and observation evidence.
+
+Operational contract:
+- Applies registered executable claim rules to the evidence explicitly supplied for one interaction.
+- Produces bounded claim outcomes according to those rules.
+- Missing observations remain INDETERMINATE; this evaluator must not infer evidence that was not supplied.
+- Fixture evaluation demonstrates rule behaviour, not necessarily real upstream runtime behaviour.
+"""
 import argparse
 import copy
 from pathlib import Path

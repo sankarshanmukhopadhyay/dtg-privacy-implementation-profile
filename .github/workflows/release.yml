@@ -1,3 +1,16 @@
+# DPIP governed release workflow
+#
+# Purpose:
+#   Validate an explicitly governed release request, bind its persisted codename, run
+#   the full repository validation suite, and optionally publish the exact approved SHA.
+#
+# Side effects:
+#   In non-dry-run mode, creates a GitHub release/tag for the approved target revision.
+#
+# Boundary:
+#   Release publication records a capability boundary. It does NOT convert unresolved,
+#   failed, constrained, or indeterminate privacy propositions into PASS.
+#
 name: Cut governed DPIP release
 
 on:

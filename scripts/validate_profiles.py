@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate DPIP YAML profiles against the JSON Schema and traceability rules."""
+"""Validate DPIP interaction profiles against schema and semantic traceability rules.
+
+Operational contract:
+- Checks repository profile structure, invariant scope, requirements/claims/tests, and internal traceability.
+- This is repository conformance validation only; passing profiles do not prove an implementation's real-world privacy behaviour.
+"""
 from __future__ import annotations
 import json
 import sys

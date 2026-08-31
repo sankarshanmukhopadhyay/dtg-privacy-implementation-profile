@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Execute controlled Trust Tasks threadId cross-exchange calibration cases."""
+"""Execute controlled Trust Tasks threadId cross-exchange calibration cases.
+
+Operational contract:
+- Runs positive/negative controlled cases across distinct exchanges to verify DPIP correlation-detection semantics.
+- Passing calibration proves the test can distinguish fixture patterns; it does not establish actual Trust Tasks runtime behaviour without attributable runtime evidence.
+"""
 from __future__ import annotations
 
 import hashlib

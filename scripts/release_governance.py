@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""DPIP release governance helper."""
+"""Enforce DPIP semantic-version and persisted lake-codename release governance.
+
+Operational contract:
+- Validates the codename pool, policy/history, semantic version requests, and persisted version-to-codename binding.
+- May generate/select governance metadata when explicitly invoked by the governed release process.
+- Release metadata has no privacy-assurance meaning and cannot alter DPIP examination outcomes.
+"""
 from __future__ import annotations
 
 import argparse
