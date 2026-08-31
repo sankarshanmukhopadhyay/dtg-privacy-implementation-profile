@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate DPIP finding records and promotion/readiness bookkeeping.
+
+Operational contract:
+- Checks finding schema, uniqueness, promotion targets, and regression references.
+- Readiness validation governs finding lifecycle metadata only; it does not resolve a finding or alter its assurance disposition.
+"""
 from __future__ import annotations
 import json
 import sys
