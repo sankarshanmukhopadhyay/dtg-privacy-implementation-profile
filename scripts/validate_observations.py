@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate DPIP observation fixtures and their semantics against canonical interaction profiles.
+
+Operational contract:
+- Checks fixture schema, context/test references, observed-vs-missing state semantics, and self-test pressure cases.
+- Observation fixtures are controlled evidence artefacts; validator success does not establish that an upstream runtime produced equivalent observations.
+"""
 from __future__ import annotations
 import json
 import sys
