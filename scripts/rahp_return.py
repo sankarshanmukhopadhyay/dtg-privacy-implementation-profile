@@ -4,6 +4,11 @@
 A completed DPIP examination must always be returnable. An INDETERMINATE result with
 no canonical evidence-requirement mapping is normalized into a deterministic
 model/evidence-contract gap rather than being stranded for human intervention.
+
+Cross-repository delivery is a durable outbox transaction. Before attempting delivery,
+DPIP records the exact payload digest on the source issue. Successful delivery records
+an acknowledgement. A transport failure therefore leaves machine-visible pending work
+that the scheduled reconciliation can retry idempotently.
 """
 from __future__ import annotations
 import argparse, hashlib, json, os, re, sys, urllib.error, urllib.parse, urllib.request
@@ -14,6 +19,7 @@ SOURCE_LABEL="source:rahp"; COMPLETE_LABEL="run:complete"; RAHP_COMPLETE="assura
 RAHP_TRANSIENT=("assurance:dpip-candidate","assurance:dpip-requested","assurance:dpip-open")
 CONCLUSIONS={"PASS","FAIL","CONSTRAINED","INDETERMINATE","NOT_APPLICABLE"}
 DEFAULT_HUMAN_OUTCOMES={"PASS":"Privacy expectation met","FAIL":"Privacy expectation not met","CONSTRAINED":"Privacy works, but with important limitations","INDETERMINATE":"We do not have enough evidence to decide yet","NOT_APPLICABLE":"This privacy test does not apply here"}
+OUTBOX_VERSION="v1"
 
 
 def api(method,repo,path,token,payload=None):
@@ -70,49 +76,27 @@ def _scope_tokens(e):
 
 
 def synthesize_model_gap_plan(e):
-    """Build an actionable remediation contract for an unmapped evidence proposition.
-
-    This deliberately does not invent runtime evidence. It records that the assurance
-    model lacks a canonical evidence contract for the already-material proposition and
-    routes that gap as machine-owned remediation.
-    """
     scope=_scope_tokens(e)
-    basis={
-        "scope":scope,
-        "evidence_summary":str(e.get("evidence_summary","")).strip(),
-        "action":str(e.get("action","")).strip(),
-    }
+    basis={"scope":scope,"evidence_summary":str(e.get("evidence_summary","")).strip(),"action":str(e.get("action","")).strip()}
     digest=hashlib.sha256(json.dumps(basis,sort_keys=True,separators=(",",":")).encode()).hexdigest()[:12]
     proposition=("; ".join(scope) if scope else "material privacy proposition not yet mapped to a canonical DPIP evidence requirement")
     requirement={
-        "id":f"MODEL-GAP-{digest}",
-        "proposition":proposition,
-        "evidence_class":"model/evidence-contract-definition",
-        "producer":"dpip-evidence-model",
+        "id":f"MODEL-GAP-{digest}","proposition":proposition,"evidence_class":"model/evidence-contract-definition","producer":"dpip-evidence-model",
         "context_boundary":"original pinned RAHP referral scope",
         "required_fields":["proposition","accepted_evidence_classes","producer_lineage","sufficiency_criterion","privacy_safe_capture_rule"],
         "privacy_safe_capture_rule":"Define the minimum evidence contract without collecting unrelated identifiers or expanding the referral correlation scope.",
         "acceptance_criterion":"Register a canonical evidence requirement for this proposition/surface, bind an attributable producer and accepted evidence class, then execute a new comparable pinned examination.",
-        "rerun_target":"new comparable pinned DPIP examination derived from the original RAHP referral",
-        "priority":"high",
-        "routing_target":"dpip-model-gap",
+        "rerun_target":"new comparable pinned DPIP examination derived from the original RAHP referral","priority":"high","routing_target":"dpip-model-gap",
     }
-    plan={
-        "status":"model-gap",
-        "reason_code":"model-gap",
-        "requirements":[requirement],
-        "rerun_policy":"Create a new comparable examination after the evidence contract is registered; do not mutate the completed historical examination.",
-    }
+    plan={"status":"model-gap","reason_code":"model-gap","requirements":[requirement],"rerun_policy":"Create a new comparable examination after the evidence contract is registered; do not mutate the completed historical examination."}
     plan["plan_digest"]=hashlib.sha256(json.dumps(plan,sort_keys=True,separators=(",",":")).encode()).hexdigest()[:16]
     return plan
 
 
 def effective_remediation_plan(e):
     plan=e.get("evidence_remediation_plan")
-    if isinstance(plan,dict) and plan.get("requirements"):
-        return plan
-    if str(e.get("conclusion","")).strip()=="INDETERMINATE":
-        return synthesize_model_gap_plan(e)
+    if isinstance(plan,dict) and plan.get("requirements"): return plan
+    if str(e.get("conclusion","")).strip()=="INDETERMINATE": return synthesize_model_gap_plan(e)
     return None
 
 
@@ -128,8 +112,7 @@ def validate_examination(e):
         if not isinstance(plan,dict) or not plan.get("requirements"): errors.append("INDETERMINATE must resolve to a non-empty evidence remediation or model-gap plan")
     if e.get("assessor_result") is not None:
         errors.extend(validate_assessor_result(e.get("assessor_result")))
-        if e["assessor_result"].get("outcome") != conclusion:
-            errors.append("assessor_result.outcome must equal DPIP conclusion")
+        if e["assessor_result"].get("outcome") != conclusion: errors.append("assessor_result.outcome must equal DPIP conclusion")
     return errors
 
 
@@ -146,12 +129,14 @@ def get_candidates(repo,token,number):
     if number is not None: return [api("GET",repo,f"issues/{number}",token)]
     labels=urllib.parse.quote(f"{SOURCE_LABEL},{COMPLETE_LABEL}",safe=","); return api("GET",repo,f"issues?state=all&labels={labels}&per_page=100",token) or []
 def return_marker(repo,number): return f"<!-- dpip-return:{repo}#{number} -->"
+def outbox_digest(payload): return hashlib.sha256(payload.encode()).hexdigest()[:20]
+def outbox_marker(number,digest): return f"<!-- rahp-return-outbox:{OUTBOX_VERSION}:{number}:{digest} -->"
+def ack_marker(number,digest): return f"<!-- rahp-return-ack:{OUTBOX_VERSION}:{number}:{digest} -->"
 
 
 def compact_plan(plan):
     requirements=[]
-    for item in plan.get("requirements",[]):
-        requirements.append({k:item.get(k) for k in ("id","proposition","evidence_class","producer","context_boundary","required_fields","privacy_safe_capture_rule","acceptance_criterion","rerun_target","priority","routing_target") if item.get(k) is not None})
+    for item in plan.get("requirements",[]): requirements.append({k:item.get(k) for k in ("id","proposition","evidence_class","producer","context_boundary","required_fields","privacy_safe_capture_rule","acceptance_criterion","rerun_target","priority","routing_target") if item.get(k) is not None})
     return {"status":plan.get("status"),"reason_code":plan.get("reason_code"),"plan_digest":plan.get("plan_digest"),"requirements":requirements,"rerun_policy":plan.get("rerun_policy")}
 
 
@@ -170,11 +155,25 @@ def disposition_body(dpip_repo,issue,e):
     payload={"dpip_disposition":disposition}; marker=return_marker(dpip_repo,issue["number"])
     remediation=""
     if disposition.get("evidence_remediation_plan"):
-        if disposition.get("terminal_reason")=="model-gap":
-            remediation="\n\n### Evidence-model remediation required\n\nDPIP reached a valid INDETERMINATE result but the material proposition is not yet mapped to a canonical evidence requirement. The structured disposition therefore carries a deterministic model/evidence-contract gap and rerun criterion. This is not a privacy PASS or FAIL."
-        else:
-            remediation="\n\n### Evidence remediation required\n\nThe structured disposition below identifies the minimum evidence packages, their producers, privacy-safe capture rules, sufficiency criteria, routing targets, and pinned rerun target. This is the action generated by the INDETERMINATE result; it is not a privacy failure finding."
+        if disposition.get("terminal_reason")=="model-gap": remediation="\n\n### Evidence-model remediation required\n\nDPIP reached a valid INDETERMINATE result but the material proposition is not yet mapped to a canonical evidence requirement. The structured disposition therefore carries a deterministic model/evidence-contract gap and rerun criterion. This is not a privacy PASS or FAIL."
+        else: remediation="\n\n### Evidence remediation required\n\nThe structured disposition below identifies the minimum evidence packages, their producers, privacy-safe capture rules, sufficiency criteria, routing targets, and pinned rerun target. This is the action generated by the INDETERMINATE result; it is not a privacy failure finding."
     return f"{marker}\n## DPIP disposition returned\n\nDPIP examination: {issue['html_url']}\n\n### Plain-language result: {plain['outcome']}\n\n{plain['explanation']}\n\n**What to do:** {plain['action']}{remediation}\n\n<details><summary>Structured DPIP disposition</summary>\n\n```yaml\n{yaml.safe_dump(payload,sort_keys=False).rstrip()}\n```\n\n</details>\n\nDPIP owns the technical conclusion above; this comment closes only the DPIP handoff subflow. Any wider RAHP/security assessment remains independently governed."
+
+
+def ensure_outbox(dpip_repo,issue_number,comments,payload,digest,dpip_token):
+    marker=outbox_marker(issue_number,digest)
+    if any(marker in (c.get("body") or "") for c in comments): return False
+    body=f"{marker}\n## RAHP return outbox\n\n- status: **pending**\n- payload digest: `{digest}`\n- transport: `DPIP -> RAHP issue disposition`\n\nThis durable outbox marker is written before cross-repository delivery. Scheduled reconciliation may retry it idempotently until an acknowledgement with the same digest exists."
+    api("POST",dpip_repo,f"issues/{issue_number}/comments",dpip_token,{"body":body})
+    return True
+
+
+def ensure_ack(dpip_repo,issue_number,comments,digest,rahp_repo,rahp_issue,dpip_token):
+    marker=ack_marker(issue_number,digest)
+    if any(marker in (c.get("body") or "") for c in comments): return False
+    body=f"{marker}\n## RAHP return acknowledged\n\n- status: **delivered**\n- payload digest: `{digest}`\n- destination: `{rahp_repo}#{rahp_issue}`\n\nThe specialist return is durably present at the RAHP source and is safe for idempotent replay."
+    api("POST",dpip_repo,f"issues/{issue_number}/comments",dpip_token,{"body":body})
+    return True
 
 
 def process_issue(dpip_repo,default_rahp_repo,issue,dpip_token,rahp_token):
@@ -182,14 +181,18 @@ def process_issue(dpip_repo,default_rahp_repo,issue,dpip_token,rahp_token):
     source=source_record(issue.get("body") or ""); rahp_repo=str(source.get("repository") or default_rahp_repo); rahp_issue=int(source["issue"])
     comments=api("GET",dpip_repo,f"issues/{issue['number']}/comments?per_page=100",dpip_token) or []; examination=examination_record(comments); problems=validate_examination(examination)
     if problems: raise ValueError("; ".join(problems))
+    payload=disposition_body(dpip_repo,issue,examination); digest=outbox_digest(payload)
+    ensure_outbox(dpip_repo,issue["number"],comments,payload,digest,dpip_token)
     marker=return_marker(dpip_repo,issue["number"]); source_comments=api("GET",rahp_repo,f"issues/{rahp_issue}/comments?per_page=100",rahp_token) or []
     if any(marker in (c.get("body") or "") for c in source_comments): print(f"EXISTS return for {dpip_repo}#{issue['number']} on {rahp_repo}#{rahp_issue}")
-    else: api("POST",rahp_repo,f"issues/{rahp_issue}/comments",rahp_token,{"body":disposition_body(dpip_repo,issue,examination)}); print(f"RETURNED {dpip_repo}#{issue['number']} to {rahp_repo}#{rahp_issue}")
+    else: api("POST",rahp_repo,f"issues/{rahp_issue}/comments",rahp_token,{"body":payload}); print(f"RETURNED {dpip_repo}#{issue['number']} to {rahp_repo}#{rahp_issue}")
     api("POST",rahp_repo,f"issues/{rahp_issue}/labels",rahp_token,{"labels":[RAHP_COMPLETE]})
     for label in RAHP_TRANSIENT:
         try: api("DELETE",rahp_repo,f"issues/{rahp_issue}/labels/{urllib.parse.quote(label,safe='')}",rahp_token)
         except urllib.error.HTTPError as exc:
             if exc.code!=404: raise
+    latest_comments=api("GET",dpip_repo,f"issues/{issue['number']}/comments?per_page=100",dpip_token) or comments
+    ensure_ack(dpip_repo,issue["number"],latest_comments,digest,rahp_repo,rahp_issue,dpip_token)
     return True
 
 
@@ -205,18 +208,12 @@ def self_test():
     body="""```yaml\nsource:\n  system: RAHP\n  repository: example/rahp\n  issue: 42\n```"""; assert source_record(body)["issue"]==42
     examination={"applicability":"applicable","conclusion":"INDETERMINATE","affected_interactions":["C3"],"evidence_summary":"Runtime evidence is missing.","residual_correlation":"Unresolved.","action":"Supply bounded evidence and rerun.","assessor_result":{"schema":"rahp-assessor-result/v1","assessor":"dpip","assessment_id":"dpip:7","outcome":"INDETERMINATE","reason_code":"evidence-required","evidence_used":[],"residual_risk":"Unresolved.","action_required":"Supply bounded evidence and rerun."},"human_summary":{"outcome":"We do not have enough evidence to decide yet","explanation":"Runtime evidence is missing.","action":"Supply bounded evidence and rerun."},"evidence_remediation_plan":{"plan_digest":"abc","requirements":[{"id":"R1","proposition":"test joinability","producer":"implementation","routing_target":"upstream-runtime"}],"rerun_policy":"new pinned run"}}
     assert not validate_examination(examination); rendered=disposition_body("example/dpip",{"number":7,"html_url":"https://example.invalid/7"},examination); assert "evidence_remediation_plan" in rendered and "Evidence remediation required" in rendered
-
-    # RAHP #309 / DPIP #149 regression shape: DPIP reached INDETERMINATE but no
-    # canonical evidence requirement was compiled. This is a valid terminal model-gap,
-    # not a human-review or transport failure.
     model_gap=dict(examination); model_gap["affected_interactions"]=[]; model_gap["affected_invariants"]=["credential-object-identity-does-not-expand-declared-correlation-scope"]; model_gap["evidence_remediation_plan"]={"plan_digest":"empty","requirements":[],"rerun_policy":"new pinned run"}
-    assert not validate_examination(model_gap)
-    gap_plan=effective_remediation_plan(model_gap); assert gap_plan["status"]=="model-gap" and len(gap_plan["requirements"])==1
-    rendered_gap=disposition_body("example/dpip",{"number":149,"html_url":"https://example.invalid/149"},model_gap)
-    assert "terminal_reason: model-gap" in rendered_gap and "Evidence-model remediation required" in rendered_gap and "MODEL-GAP-" in rendered_gap
-
+    assert not validate_examination(model_gap); gap_plan=effective_remediation_plan(model_gap); assert gap_plan["status"]=="model-gap" and len(gap_plan["requirements"])==1
+    rendered_gap=disposition_body("example/dpip",{"number":149,"html_url":"https://example.invalid/149"},model_gap); assert "terminal_reason: model-gap" in rendered_gap and "MODEL-GAP-" in rendered_gap
+    digest=outbox_digest(rendered_gap); assert digest==outbox_digest(rendered_gap); assert "rahp-return-outbox:v1:149:" in outbox_marker(149,digest); assert "rahp-return-ack:v1:149:" in ack_marker(149,digest)
     malformed=dict(model_gap); malformed["action"]=""; assert validate_examination(malformed)
-    print("PASS rahp_return self-test including DPIP #149 model-gap regression"); return 0
+    print("PASS rahp_return self-test including #149 model-gap and durable outbox contract"); return 0
 
 
 def main():
@@ -224,6 +221,6 @@ def main():
     if a.self_test: return self_test()
     dt=os.getenv("GITHUB_TOKEN",""); rt=os.getenv("RAHP_HANDOFF_TOKEN","")
     if not dt: print("GITHUB_TOKEN is required",file=sys.stderr); return 2
-    if not rt: print("RAHP_HANDOFF_TOKEN is not configured; completed DPIP dispositions were not returned."); return 0
+    if not rt: print("RAHP_HANDOFF_TOKEN is not configured; completed DPIP dispositions remain pending in the durable outbox.",file=sys.stderr); return 2
     return run(a.dpip_repository,a.rahp_repository,dt,rt,a.issue_number)
 if __name__=="__main__": raise SystemExit(main())

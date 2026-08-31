@@ -15,7 +15,7 @@ on:
 
 permissions:
   contents: read
-  issues: read
+  issues: write
 
 concurrency:
   group: dpip-rahp-return-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
@@ -36,7 +36,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - name: Validate return transport
+      - name: Validate return contract and durable outbox
         run: python scripts/rahp_return.py --self-test
       - name: Require RAHP return credential
         env:
@@ -44,10 +44,10 @@ jobs:
         shell: bash
         run: |
           if [ -z "${RAHP_HANDOFF_TOKEN:-}" ]; then
-            echo '::error::RAHP_HANDOFF_TOKEN is not configured; completed DPIP dispositions would be stranded.'
+            echo '::error::RAHP_HANDOFF_TOKEN is not configured; completed DPIP dispositions remain retryable but cannot yet be delivered.'
             exit 2
           fi
-      - name: Return completed disposition
+      - name: Persist outbox, deliver and acknowledge disposition
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RAHP_HANDOFF_TOKEN: ${{ secrets.RAHP_HANDOFF_TOKEN }}
