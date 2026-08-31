@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Admit valid RAHP-originated DPIP requests without prejudging privacy results."""
+"""Admit valid RAHP-originated DPIP requests without prejudging privacy results.
+
+Operational contract:
+- Reads RAHP-originated request metadata from DPIP issues and validates canonical scope/transport.
+- May update labels/comments to move valid work from requested to in-progress.
+- Admission means DPIP can process the request; it is not evidence sufficiency or privacy PASS.
+- Invalid or ambiguous requests remain visible rather than being silently normalized into success.
+"""
 from __future__ import annotations
 
 import argparse
