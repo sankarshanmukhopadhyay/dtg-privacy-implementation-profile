@@ -15,7 +15,7 @@ import argparse, hashlib, json, os, re, sys, urllib.error, urllib.parse, urllib.
 from typing import Any
 import yaml
 DEFAULT_DPIP_REPO="sankarshanmukhopadhyay/dtg-privacy-implementation-profile"; DEFAULT_RAHP_REPO="sankarshanmukhopadhyay/rahp-toolkit"
-SOURCE_LABEL="source:rahp"; COMPLETE_LABEL="run:complete"; RAHP_COMPLETE="assurance:dpip-complete"
+SOURCE_LABEL="source:rahp"; COMPLETE_LABEL="run:complete"; MODEL_GAP_LABEL="model-gap"; RAHP_COMPLETE="assurance:dpip-complete"
 RAHP_TRANSIENT=("assurance:dpip-candidate","assurance:dpip-requested","assurance:dpip-open")
 CONCLUSIONS={"PASS","FAIL","CONSTRAINED","INDETERMINATE","NOT_APPLICABLE"}
 DEFAULT_HUMAN_OUTCOMES={"PASS":"Privacy expectation met","FAIL":"Privacy expectation not met","CONSTRAINED":"Privacy works, but with important limitations","INDETERMINATE":"We do not have enough evidence to decide yet","NOT_APPLICABLE":"This privacy test does not apply here"}
@@ -100,6 +100,11 @@ def effective_remediation_plan(e):
     return None
 
 
+def terminal_labels(e):
+    plan=effective_remediation_plan(e)
+    return [MODEL_GAP_LABEL] if isinstance(plan,dict) and plan.get("status")=="model-gap" else []
+
+
 def validate_examination(e):
     errors=[]; applicability=str(e.get("applicability","")).strip(); conclusion=str(e.get("conclusion","")).strip()
     if applicability not in {"applicable","not-applicable"}: errors.append("applicability must be applicable or not-applicable")
@@ -181,6 +186,8 @@ def process_issue(dpip_repo,default_rahp_repo,issue,dpip_token,rahp_token):
     source=source_record(issue.get("body") or ""); rahp_repo=str(source.get("repository") or default_rahp_repo); rahp_issue=int(source["issue"])
     comments=api("GET",dpip_repo,f"issues/{issue['number']}/comments?per_page=100",dpip_token) or []; examination=examination_record(comments); problems=validate_examination(examination)
     if problems: raise ValueError("; ".join(problems))
+    labels=terminal_labels(examination)
+    if labels: api("POST",dpip_repo,f"issues/{issue['number']}/labels",dpip_token,{"labels":labels})
     payload=disposition_body(dpip_repo,issue,examination); digest=outbox_digest(payload)
     ensure_outbox(dpip_repo,issue["number"],comments,payload,digest,dpip_token)
     marker=return_marker(dpip_repo,issue["number"]); source_comments=api("GET",rahp_repo,f"issues/{rahp_issue}/comments?per_page=100",rahp_token) or []
@@ -208,12 +215,14 @@ def self_test():
     body="""```yaml\nsource:\n  system: RAHP\n  repository: example/rahp\n  issue: 42\n```"""; assert source_record(body)["issue"]==42
     examination={"applicability":"applicable","conclusion":"INDETERMINATE","affected_interactions":["C3"],"evidence_summary":"Runtime evidence is missing.","residual_correlation":"Unresolved.","action":"Supply bounded evidence and rerun.","assessor_result":{"schema":"rahp-assessor-result/v1","assessor":"dpip","assessment_id":"dpip:7","outcome":"INDETERMINATE","reason_code":"evidence-required","evidence_used":[],"residual_risk":"Unresolved.","action_required":"Supply bounded evidence and rerun."},"human_summary":{"outcome":"We do not have enough evidence to decide yet","explanation":"Runtime evidence is missing.","action":"Supply bounded evidence and rerun."},"evidence_remediation_plan":{"plan_digest":"abc","requirements":[{"id":"R1","proposition":"test joinability","producer":"implementation","routing_target":"upstream-runtime"}],"rerun_policy":"new pinned run"}}
     assert not validate_examination(examination); rendered=disposition_body("example/dpip",{"number":7,"html_url":"https://example.invalid/7"},examination); assert "evidence_remediation_plan" in rendered and "Evidence remediation required" in rendered
+    assert terminal_labels(examination)==[]
     model_gap=dict(examination); model_gap["affected_interactions"]=[]; model_gap["affected_invariants"]=["credential-object-identity-does-not-expand-declared-correlation-scope"]; model_gap["evidence_remediation_plan"]={"plan_digest":"empty","requirements":[],"rerun_policy":"new pinned run"}
     assert not validate_examination(model_gap); gap_plan=effective_remediation_plan(model_gap); assert gap_plan["status"]=="model-gap" and len(gap_plan["requirements"])==1
+    assert terminal_labels(model_gap)==["model-gap"]
     rendered_gap=disposition_body("example/dpip",{"number":149,"html_url":"https://example.invalid/149"},model_gap); assert "terminal_reason: model-gap" in rendered_gap and "MODEL-GAP-" in rendered_gap
     digest=outbox_digest(rendered_gap); assert digest==outbox_digest(rendered_gap); assert "rahp-return-outbox:v1:149:" in outbox_marker(149,digest); assert "rahp-return-ack:v1:149:" in ack_marker(149,digest)
     malformed=dict(model_gap); malformed["action"]=""; assert validate_examination(malformed)
-    print("PASS rahp_return self-test including #149 model-gap and durable outbox contract"); return 0
+    print("PASS rahp_return self-test including #149 model-gap labeling and durable outbox contract"); return 0
 
 
 def main():
