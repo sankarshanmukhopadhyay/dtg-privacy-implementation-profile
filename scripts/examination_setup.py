@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Materialize deterministic, non-judgmental DPIP examination setup for admitted RAHP requests."""
+"""Materialize deterministic, non-judgmental DPIP examination setup for admitted RAHP requests.
+
+Operational contract:
+- Resolves admitted scope against DPIP interactions, claims, invariants, flows, and evidence requirements.
+- Writes a structured examination_setup record to the DPIP issue for downstream planning.
+- Performs setup only: it neither gathers runtime evidence nor computes a privacy conclusion.
+"""
 from __future__ import annotations
 
 import argparse
