@@ -1,0 +1,12 @@
+version: v0.1.0
+status: approved
+publish: true
+target_sha: 74517965d8e08baaa922eb6698496d1ab14d8e81
+release_notes: >-
+  First governed DPIP release. It packages composed-interaction privacy coverage,
+  C1-C6 and RF-001-RF-004, evidence provenance and acquisition, portable
+  rahp-assessor-result/v1 outcomes, deterministic evidence-required and model-gap
+  handling, and durable retryable RAHP return semantics. RF-001-F001 is resolved
+  as a release blocker because the gap is explicitly modeled and fail-closed; this
+  release does not assert universal privacy PASS where attributable runtime evidence
+  is unavailable.
