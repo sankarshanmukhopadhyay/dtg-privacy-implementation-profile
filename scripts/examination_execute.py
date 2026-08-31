@@ -698,7 +698,7 @@ def self_test() -> int:
     observed = _binding("ER-REL-DID-AB")
     observed["surfaces"] = {
         "relationship_did": {"classification": "absent"},
-        "equivalent_relationship_binder": {"classification": "identical", "context_a": "same", "context_b": "same"},
+        "equivalent_relationship_binder": {"classification": "identical", "context_a": "same", "context_b": "same", "execution_source": "runtime-read", "observer": "observer-A/observer-B"},
     }
     mixed["provided_evidence"] = [observed]
     mixed_record = build_execution(126, mixed)["execution_evidence"]
