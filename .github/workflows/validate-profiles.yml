@@ -52,6 +52,8 @@ jobs:
         run: python scripts/validate_findings_readiness.py
       - name: Validate portfolio change-impact metadata
         run: python scripts/validate_change_impact.py
+      - name: Validate portable RAHP producer-consumer contracts
+        run: python scripts/validate_rahp_contracts.py
       - name: Validate RAHP intake admission transport
         run: python scripts/rahp_intake.py --self-test
       - name: Validate RAHP examination setup
