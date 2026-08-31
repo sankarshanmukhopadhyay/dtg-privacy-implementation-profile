@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Execute controlled ZKP context-commitment cross-context calibration cases."""
+"""Execute controlled ZKP context-commitment cross-context calibration cases.
+
+Operational contract:
+- Runs controlled distinct-verifier cases to verify detection of context-reuse/correlation-scope patterns.
+- Passing calibration validates the detector against fixtures; it is not evidence that an upstream ZKP implementation behaves the same way in production.
+"""
 from __future__ import annotations
 
 import hashlib
