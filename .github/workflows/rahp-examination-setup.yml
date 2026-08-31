@@ -1,3 +1,16 @@
+# DPIP RAHP examination setup workflow
+#
+# Purpose:
+#   Materialize deterministic examination setup for admitted RAHP-originated requests
+#   and dispatch evidence planning. Scheduled runs are recovery reconciliation only.
+#
+# Side effects:
+#   May write structured setup records to DPIP issues and dispatch downstream workflows.
+#
+# Boundary:
+#   Setup prepares scope/bindings; it does NOT execute the privacy examination or
+#   establish evidence sufficiency or a privacy conclusion.
+#
 name: Prepare admitted RAHP privacy examinations
 
 on:
