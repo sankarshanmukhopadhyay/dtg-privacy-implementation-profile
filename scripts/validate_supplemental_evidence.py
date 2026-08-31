@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Validate and execute supplemental DPIP executable-evidence calibration bindings."""
+"""Validate and execute supplemental DPIP executable-evidence calibration bindings.
+
+Operational contract:
+- Exercises controlled fixtures/bindings used to calibrate correlation and evidence semantics.
+- Calibration can demonstrate that the DPIP rule machinery detects a known pattern.
+- It is supplemental controlled evidence, not proof that a real upstream implementation exhibits or avoids that pattern.
+"""
 from __future__ import annotations
 
 import hashlib
