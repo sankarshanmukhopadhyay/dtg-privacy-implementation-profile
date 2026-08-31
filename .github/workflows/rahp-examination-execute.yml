@@ -62,8 +62,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - name: Validate execution harness and causal-attribution gate
-        run: python scripts/examination_execute_causal.py --self-test
+      - name: Validate existing execution harness
+        run: python scripts/examination_execute.py --self-test
+      - name: Validate causal-attribution gate
+        run: python scripts/causal_attribution.py
       - name: Resolve execution targets
         env:
           GH_TOKEN: ${{ github.token }}
