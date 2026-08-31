@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Return completed RAHP-originated DPIP dispositions to their source issue."""
+"""Return completed RAHP-originated DPIP dispositions to their source issue.
+
+A completed DPIP examination must always be returnable. An INDETERMINATE result with
+no canonical evidence-requirement mapping is normalized into a deterministic
+model/evidence-contract gap rather than being stranded for human intervention.
+"""
 from __future__ import annotations
-import argparse, json, os, re, sys, urllib.error, urllib.parse, urllib.request
+import argparse, hashlib, json, os, re, sys, urllib.error, urllib.parse, urllib.request
 from typing import Any
 import yaml
 DEFAULT_DPIP_REPO="sankarshanmukhopadhyay/dtg-privacy-implementation-profile"; DEFAULT_RAHP_REPO="sankarshanmukhopadhyay/rahp-toolkit"
@@ -10,11 +15,13 @@ RAHP_TRANSIENT=("assurance:dpip-candidate","assurance:dpip-requested","assurance
 CONCLUSIONS={"PASS","FAIL","CONSTRAINED","INDETERMINATE","NOT_APPLICABLE"}
 DEFAULT_HUMAN_OUTCOMES={"PASS":"Privacy expectation met","FAIL":"Privacy expectation not met","CONSTRAINED":"Privacy works, but with important limitations","INDETERMINATE":"We do not have enough evidence to decide yet","NOT_APPLICABLE":"This privacy test does not apply here"}
 
+
 def api(method,repo,path,token,payload=None):
     url=f"https://api.github.com/repos/{repo}/{path.lstrip('/')}"; data=None if payload is None else json.dumps(payload).encode()
     req=urllib.request.Request(url,data=data,method=method,headers={"Accept":"application/vnd.github+json","User-Agent":"dpip-rahp-return/1.0","X-GitHub-Api-Version":"2022-11-28","Authorization":f"Bearer {token}",**({"Content-Type":"application/json"} if data is not None else {})})
     with urllib.request.urlopen(req,timeout=30) as response: raw=response.read()
     return json.loads(raw) if raw else None
+
 
 def yaml_blocks(text):
     out=[]
@@ -24,11 +31,13 @@ def yaml_blocks(text):
         if isinstance(parsed,dict): out.append(parsed)
     return out
 
+
 def source_record(body):
     for block in yaml_blocks(body):
         source=block.get("source")
         if isinstance(source,dict) and source.get("system")=="RAHP": return source
     raise ValueError("no machine-readable RAHP `source:` YAML block found")
+
 
 def examination_record(comments):
     for comment in reversed(comments):
@@ -36,6 +45,7 @@ def examination_record(comments):
             examination=block.get("dpip_examination")
             if isinstance(examination,dict): return examination
     raise ValueError("no structured `dpip_examination:` conclusion found in DPIP comments")
+
 
 def validate_assessor_result(result):
     errors=[]
@@ -49,6 +59,63 @@ def validate_assessor_result(result):
     if not isinstance(result.get("evidence_used"),list): errors.append("assessor_result.evidence_used must be a list")
     return errors
 
+
+def _scope_tokens(e):
+    values=[]
+    for key in ("affected_invariants","affected_claims","affected_interactions","affected_reference_flows"):
+        for value in e.get(key,[]) or []:
+            text=str(value).strip()
+            if text and text not in values: values.append(text)
+    return values
+
+
+def synthesize_model_gap_plan(e):
+    """Build an actionable remediation contract for an unmapped evidence proposition.
+
+    This deliberately does not invent runtime evidence. It records that the assurance
+    model lacks a canonical evidence contract for the already-material proposition and
+    routes that gap as machine-owned remediation.
+    """
+    scope=_scope_tokens(e)
+    basis={
+        "scope":scope,
+        "evidence_summary":str(e.get("evidence_summary","")).strip(),
+        "action":str(e.get("action","")).strip(),
+    }
+    digest=hashlib.sha256(json.dumps(basis,sort_keys=True,separators=(",",":")).encode()).hexdigest()[:12]
+    proposition=("; ".join(scope) if scope else "material privacy proposition not yet mapped to a canonical DPIP evidence requirement")
+    requirement={
+        "id":f"MODEL-GAP-{digest}",
+        "proposition":proposition,
+        "evidence_class":"model/evidence-contract-definition",
+        "producer":"dpip-evidence-model",
+        "context_boundary":"original pinned RAHP referral scope",
+        "required_fields":["proposition","accepted_evidence_classes","producer_lineage","sufficiency_criterion","privacy_safe_capture_rule"],
+        "privacy_safe_capture_rule":"Define the minimum evidence contract without collecting unrelated identifiers or expanding the referral correlation scope.",
+        "acceptance_criterion":"Register a canonical evidence requirement for this proposition/surface, bind an attributable producer and accepted evidence class, then execute a new comparable pinned examination.",
+        "rerun_target":"new comparable pinned DPIP examination derived from the original RAHP referral",
+        "priority":"high",
+        "routing_target":"dpip-model-gap",
+    }
+    plan={
+        "status":"model-gap",
+        "reason_code":"model-gap",
+        "requirements":[requirement],
+        "rerun_policy":"Create a new comparable examination after the evidence contract is registered; do not mutate the completed historical examination.",
+    }
+    plan["plan_digest"]=hashlib.sha256(json.dumps(plan,sort_keys=True,separators=(",",":")).encode()).hexdigest()[:16]
+    return plan
+
+
+def effective_remediation_plan(e):
+    plan=e.get("evidence_remediation_plan")
+    if isinstance(plan,dict) and plan.get("requirements"):
+        return plan
+    if str(e.get("conclusion","")).strip()=="INDETERMINATE":
+        return synthesize_model_gap_plan(e)
+    return None
+
+
 def validate_examination(e):
     errors=[]; applicability=str(e.get("applicability","")).strip(); conclusion=str(e.get("conclusion","")).strip()
     if applicability not in {"applicable","not-applicable"}: errors.append("applicability must be applicable or not-applicable")
@@ -57,13 +124,14 @@ def validate_examination(e):
     if not str(e.get("evidence_summary","")).strip(): errors.append("evidence_summary is required")
     if not str(e.get("action","")).strip(): errors.append("action is required")
     if conclusion=="INDETERMINATE":
-        plan=e.get("evidence_remediation_plan")
-        if not isinstance(plan,dict) or not plan.get("requirements"): errors.append("INDETERMINATE requires a non-empty evidence_remediation_plan")
+        plan=effective_remediation_plan(e)
+        if not isinstance(plan,dict) or not plan.get("requirements"): errors.append("INDETERMINATE must resolve to a non-empty evidence remediation or model-gap plan")
     if e.get("assessor_result") is not None:
         errors.extend(validate_assessor_result(e.get("assessor_result")))
         if e["assessor_result"].get("outcome") != conclusion:
             errors.append("assessor_result.outcome must equal DPIP conclusion")
     return errors
+
 
 def human_summary(e):
     supplied=e.get("human_summary")
@@ -72,17 +140,20 @@ def human_summary(e):
     if residual: explanation+=f" Remaining limitation: {residual}"
     return {"outcome":DEFAULT_HUMAN_OUTCOMES[str(e["conclusion"])],"explanation":explanation,"action":str(e["action"]).strip()}
 
+
 def has_label(issue,name): return any(label.get("name")==name for label in issue.get("labels",[]))
 def get_candidates(repo,token,number):
     if number is not None: return [api("GET",repo,f"issues/{number}",token)]
     labels=urllib.parse.quote(f"{SOURCE_LABEL},{COMPLETE_LABEL}",safe=","); return api("GET",repo,f"issues?state=all&labels={labels}&per_page=100",token) or []
 def return_marker(repo,number): return f"<!-- dpip-return:{repo}#{number} -->"
 
+
 def compact_plan(plan):
     requirements=[]
     for item in plan.get("requirements",[]):
         requirements.append({k:item.get(k) for k in ("id","proposition","evidence_class","producer","context_boundary","required_fields","privacy_safe_capture_rule","acceptance_criterion","rerun_target","priority","routing_target") if item.get(k) is not None})
-    return {"plan_digest":plan.get("plan_digest"),"requirements":requirements,"rerun_policy":plan.get("rerun_policy")}
+    return {"status":plan.get("status"),"reason_code":plan.get("reason_code"),"plan_digest":plan.get("plan_digest"),"requirements":requirements,"rerun_policy":plan.get("rerun_policy")}
+
 
 def disposition_body(dpip_repo,issue,e):
     plain=human_summary(e); disposition={"dpip_issue":issue["number"],"applicability":e["applicability"],"conclusion":e["conclusion"],"human_summary":plain}
@@ -91,13 +162,20 @@ def disposition_body(dpip_repo,issue,e):
     disposition["evidence_summary"]=e["evidence_summary"]
     if e.get("residual_correlation"): disposition["residual_correlation"]=e["residual_correlation"]
     disposition["action"]=e["action"]
-    if isinstance(e.get("evidence_remediation_plan"),dict): disposition["evidence_remediation_plan"]=compact_plan(e["evidence_remediation_plan"])
+    plan=effective_remediation_plan(e)
+    if isinstance(plan,dict):
+        disposition["evidence_remediation_plan"]=compact_plan(plan)
+        if plan.get("status")=="model-gap": disposition["terminal_reason"]="model-gap"
     if isinstance(e.get("assessor_result"),dict): disposition["assessor_result"]=e["assessor_result"]
     payload={"dpip_disposition":disposition}; marker=return_marker(dpip_repo,issue["number"])
     remediation=""
     if disposition.get("evidence_remediation_plan"):
-        remediation="\n\n### Evidence remediation required\n\nThe structured disposition below identifies the minimum evidence packages, their producers, privacy-safe capture rules, sufficiency criteria, routing targets, and pinned rerun target. This is the action generated by the INDETERMINATE result; it is not a privacy failure finding."
+        if disposition.get("terminal_reason")=="model-gap":
+            remediation="\n\n### Evidence-model remediation required\n\nDPIP reached a valid INDETERMINATE result but the material proposition is not yet mapped to a canonical evidence requirement. The structured disposition therefore carries a deterministic model/evidence-contract gap and rerun criterion. This is not a privacy PASS or FAIL."
+        else:
+            remediation="\n\n### Evidence remediation required\n\nThe structured disposition below identifies the minimum evidence packages, their producers, privacy-safe capture rules, sufficiency criteria, routing targets, and pinned rerun target. This is the action generated by the INDETERMINATE result; it is not a privacy failure finding."
     return f"{marker}\n## DPIP disposition returned\n\nDPIP examination: {issue['html_url']}\n\n### Plain-language result: {plain['outcome']}\n\n{plain['explanation']}\n\n**What to do:** {plain['action']}{remediation}\n\n<details><summary>Structured DPIP disposition</summary>\n\n```yaml\n{yaml.safe_dump(payload,sort_keys=False).rstrip()}\n```\n\n</details>\n\nDPIP owns the technical conclusion above; this comment closes only the DPIP handoff subflow. Any wider RAHP/security assessment remains independently governed."
+
 
 def process_issue(dpip_repo,default_rahp_repo,issue,dpip_token,rahp_token):
     if not(has_label(issue,SOURCE_LABEL) and has_label(issue,COMPLETE_LABEL)): print(f"SKIP {dpip_repo}#{issue.get('number')}: not a completed RAHP-originated intake"); return False
@@ -114,6 +192,7 @@ def process_issue(dpip_repo,default_rahp_repo,issue,dpip_token,rahp_token):
             if exc.code!=404: raise
     return True
 
+
 def run(dpip_repo,rahp_repo,dpip_token,rahp_token,number):
     failures=0
     for issue in get_candidates(dpip_repo,dpip_token,number):
@@ -121,12 +200,24 @@ def run(dpip_repo,rahp_repo,dpip_token,rahp_token,number):
         except Exception as exc: failures+=1; print(f"FAIL {dpip_repo}#{issue.get('number')}: {exc}",file=sys.stderr)
     return 1 if failures else 0
 
+
 def self_test():
     body="""```yaml\nsource:\n  system: RAHP\n  repository: example/rahp\n  issue: 42\n```"""; assert source_record(body)["issue"]==42
     examination={"applicability":"applicable","conclusion":"INDETERMINATE","affected_interactions":["C3"],"evidence_summary":"Runtime evidence is missing.","residual_correlation":"Unresolved.","action":"Supply bounded evidence and rerun.","assessor_result":{"schema":"rahp-assessor-result/v1","assessor":"dpip","assessment_id":"dpip:7","outcome":"INDETERMINATE","reason_code":"evidence-required","evidence_used":[],"residual_risk":"Unresolved.","action_required":"Supply bounded evidence and rerun."},"human_summary":{"outcome":"We do not have enough evidence to decide yet","explanation":"Runtime evidence is missing.","action":"Supply bounded evidence and rerun."},"evidence_remediation_plan":{"plan_digest":"abc","requirements":[{"id":"R1","proposition":"test joinability","producer":"implementation","routing_target":"upstream-runtime"}],"rerun_policy":"new pinned run"}}
     assert not validate_examination(examination); rendered=disposition_body("example/dpip",{"number":7,"html_url":"https://example.invalid/7"},examination); assert "evidence_remediation_plan" in rendered and "Evidence remediation required" in rendered
-    missing=dict(examination); missing.pop("evidence_remediation_plan"); assert validate_examination(missing)
-    print("PASS rahp_return self-test"); return 0
+
+    # RAHP #309 / DPIP #149 regression shape: DPIP reached INDETERMINATE but no
+    # canonical evidence requirement was compiled. This is a valid terminal model-gap,
+    # not a human-review or transport failure.
+    model_gap=dict(examination); model_gap["affected_interactions"]=[]; model_gap["affected_invariants"]=["credential-object-identity-does-not-expand-declared-correlation-scope"]; model_gap["evidence_remediation_plan"]={"plan_digest":"empty","requirements":[],"rerun_policy":"new pinned run"}
+    assert not validate_examination(model_gap)
+    gap_plan=effective_remediation_plan(model_gap); assert gap_plan["status"]=="model-gap" and len(gap_plan["requirements"])==1
+    rendered_gap=disposition_body("example/dpip",{"number":149,"html_url":"https://example.invalid/149"},model_gap)
+    assert "terminal_reason: model-gap" in rendered_gap and "Evidence-model remediation required" in rendered_gap and "MODEL-GAP-" in rendered_gap
+
+    malformed=dict(model_gap); malformed["action"]=""; assert validate_examination(malformed)
+    print("PASS rahp_return self-test including DPIP #149 model-gap regression"); return 0
+
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--self-test",action="store_true"); p.add_argument("--issue-number",type=int); p.add_argument("--dpip-repository",default=os.getenv("DPIP_REPOSITORY",DEFAULT_DPIP_REPO)); p.add_argument("--rahp-repository",default=os.getenv("RAHP_REPOSITORY",DEFAULT_RAHP_REPO)); a=p.parse_args()
