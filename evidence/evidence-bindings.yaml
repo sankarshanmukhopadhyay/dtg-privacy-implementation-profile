@@ -4,6 +4,12 @@ bindings:
     match:
       interactions_any: [C3, C5]
       claims_any: [C3-PC-2, C5-PC-2, C3-PC-4, C3-PC-5, C5-PC-4]
+      surfaces_any:
+        - relationship DID
+        - edge identifiers
+        - status and policy discovery
+        - retained relationship evidence
+        - deliberate-correlation mechanisms
     evidence_requirement_ids:
       - ER-REL-DID-AB
       - ER-STATUS-AB
