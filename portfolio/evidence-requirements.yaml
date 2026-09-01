@@ -1,7 +1,8 @@
-version: 2
+version: 3
 purpose: >-
   Stable evidence-requirement identifiers for deterministic RAHP-originated DPIP examinations.
-  These requirements describe evidence classes; they do not fabricate observations or imply PASS.
+  These requirements describe evidence classes and observation contracts; they do not
+  fabricate observations or imply PASS.
 
 evidence_classes:
   runtime-upstream-observation:
@@ -22,6 +23,9 @@ requirements:
     source_lineage: ["RAHP #137", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [relationship_did, edge_identifier, equivalent_relationship_binder]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
   ER-STATUS-AB:
     title: Cross-context status and policy-discovery observations
     summary: Capture attributable A/B runtime observations for status queries and policy-discovery behavior, including any stable handles or metadata that permit unintended joining.
@@ -29,6 +33,9 @@ requirements:
     source_lineage: ["RAHP #138", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [status_handle, status_endpoint, policy_discovery_handle, policy_endpoint]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
   ER-TASK-AB:
     title: Cross-context retained Trust Task evidence observations
     summary: Capture attributable A/B runtime observations showing whether retained Trust Task or relationship evidence creates a durable cross-context correlation surface.
@@ -36,6 +43,9 @@ requirements:
     source_lineage: ["RAHP #139", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [task_identifier, thread_identifier, retained_relationship_evidence, retained_outcome_evidence]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
   ER-VERIFIER-AB:
     title: Verifier transcript and deliberate-correlation observations
     summary: Capture attributable A/B verifier transcripts and deliberate-correlation attempts to determine whether composed evidence enables linkage beyond the declared scope.
@@ -43,7 +53,19 @@ requirements:
     source_lineage: ["RAHP #140", "Interop Lab #31", "Interop Lab #62"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
-
+    required_surfaces: [verifier_transcript, challenge, purpose, transaction_context, deliberate_join_attempt]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
+  ER-CREDENTIAL-ID-AB:
+    title: Cross-context credential identifier observations
+    summary: Capture attributable A/B observations showing whether credential, presentation, request/proof binding, status, verifier-transcript or retained-evidence identifiers create a reusable join across unrelated contexts.
+    interactions: [C1, C2, C3]
+    source_lineage: ["RAHP #309", "RAHP #310"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [credential_identifier, presentation_identifier, proof_or_request_binding, status_handle, verifier_transcript, retained_evidence_reference]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
   ER-DEVICE-METADATA-AB:
     title: Cross-context device heartbeat/presence metadata observations
     summary: >-
@@ -54,3 +76,6 @@ requirements:
     source_lineage: ["RAHP #273", "RAHP stabilization #276"]
     evidence_kind: runtime-ab-observation
     accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [device_install_display_metadata, heartbeat_payload, retained_presence_record]
+    producer_capability: composed-unlinkability-v1
+    source_pin_policy: immutable-component-pins-required
