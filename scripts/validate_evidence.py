@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Validate external DPIP evidence bindings and immutable provenance requirements.
 
-Operational contract:
-- Checks evidence-binding schema, target references, maturity rules, and immutable revision requirements.
-- Validation proves the binding is well-formed and correctly scoped; it does not independently verify the external system's privacy behaviour.
+`evidence/evidence-bindings.yaml` is a semantic evidence-requirement routing registry,
+not an external evidence record. It is validated by `validate_evidence_contracts.py`
+and is intentionally excluded here so the two contract classes cannot be confused.
 """
 from __future__ import annotations
 import json
@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE_DIR = ROOT / "examples"
 EVIDENCE_DIR = ROOT / "evidence"
 SCHEMA = ROOT / "schema" / "evidence-binding.schema.json"
+MODEL_BINDINGS = "evidence-bindings.yaml"
 
 
 def load_profile(interaction_id: str) -> dict:
@@ -30,7 +31,6 @@ def semantic_errors(registry: dict, profile: dict) -> list[str]:
     tests = {t["id"] for t in profile.get("tests", [])}
     claims = {c["id"] for c in profile.get("privacy_claims", [])}
     reqs = {r["id"] for r in profile.get("requirements", [])}
-
     for binding in registry.get("bindings", []):
         bid = binding["id"]
         if binding["maturity"] == "verified" and not binding.get("revision"):
@@ -49,7 +49,7 @@ def main() -> int:
     schema = json.loads(SCHEMA.read_text())
     validator = Draft202012Validator(schema)
     failed = False
-    files = sorted(EVIDENCE_DIR.glob("*.yaml"))
+    files = sorted(path for path in EVIDENCE_DIR.glob("*.yaml") if path.name != MODEL_BINDINGS)
     if not files:
         print("No external evidence registries found", file=sys.stderr)
         return 1
@@ -69,6 +69,7 @@ def main() -> int:
         else:
             print(f"PASS {path.relative_to(ROOT)}")
     return 1 if failed else 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

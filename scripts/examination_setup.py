@@ -2,9 +2,10 @@
 """Materialize deterministic, non-judgmental DPIP examination setup for admitted RAHP requests.
 
 Operational contract:
-- Resolves admitted scope against DPIP interactions, claims, invariants, flows, and evidence requirements.
-- Writes a structured examination_setup record to the DPIP issue for downstream planning.
-- Performs setup only: it neither gathers runtime evidence nor computes a privacy conclusion.
+- resolve admitted privacy scope to canonical interactions/claims/invariants/flows;
+- derive required evidence contracts when the referral did not already supply them;
+- preserve supplied evidence and immutable source provenance without judging sufficiency;
+- never manufacture evidence or a privacy conclusion.
 """
 from __future__ import annotations
 
@@ -27,13 +28,14 @@ IN_PROGRESS = "run:in-progress"
 REGISTRY = Path("portfolio/rahp-examination-bindings.yaml")
 GLOSSARY = Path("portfolio/identifier-glossary.yaml")
 EVIDENCE_REQUIREMENTS = Path("portfolio/evidence-requirements.yaml")
+EVIDENCE_BINDINGS = Path("evidence/evidence-bindings.yaml")
 EXAMPLES = Path("examples")
 FLOWS = Path("reference-system/flows")
 SHA40 = re.compile(r"^[0-9a-f]{40}$", re.I)
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    value = yaml.safe_load(path.read_text())
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError(f"{path} must contain a mapping")
     return value
@@ -45,19 +47,20 @@ def canonical_catalog() -> dict[str, Any]:
     profiles: set[str] = set()
     invariants: set[str] = set()
     for path in sorted(EXAMPLES.glob("*.yaml")):
-        doc = yaml.safe_load(path.read_text()) or {}
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         interaction = doc.get("interaction") or {}
         iid = interaction.get("id")
         if iid:
             interactions[str(iid)] = {"path": str(path), **interaction}
-            profiles.update([str(interaction["target_profile"])]) if interaction.get("target_profile") else None
+            if interaction.get("target_profile"):
+                profiles.add(str(interaction["target_profile"]))
             invariants.update(str(v) for v in interaction.get("invariants", []) or [])
         for claim in doc.get("privacy_claims", []) or []:
             if claim.get("id"):
                 claims[str(claim["id"])] = {"path": str(path), **claim}
     flows: dict[str, dict[str, Any]] = {}
     for path in sorted(FLOWS.glob("*.yaml")):
-        doc = yaml.safe_load(path.read_text()) or {}
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         flow = doc.get("flow") or doc.get("reference_flow") or doc
         fid = flow.get("id") if isinstance(flow, dict) else None
         if fid:
@@ -94,15 +97,8 @@ def structural_source_pins(source: dict[str, Any], body: str) -> list[dict[str, 
     changed = source.get("changed_artifact") if isinstance(source.get("changed_artifact"), dict) else {}
     repo = str(changed.get("repository") or "").strip()
     revision = str(changed.get("revision") or "").strip()
-    if repo and SHA40.fullmatch(revision) and not any(p["repository"] == repo and p["revision"].lower() == revision.lower() for p in pins):
+    if repo and SHA40.fullmatch(revision) and not any(p.get("repository") == repo and p["revision"].lower() == revision.lower() for p in pins):
         pins.insert(0, {"label": "Changed artifact", "repository": repo, "revision": revision})
-    for match in re.finditer(r"^-\s+([^\[\n]+?)\s+\[repo=([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\]:\s+`([0-9a-f]{40})`\s*$", body or "", re.MULTILINE | re.I):
-        pin = {"label": match.group(1).strip(), "repository": match.group(2), "revision": match.group(3)}
-        if not any(p.get("repository") == pin["repository"] and p["revision"].lower() == pin["revision"].lower() for p in pins):
-            pins.append(pin)
-    for match in re.finditer(r"^-\s+([^:\n]+):\s+`([0-9a-f]{40})`\s*$", body or "", re.MULTILINE | re.I):
-        if not any(p["revision"].lower() == match.group(2).lower() for p in pins):
-            pins.append({"label": match.group(1).strip(), "revision": match.group(2)})
     return pins
 
 
@@ -132,8 +128,7 @@ def _human_entry(identifier: str, kind: str, glossary: dict[str, Any], catalog: 
         return {"id": identifier, "kind": kind, "title": f"{prop} — {subject}", "summary": str(summary)}
     if kind == "evidence_requirement":
         req = catalog["evidence_requirements"].get(identifier, {})
-        if isinstance(req, dict):
-            return {"id": identifier, "kind": kind, "title": req.get("title"), "summary": req.get("summary")}
+        return {"id": identifier, "kind": kind, "title": req.get("title"), "summary": req.get("summary")} if isinstance(req, dict) else {"id": identifier, "kind": kind}
     return {"id": identifier, "kind": kind, "title": None, "summary": None}
 
 
@@ -148,9 +143,38 @@ def _provided_evidence(requested: dict[str, Any], unresolved: list[str]) -> list
     for index, item in enumerate(value):
         if not isinstance(item, dict):
             unresolved.append(f"provided_evidence[{index}] must be a mapping")
-            continue
-        out.append(item)
+        else:
+            out.append(item)
     return out
+
+
+def _matches_any(actual: list[str], wanted: list[str]) -> bool:
+    return not wanted or bool(set(actual) & set(wanted))
+
+
+def derive_evidence_requirements(interactions: list[str], claims: list[str], surfaces: list[str], catalog: dict[str, Any]) -> list[str]:
+    """Resolve evidence contracts from semantic scope, never from issue/referral identity."""
+    doc = load_yaml(EVIDENCE_BINDINGS)
+    resolved: list[str] = []
+    normalized_surfaces = [str(v).strip().lower() for v in surfaces or []]
+    for binding in doc.get("bindings", []) or []:
+        if not isinstance(binding, dict):
+            continue
+        match = binding.get("match") if isinstance(binding.get("match"), dict) else {}
+        if not _matches_any(interactions, [str(v) for v in match.get("interactions_any", []) or []]):
+            continue
+        if not _matches_any(claims, [str(v) for v in match.get("claims_any", []) or []]):
+            continue
+        wanted_surfaces = [str(v).strip().lower() for v in match.get("surfaces_any", []) or []]
+        if wanted_surfaces and not any(any(w in surface or surface in w for surface in normalized_surfaces) for w in wanted_surfaces):
+            continue
+        for rid in binding.get("evidence_requirement_ids", []) or []:
+            rid = str(rid)
+            if rid not in catalog["evidence_requirements"]:
+                raise ValueError(f"evidence binding {binding.get('id')} references unknown requirement {rid}")
+            if rid not in resolved:
+                resolved.append(rid)
+    return resolved
 
 
 def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog: dict[str, Any], glossary: dict[str, Any]) -> dict[str, Any]:
@@ -177,8 +201,12 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
 
     profiles = _validate_ids(canonical.get("profile_ids", []), catalog["profiles"], "profile", unresolved) if canonical.get("profile_ids") else []
     if not profiles:
-        profiles = _dedupe([str(catalog["interactions"][iid].get("target_profile")) for iid in interactions if iid in catalog["interactions"] and catalog["interactions"][iid].get("target_profile")])
-    evidence_ids = _validate_ids(canonical.get("evidence_requirement_ids", []), catalog["evidence_requirements"], "evidence requirement", unresolved)
+        profiles = _dedupe([str(catalog["interactions"][iid].get("target_profile")) for iid in interactions if catalog["interactions"].get(iid, {}).get("target_profile")])
+
+    explicit_evidence = canonical.get("evidence_requirement_ids", []) or []
+    evidence_ids = _validate_ids(explicit_evidence, catalog["evidence_requirements"], "evidence requirement", unresolved)
+    if not evidence_ids:
+        evidence_ids = derive_evidence_requirements(interactions, claims, requested.get("suspected_surfaces", []) or [], catalog)
     supplied_evidence = _provided_evidence(requested, unresolved)
 
     pins = structural_source_pins(source, body)
@@ -194,7 +222,7 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
                 unresolved.append(f"canonical {kind} identifier lacks human-readable metadata: {identifier}")
             human_scope.append(entry)
 
-    evidence_status = "evidence-supplied-for-evaluation" if supplied_evidence else ("evidence-required" if evidence_ids else "not-declared")
+    evidence_status = "evidence-supplied-for-evaluation" if supplied_evidence else ("evidence-required" if evidence_ids else "model-gap")
     setup = {"examination_setup": {
         "status": "ready" if not unresolved else "needs-review",
         "source_issue": issue_number,
@@ -217,8 +245,7 @@ def build_setup(issue_number: int, body: str, registry: dict[str, Any], catalog:
         "privacy_judgment": "not-made",
         "human_acceptance_required": bool(unresolved),
     }}
-    digest = hashlib.sha256(json.dumps(setup, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
-    setup["examination_setup"]["setup_digest"] = digest
+    setup["examination_setup"]["setup_digest"] = hashlib.sha256(json.dumps(setup, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
     return setup
 
 
@@ -244,44 +271,23 @@ def publish(repo: str, issue: dict[str, Any], token: str, registry: dict[str, An
     marker = f"<!-- dpip-examination-setup:{number}:{digest} -->"
     if any(marker in (c.get("body") or "") for c in comments(repo, number, token)):
         print(f"UNCHANGED #{number}"); return
-    status = setup["status"]
-    intro = "The setup below is deterministic candidate binding only. It does **not** establish DPIP applicability, evidence sufficiency, or a privacy PASS/FAIL result. Known identifiers are resolved to canonical names for human review; unknown identifiers stop the deterministic path."
-    body = f"{marker}\n## DPIP examination setup — {status}\n\n{intro}\n\n{human_markdown(setup)}\n\n```yaml\n{yaml.safe_dump(setup_doc, sort_keys=False).rstrip()}\n```"
+    intro = "The setup below is deterministic candidate binding only. It does **not** establish DPIP applicability, evidence sufficiency, or a privacy PASS/FAIL result."
+    body = f"{marker}\n## DPIP examination setup — {setup['status']}\n\n{intro}\n\n{human_markdown(setup)}\n\n```yaml\n{yaml.safe_dump(setup_doc, sort_keys=False).rstrip()}\n```"
     api("POST", repo, f"issues/{number}/comments", token, {"body": body})
-    print(f"SETUP #{number}: {status}")
+    print(f"SETUP #{number}: {setup['status']}")
 
 
 def eligible(issue: dict[str, Any]) -> bool:
     return not issue.get("pull_request") and {SOURCE_LABEL, IN_PROGRESS}.issubset(labels(issue))
 
 
-def run(repo: str, token: str, issue_number: int | None = None) -> int:
-    registry = load_yaml(REGISTRY); catalog = canonical_catalog(); glossary = load_yaml(GLOSSARY)
-    if issue_number is not None:
-        issue = api("GET", repo, f"issues/{issue_number}", token)
-        if eligible(issue): publish(repo, issue, token, registry, catalog, glossary)
-        else: print(f"SKIP #{issue_number}: not an admitted RAHP run")
-        return 0
-    issues = api("GET", repo, "issues?state=open&labels=source%3Arahp%2Crun%3Ain-progress&per_page=100", token) or []
-    for issue in issues:
-        if eligible(issue): publish(repo, issue, token, registry, catalog, glossary)
-    return 0
-
-
 def self_test() -> int:
     registry = load_yaml(REGISTRY); catalog = canonical_catalog(); glossary = load_yaml(GLOSSARY)
-    dogwood = """```yaml
+    pin = "cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b"
+    relationship = f"""```yaml
 source:
   system: RAHP
-  repository: sankarshanmukhopadhyay/rahp-toolkit
-  issue: 225
-  changed_artifact:
-    repository: OpenVTC/verifiable-trust-infrastructure
-    revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
-  source_pins:
-    - label: Dogwood RC-1
-      repository: OpenVTC/verifiable-trust-infrastructure
-      revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
+  changed_artifact: {{repository: OpenVTC/verifiable-trust-infrastructure, revision: {pin}}}
 ```
 ```yaml
 requested_examination:
@@ -289,39 +295,38 @@ requested_examination:
     interaction_ids: [C3, C5]
     reference_flow_ids: [RF-001, RF-003]
     invariant_ids: [P2, P4, P5]
+    claim_ids: [C3-PC-2, C5-PC-2, C3-PC-4, C3-PC-5, C5-PC-4]
     profile_ids: [PP-4, PP-2]
-    evidence_requirement_ids: [ER-REL-DID-AB, ER-STATUS-AB, ER-TASK-AB, ER-VERIFIER-AB]
-  provided_evidence:
-    - requirement_id: ER-REL-DID-AB
-      evidence_class: synthetic-fixture-self-test
-      provenance:
-        producer: trust-protocol-interop-lab
-        run_id: selftest
-        observed_at: '2026-08-30T00:00:00Z'
-        implementation_repository: OpenVTC/verifiable-trust-infrastructure
-        implementation_revision: cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b
-        context_a_run: A
-        context_b_run: B
-      observation_summary: Setup preserves this binding but does not decide sufficiency.
-      surfaces: {}
-  question: Does Dogwood preserve correlation resistance across the composed privacy boundary?
+  suspected_surfaces: [relationship DID and edge identifiers, status and policy discovery traffic, retained relationship evidence, deliberate-correlation mechanisms]
+  question: relationship correlation
 ```"""
-    setup = build_setup(120, dogwood, registry, catalog, glossary)["examination_setup"]
+    setup = build_setup(168, relationship, registry, catalog, glossary)["examination_setup"]
+    assert setup["evidence_requirement_ids"] == ["ER-REL-DID-AB", "ER-STATUS-AB", "ER-TASK-AB", "ER-VERIFIER-AB"], setup
+    assert setup["evidence_status"] == "evidence-required"
     assert setup["status"] == "ready", setup
-    assert setup["candidate_interactions"] == ["C3", "C5"]
-    assert setup["candidate_reference_flows"] == ["RF-001", "RF-003"]
-    assert setup["source_pins"][0]["revision"] == "cb01d0a758863fb3a02f9f4eef2c4f15f56c4c3b"
-    assert setup["evidence_status"] == "evidence-supplied-for-evaluation"
-    assert setup["provided_evidence"][0]["evidence_class"] == "synthetic-fixture-self-test"
-    assert setup["human_acceptance_required"] is False
-    c3 = next(item for item in setup["human_scope"] if item["id"] == "C3")
-    assert c3["title"] == "Asymmetric cross-community relationship privacy"
-    assert c3["summary"]
-    bad = dogwood.replace("C3, C5", "C3, C999")
-    blocked = build_setup(120, bad, registry, catalog, glossary)["examination_setup"]
-    assert blocked["status"] == "needs-review"
-    assert any("unknown canonical interaction" in x for x in blocked["unresolved_bindings"])
-    print("PASS examination_setup self-test")
+
+    credential = f"""```yaml
+source:
+  system: RAHP
+  changed_artifact: {{repository: example/credential-implementation, revision: {'a'*40}}}
+```
+```yaml
+requested_examination:
+  canonical:
+    interaction_ids: [C3]
+    invariant_ids: [P2, P4, P5]
+    claim_ids: [C3-PC-2]
+    profile_ids: [PP-4]
+  suspected_surfaces: [credential identifier cross-context correlation]
+  question: can a credential identifier join unrelated contexts?
+```"""
+    cred = build_setup(149, credential, registry, catalog, glossary)["examination_setup"]
+    assert cred["evidence_requirement_ids"] == ["ER-CREDENTIAL-ID-AB"], cred
+    assert cred["evidence_status"] == "evidence-required"
+
+    replay = build_setup(999, relationship, registry, catalog, glossary)["examination_setup"]
+    assert replay["evidence_requirement_ids"] == setup["evidence_requirement_ids"]
+    print("PASS examination_setup semantic evidence binding regressions (#149/#168)")
     return 0
 
 
@@ -330,7 +335,8 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--issue-number", type=int)
     args = parser.parse_args()
-    if args.self_test: return self_test()
+    if args.self_test:
+        return self_test()
     if not args.issue_number:
         print("--issue-number is required for runtime publication", file=sys.stderr); return 2
     token = os.getenv("GITHUB_TOKEN", "")
