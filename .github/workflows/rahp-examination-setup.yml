@@ -1,35 +1,30 @@
 # DPIP RAHP examination setup workflow
 #
-# Purpose:
-#   Materialize deterministic examination setup for admitted RAHP-originated requests
-#   and dispatch evidence planning. Scheduled runs are recovery reconciliation only.
-#
-# Side effects:
-#   May write structured setup records to DPIP issues and dispatch downstream workflows.
-#
-# Boundary:
-#   Setup prepares scope/bindings; it does NOT execute the privacy examination or
-#   establish evidence sufficiency or a privacy conclusion.
-#
+# Purpose: deterministically bind admitted RAHP privacy propositions to canonical
+# DPIP scope and evidence requirements, then dispatch evidence planning.
 name: Prepare admitted RAHP privacy examinations
 
 on:
   issues:
     types: [labeled]
   schedule:
-    # Recovery reconciliation; normal progression is explicitly dispatched.
     - cron: '27 * * * *'
   push:
     branches: [main]
     paths:
       - '.github/workflows/rahp-examination-setup.yml'
       - '.github/workflows/rahp-evidence-plan.yml'
-      - '.github/workflows/rahp-examination-execute.yml'
-      - '.github/workflows/rahp-return.yml'
       - 'scripts/examination_setup.py'
-      - 'scripts/evidence_plan.py'
-      - 'scripts/evidence_acquire.py'
-      - 'scripts/examination_execute.py'
+      - 'scripts/validate_evidence_contracts.py'
+      - 'portfolio/evidence-requirements.yaml'
+      - 'evidence/evidence-bindings.yaml'
+  pull_request:
+    paths:
+      - '.github/workflows/rahp-examination-setup.yml'
+      - 'scripts/examination_setup.py'
+      - 'scripts/validate_evidence_contracts.py'
+      - 'portfolio/evidence-requirements.yaml'
+      - 'evidence/evidence-bindings.yaml'
   workflow_dispatch:
     inputs:
       issue_number:
@@ -43,12 +38,13 @@ permissions:
   actions: write
 
 concurrency:
-  group: dpip-examination-setup-${{ github.event.issue.number || inputs.issue_number || 'reconcile' }}
+  group: dpip-examination-setup-${{ github.event.issue.number || github.event.pull_request.number || inputs.issue_number || 'reconcile' }}
   cancel-in-progress: false
 
 jobs:
   setup:
     if: >-
+      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
       github.event_name == 'push' ||
@@ -62,9 +58,12 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - name: Validate examination setup processor
-        run: python scripts/examination_setup.py --self-test
+      - name: Validate canonical evidence model and setup regressions
+        run: |
+          python scripts/validate_evidence_contracts.py
+          python scripts/examination_setup.py --self-test
       - name: Prepare admitted examination and collect targets
+        if: github.event_name != 'pull_request'
         id: targets
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -89,6 +88,7 @@ jobs:
               done
           fi
       - name: Dispatch evidence planning for prepared examinations
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
