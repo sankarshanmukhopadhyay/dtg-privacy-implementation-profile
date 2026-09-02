@@ -1,0 +1,50 @@
+version: "0.1"
+interaction_id: C3
+implementation:
+  name: dtg-371-correlation-scope-synthetic-fixture
+  version: "0.1"
+  deployment: two-counterparty-pairwise-contradiction
+provenance:
+  - id: rahp-371-matrix
+    source: sankarshanmukhopadhyay/rahp-toolkit#372
+    version: 88fa74d56f91d65ff7d5ca942c58b02fa89a6e6f
+  - id: cred-spec-pr30
+    source: trustoverip/dtgwg-cred-spec#30
+    version: b3840f430f5bd01addab95881350a7f860e763e2
+    authority_status: proposed-upstream
+proposition_ids: [DTG-371-P02, DTG-371-P03, DTG-371-P13]
+evidence_class: synthetic-fixture-self-test
+contexts:
+  - id: counterparty-a
+    relationship: unrelated-counterparty
+  - id: counterparty-b
+    relationship: unrelated-counterparty
+observed_surfaces:
+  - id: a-holder-id
+    context_id: counterparty-a
+    surface: relationship_did
+    state: observed
+    value_digest: sha256:pairwise-reuse-fixture
+    declared_scope: pairwise
+    observable_scope: counterparty
+    effective_scope: cross-counterparty
+  - id: b-holder-id
+    context_id: counterparty-b
+    surface: relationship_did
+    state: observed
+    value_digest: sha256:pairwise-reuse-fixture
+    declared_scope: pairwise
+    observable_scope: counterparty
+    effective_scope: cross-counterparty
+join_attempts:
+  - id: pairwise-reuse-join
+    context_ids: [counterparty-a, counterparty-b]
+    input_observation_ids: [a-holder-id, b-holder-id]
+    basis: identical identifier digest observed by two unrelated counterparties
+    result: joined
+    explanation: This synthetic vector falsifies the claimed pairwise property by contradiction; it is not runtime evidence that an upstream implementation behaves this way.
+expected_disposition:
+  declared_scope: contradiction
+  effective_privacy: FAIL
+  runtime_conclusion: INDETERMINATE
+  runtime_evidence_required: [ER-REL-DID-AB, ER-VERIFIER-AB]
