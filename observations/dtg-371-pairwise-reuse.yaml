@@ -1,0 +1,61 @@
+version: "2"
+interaction_id: C3
+implementation:
+  name: dtg-371-correlation-scope-synthetic-fixture
+  version: "0.1"
+  deployment: two-counterparty-pairwise-contradiction
+provenance:
+  - id: rahp-371-matrix
+    source: sankarshanmukhopadhyay/rahp-toolkit#372
+    version: 5861a068982c804be7655d9727aa0418e4f922f9
+  - id: cred-spec-pr30
+    source: trustoverip/dtgwg-cred-spec#30
+    version: b3840f430f5bd01addab95881350a7f860e763e2
+contexts:
+  - id: counterparty-a
+    relationship: unrelated
+    description: unrelated counterparty A observing a holder-declared pairwise identifier
+  - id: counterparty-b
+    relationship: unrelated
+    description: unrelated counterparty B observing the same holder-declared pairwise identifier
+observed_surfaces:
+  - id: a-holder-id
+    task_id: DTG-371-P02
+    context_id: counterparty-a
+    observer: verifier-a
+    component: DTG identifier layer
+    surface: relationship_did
+    state: observed
+    value_digest: sha256:pairwise-reuse-fixture
+    stability: cross-context-stable
+    retention_stage: retained-credential
+    declared_scope: pairwise
+    observable_scope: counterparty
+    effective_scope: cross-context
+    provenance_ids: [rahp-371-matrix, cred-spec-pr30]
+  - id: b-holder-id
+    task_id: DTG-371-P02
+    context_id: counterparty-b
+    observer: verifier-b
+    component: DTG identifier layer
+    surface: relationship_did
+    state: observed
+    value_digest: sha256:pairwise-reuse-fixture
+    stability: cross-context-stable
+    retention_stage: retained-credential
+    declared_scope: pairwise
+    observable_scope: counterparty
+    effective_scope: cross-context
+    provenance_ids: [rahp-371-matrix, cred-spec-pr30]
+join_attempts:
+  - id: pairwise-reuse-join
+    context_ids: [counterparty-a, counterparty-b]
+    input_observation_ids: [a-holder-id, b-holder-id]
+    basis: identical identifier digest observed by two unrelated counterparties
+    result: joined
+    evidence: [a-holder-id, b-holder-id]
+    explanation: The synthetic fixture falsifies the claimed pairwise property by contradiction; it is not runtime evidence that an upstream implementation behaves this way.
+vectors:
+  - id: DTG-371-A-PAIRWISE-REUSE
+    test_id: C3-T7
+    crypto_verified: true
