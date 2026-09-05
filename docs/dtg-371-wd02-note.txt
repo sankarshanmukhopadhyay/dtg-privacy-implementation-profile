@@ -1,0 +1,1 @@
+DTG-371 WD02 correlation-scope privacy reconciliation; INDETERMINATE/AMBER; runtime A/B evidence required; upstream read-only.
