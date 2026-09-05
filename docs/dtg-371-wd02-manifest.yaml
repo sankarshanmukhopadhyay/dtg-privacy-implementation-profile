@@ -1,0 +1,9 @@
+manifest:
+  id: DTG-371-WD02-PRIVACY
+  status: pr-ready
+  historical_evidence_preserved: true
+  upstream_mutation: false
+  current_result: INDETERMINATE
+  assurance_posture: AMBER
+  runtime_ab_evidence_required: true
+  parent_assurance_issue: sankarshanmukhopadhyay/rahp-toolkit#433
