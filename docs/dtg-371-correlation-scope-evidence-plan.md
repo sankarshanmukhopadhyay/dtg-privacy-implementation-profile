@@ -58,6 +58,18 @@ Where runtime evidence is unavailable, the result remains `INDETERMINATE / evide
 
 The PR #30 merge therefore does **not** promote Track A privacy assurance to GREEN. It strengthens specification authority and removes one former design uncertainty while leaving runtime privacy evidence obligations intact.
 
+## Current OpenVTC examination — 2026-09-06
+
+A new attributable runtime package was produced by `sankarshanmukhopadhyay/trust-protocol-interop-lab` workflow run `34028158162` against the immutable implementation pin `OpenVTC/verifiable-trust-infrastructure@e393e38da4941202143e293b555413d8c86ef3b3`. The workflow completed successfully and emitted artifact `current-openvtc-track-a-runtime-upstream-observation` (artifact `9987775337`, digest `sha256:c2ef32c1ea4ca46ae6df1cbe63db0c8f86693dce231bf8696ae9303855d1fbd5`). Dogwood is not used as current evidence.
+
+DPIP admits the package as `runtime-upstream-observation` for this exact source pin. The A/B observation materially executed the relationship/verifier path: the equivalent relationship binder was fresh across contexts, relationship DID and edge identifier were absent on the executed path, verifier transcript/challenge/purpose/transaction context were fresh, and the deliberate join attempt reported `not-detected`.
+
+The same package explicitly records `ER-STATUS-AB` and `ER-TASK-AB` surfaces as `not-evidenced` / `not-executed`; credential/presentation/proof identifier surfaces under `ER-CREDENTIAL-ID-AB` are likewise not evidenced apart from the executed verifier transcript. These are bounded non-observations, not evidence that the surfaces are universally absent from OpenVTC.
+
+**DPIP disposition: `INDETERMINATE / evidence-required`.** The current package materially improves Track A evidence and removes the historical identical-binder observation as a current-baseline assumption, but it is insufficient for an end-to-end effective-correlation PASS because status/policy-discovery, Trust Task/retention, and credential-carriage correlation surfaces were not materially exercised. A successful workflow and a no-join result on the executed path do not imply composed privacy PASS.
+
+The smallest remaining evidence obligation is therefore bounded to current-source-pinned execution of the missing surfaces, where those surfaces are actually available in the implementation/composition. If a surface cannot be exercised because it is not implemented on the current target path, the producer should return that implementation finding rather than synthesize a substitute.
+
 ## Reassessment rule
 
 Historical source-pinned evidence is immutable. Reassess only when a source transition changes semantics material to a bound privacy proposition, runtime implementation pins change, or a residual such as binder blinding changes the observable join surface. A changed upstream SHA is a trigger for semantic comparison, not automatic invalidation of every evidence artifact.
