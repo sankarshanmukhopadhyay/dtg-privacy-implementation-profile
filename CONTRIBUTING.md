@@ -12,4 +12,10 @@ DPIP owns composed privacy assurance semantics only. Contributions must not sile
 
 Missing or inadmissible evidence is never PASS. Preserve `INDETERMINATE / evidence-required` and `INDETERMINATE / model-gap` semantics where evidence or model coverage is insufficient.
 
+## Durable artifact placement
+
+Before adding a durable file, identify its repository role: **profile authority, executable contract, executable implementation, evidence, assurance judgment, historical record, or canonical reader documentation**. Evidence registries, observations, fixtures, evidence plans and machine-readable bindings are not disposable documentation merely because they are text or YAML.
+
+Prefer stable requirement IDs such as `ER-*`, case IDs and links to canonical artifacts over repeating cross-repository coordination prose. Add a new explanatory document only when an existing canonical page cannot own the material without obscuring its purpose. Temporary reasoning, status narration and coordination should normally remain in the Issue/PR record.
+
 Security reports must follow [`SECURITY.md`](SECURITY.md).
