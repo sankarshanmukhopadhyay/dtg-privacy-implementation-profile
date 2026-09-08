@@ -1,0 +1,32 @@
+{
+  "schema": "dpip-data-room-observability/v1",
+  "proposition": "P-ROOM-007",
+  "subject": "dtg-private-data-room",
+  "source_revision": "0a5897f0acf9e16eec8ee88ccb74d7b1afb0bd87",
+  "experiment": {
+    "id": "E2",
+    "configuration": {
+      "mode": "repeated-member-unlinkability",
+      "runtime_available": false,
+      "reason": "private-room serving is intentionally disabled pending same-subject ZK support"
+    }
+  },
+  "observations": {
+    "host": [],
+    "verifier": [],
+    "transport": [],
+    "audit": []
+  },
+  "correlation_signal": "not-tested",
+  "result": "evidence-incomplete",
+  "limitations": [
+    "No executable private-room serving path exists at the pinned implementation revision.",
+    "Static cryptographic design does not establish runtime membership unlinkability."
+  ],
+  "residual_uncertainty": [
+    "host linkability across repeated actions",
+    "invitation and key-establishment metadata leakage",
+    "cross-room holder correlation"
+  ],
+  "artifacts": []
+}
