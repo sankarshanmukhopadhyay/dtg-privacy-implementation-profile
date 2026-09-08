@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DPIP Data Room Observability Evidence v1",
+  "type": "object",
+  "required": ["schema", "proposition", "subject", "source_revision", "experiment", "observations", "result", "limitations"],
+  "properties": {
+    "schema": {"const": "dpip-data-room-observability/v1"},
+    "proposition": {"type": "string", "minLength": 1},
+    "subject": {"type": "string", "minLength": 1},
+    "source_revision": {"type": "string", "minLength": 1},
+    "experiment": {"type": "object", "required": ["id", "configuration"], "properties": {"id": {"enum": ["E1", "E2", "E3", "E4", "E5", "E6"]}, "configuration": {"type": "object"}}, "additionalProperties": true},
+    "observations": {"type": "object", "required": ["host", "verifier", "transport", "audit"], "properties": {"host": {"type": "array", "items": {"type": "string"}}, "verifier": {"type": "array", "items": {"type": "string"}}, "transport": {"type": "array", "items": {"type": "string"}}, "audit": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false},
+    "correlation_signal": {"enum": ["found", "not-found", "not-tested", "inconclusive"]},
+    "result": {"enum": ["supported", "not-supported", "indeterminate", "evidence-incomplete", "outside-threat-model"]},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "residual_uncertainty": {"type": "array", "items": {"type": "string"}},
+    "artifacts": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
