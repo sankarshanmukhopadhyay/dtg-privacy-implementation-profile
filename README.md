@@ -35,8 +35,18 @@ DPIP is not version-locked to a particular RAHP release. Interoperability is gov
 
 Specification/source evidence establishes what a conforming system is required, permitted or expected to expose; it cannot establish what two actual runtime contexts observed. Synthetic/calibration fixtures test evaluator behavior; attributable runtime observations test implementation behavior. Evidence must satisfy the provenance class and immutable source identity required by the named `ER-*` obligation. Missing evidence is useful information but is never PASS.
 
+## Current post-v0.1 evidence state
+
+The 2026-09-08 RAHP-triggered relationship-correlation privacy rerun (DPIP #218) consumed attributable OpenVTC A/B evidence produced by the Trust Protocol Interop Lab for relationship identifiers, verifier transcripts, status, Trust Tasks and policy discovery. Within that exact pinned runtime boundary, the examination reached **SATISFIED**: no unintended subject join was observed across the exercised relationship/verifier surfaces; Trust Task identifiers/evidence and policy discovery were fresh across A/B contexts; and the shared status endpoint/handle was treated as an intentional common service surface rather than, by itself, evidence of subject correlation.
+
+That result is deliberately bounded. It does **not** establish deployment-wide unlinkability, network/device unlinkability, or universal privacy across unexercised transports and implementations. The distinction is the DPIP contract in action: attributable runtime evidence can retire a named evidence obligation without becoming a broader privacy claim.
+
+Data Rooms remain a separate evidence boundary. [`docs/data-room-observability.md`](docs/data-room-observability.md) defines the E1-E6 observability contract used by RAHP #481. Current private-room runtime execution remains unavailable pending same-subject/common-control ZK support, so the private-tier membership and invitation/key-establishment propositions remain `EVIDENCE_REQUIRED / evidence-incomplete` until that runtime exists and can be observed.
+
 ## Release status
 
-**v0.1.0 — Khajjiar Lake** is the first governed release candidate. The historical RF-001 Trust Task binding blocker is no longer an unhandled semantic dead end: DPIP models the correlation surface, mechanically pressure-tests prohibited thread/envelope reuse, and deterministically returns evidence-required when authoritative runtime observations are absent. This resolves the release blocker without claiming universal privacy success.
+**v0.1.0 — Khajjiar Lake** is the first governed DPIP release, published on 2026-08-31. The historical RF-001 Trust Task binding blocker is no longer an unhandled semantic dead end: DPIP models the correlation surface, mechanically pressure-tests prohibited thread/envelope reuse, and deterministically returns evidence-required when authoritative runtime observations are absent.
+
+The current unreleased development line is aimed at **v0.2.0** and includes attributable runtime evidence handling and the Data Rooms observability contract. The next release is intentionally being held while the corresponding RAHP residuals reach stable dispositions; no unreleased work should be read as changing the v0.1.0 release claim.
 
 See [`readiness/v0.1.yaml`](readiness/v0.1.yaml) and [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
