@@ -57,9 +57,13 @@ Assess whether Persona identifiers, disclosure records, verifier state or operat
 
 ## Current pinned executability
 
-At OpenVTC revision `0a5897f0acf9e16eec8ee88ccb74d7b1afb0bd87`, Data Room design and partial implementation evidence exist, but private-room serving is intentionally refused pending same-subject ZK support. Therefore E2/E3/E4/E5/E6 cannot yet produce runtime privacy conclusions for the private tier.
+The 2026-09-08 RAHP #481 evidence tranche rechecked the public OpenVTC Data Rooms implementation at `56cd6e5b7116777f1d9734e76c9a7b0569870e19` through `sankarshanmukhopadhyay/trust-protocol-interop-lab#185` / PR #186. Target-native `vti-rooms`, `vti-rooms-dtg`, `room-host`, and `vtc-service` room tests passed, but the implementation boundary remains unchanged for the privacy propositions governed here: private-room serving is still intentionally unavailable pending same-subject/common-control ZK support.
 
-The fixture `contracts/fixtures/data-room-observability-evidence-incomplete.json` is the required current-state return for P-ROOM-007. It records the gap rather than treating MLS or host key separation as proof of membership unlinkability.
+Therefore E2/E3/E4/E5/E6 still cannot produce runtime privacy conclusions for the private tier. The stronger non-private implementation evidence produced by the Interop Lab must not be promoted into private-tier unlinkability or invitation-privacy evidence.
+
+The fixture `contracts/fixtures/data-room-observability-evidence-incomplete.json` remains the required current-state return for `P-ROOM-007`. It records the gap rather than treating MLS, host key separation, passing room tests, or fail-closed private-room behavior as proof of membership unlinkability. `P-ROOM-008` remains evidence-incomplete for the same executable-runtime reason.
+
+The durable RAHP residual owner is [RAHP #481](https://github.com/sankarshanmukhopadhyay/rahp-toolkit/issues/481), whose canonical proposition definitions come from `profiles/dtg/coverage/data-rooms.yaml`. DPIP should rerun the relevant E-family experiments only when the required private-room execution surface exists or the upstream same-subject/common-control dependency changes materially.
 
 ## RAHP mapping
 
