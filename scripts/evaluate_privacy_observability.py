@@ -49,21 +49,17 @@ def to_assessor_result(doc: dict[str, Any]) -> dict[str, Any]:
         outcome = "NOT_APPLICABLE"
         reason_code = "outside-threat-model"
         action = "Do not extend this DPIP privacy conclusion to the explicitly out-of-scope observer; use a separate assessment if that observer becomes in scope."
-    else:  # guarded by schema; retained as a fail-closed implementation boundary
+    else:
         outcome = "INDETERMINATE"
         reason_code = "unsupported-privacy-result"
         action = "Update the specialist mapping before reconciliation; do not infer PASS."
 
-    evidence_used = [{
-        "schema": doc["schema"],
-        "experiment_id": experiment_id,
-        "result": result,
-        "executed": doc["executed"],
-        "observer_planes": [plane["id"] for plane in doc["observer_planes"]],
-        "correlation": correlation,
-        "unsupported_inference": unsupported,
-    }]
-
+    observer_ids = [plane["id"] for plane in doc["observer_planes"]]
+    evidence_used = [
+        f"{doc['schema']}:{experiment_id}:result={result}",
+        "observer-planes:" + ",".join(observer_ids),
+        f"correlation:{correlation.get('signal')}|effective_join={str(bool(correlation.get('effective_join'))).lower()}",
+    ]
     residual_parts = residual + [f"Unsupported inference: {item}" for item in unsupported]
     residual_risk = "; ".join(residual_parts) or "No residual uncertainty supplied; RAHP must retain the bounded specialist scope."
 
@@ -76,8 +72,15 @@ def to_assessor_result(doc: dict[str, Any]) -> dict[str, Any]:
         "evidence_used": evidence_used,
         "residual_risk": residual_risk,
         "action_required": action,
-        "boundedness": "DPIP owns privacy interpretation for the declared experiment/observer scope; RAHP owns terminal assurance reconciliation.",
-        "confidence": "bounded-runtime" if doc["executed"] else "evidence-incomplete",
+        "details": {
+            "privacy_observability_schema": doc["schema"],
+            "privacy_result": result,
+            "executed": doc["executed"],
+            "observer_planes": observer_ids,
+            "correlation": correlation,
+            "unsupported_inference": unsupported,
+            "ownership_boundary": "DPIP owns privacy interpretation for the declared experiment/observer scope; RAHP owns terminal assurance reconciliation."
+        }
     }
     assessor_problems = _validate(assessor, ASSESSOR_SCHEMA)
     if assessor_problems:
