@@ -6,6 +6,11 @@ from scripts.evaluate_privacy_observability import to_assessor_result
 
 
 FIXTURE_DIR = Path(__file__).parents[1] / "contracts" / "fixtures"
+RAHP_CONSUMER_KEYS = {
+    "schema", "assessor", "assessment_id", "outcome", "reason_code",
+    "evidence_used", "residual_risk", "action_required", "source_pins",
+    "provenance", "details",
+}
 
 
 def fixture(name):
@@ -20,6 +25,9 @@ class PrivacyObservabilitySpecialistReturnTests(unittest.TestCase):
         self.assertEqual("bounded-privacy-supported", result["reason_code"])
         self.assertIn("DPIP", result["assessor"])
         self.assertIn("deployment-wide unlinkability", result["residual_risk"])
+        self.assertTrue(all(isinstance(item, str) and item for item in result["evidence_used"]))
+        self.assertLessEqual(set(result), RAHP_CONSUMER_KEYS)
+        self.assertIn("RAHP owns terminal assurance reconciliation", result["details"]["ownership_boundary"])
 
     def test_observed_correlation_maps_to_fail(self):
         result = to_assessor_result(fixture("privacy-observability-observed-correlation.json"))
