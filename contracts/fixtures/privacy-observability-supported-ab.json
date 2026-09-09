@@ -1,0 +1,20 @@
+{
+  "schema": "dpip-privacy-observability-result/v1",
+  "experiment": {
+    "id": "privacy-ab-unlinkability",
+    "privacy_proposition": "Repeated interactions should not expose a stable join at the declared observer planes.",
+    "comparison": {"kind": "A/B", "scenarios": ["A", "B"]},
+    "required_observer_planes": ["host", "verifier"],
+    "minimum_evidence_class": "runtime-observation",
+    "reproducibility": "source-pinned"
+  },
+  "observer_planes": [
+    {"id": "host", "direct_observables": ["request timing"], "derived_or_joinable": [], "privilege": "ordinary", "threat_model": "in-scope"},
+    {"id": "verifier", "direct_observables": ["presented claims"], "derived_or_joinable": [], "privilege": "ordinary", "threat_model": "in-scope"}
+  ],
+  "correlation": {"signal": "not-found", "effective_join": false},
+  "result": "supported",
+  "executed": true,
+  "unsupported_inference": ["deployment-wide unlinkability"],
+  "residual_uncertainty": ["network observer not measured"]
+}

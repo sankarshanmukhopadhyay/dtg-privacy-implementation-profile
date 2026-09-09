@@ -1,0 +1,19 @@
+{
+  "schema": "dpip-privacy-observability-result/v1",
+  "experiment": {
+    "id": "privacy-privileged-observer-boundary",
+    "privacy_proposition": "Privacy claims must not silently extend to privileged deployment observers outside the declared threat model.",
+    "comparison": {"kind": "single", "scenarios": ["privileged-observer"]},
+    "required_observer_planes": ["deployment-privileged"],
+    "minimum_evidence_class": "runtime-observation",
+    "reproducibility": "deployment-specific"
+  },
+  "observer_planes": [
+    {"id": "deployment-privileged", "direct_observables": ["raw service logs"], "derived_or_joinable": ["account join"], "privilege": "privileged", "threat_model": "outside"}
+  ],
+  "correlation": {"signal": "inconclusive", "effective_join": false},
+  "result": "outside-threat-model",
+  "executed": true,
+  "unsupported_inference": ["deployment-wide unlinkability", "privacy against privileged deployment operators"],
+  "residual_uncertainty": ["privileged observer is explicitly outside the declared privacy claim"]
+}
