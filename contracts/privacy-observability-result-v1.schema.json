@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DPIP Privacy Observability Result v1",
+  "type": "object",
+  "required": ["schema", "experiment", "observer_planes", "correlation", "result", "executed", "unsupported_inference", "residual_uncertainty"],
+  "properties": {
+    "schema": {"const": "dpip-privacy-observability-result/v1"},
+    "experiment": {
+      "type": "object",
+      "required": ["id", "privacy_proposition", "comparison", "required_observer_planes", "minimum_evidence_class", "reproducibility"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "privacy_proposition": {"type": "string", "minLength": 1},
+        "comparison": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {"enum": ["A/B", "single", "multi-context", "composition"]},
+            "scenarios": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": true
+        },
+        "required_observer_planes": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+        "minimum_evidence_class": {"type": "string", "minLength": 1},
+        "reproducibility": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "observer_planes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "direct_observables", "derived_or_joinable", "privilege", "threat_model"],
+        "properties": {
+          "id": {"enum": ["host", "verifier", "transport", "audit", "deployment-privileged", "other"]},
+          "direct_observables": {"type": "array", "items": {"type": "string"}},
+          "derived_or_joinable": {"type": "array", "items": {"type": "string"}},
+          "privilege": {"enum": ["ordinary", "privileged", "deployment-specific"]},
+          "threat_model": {"enum": ["in-scope", "outside", "conditional"]},
+          "composition_notes": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "required": ["signal", "effective_join"],
+      "properties": {
+        "signal": {"enum": ["found", "not-found", "not-tested", "inconclusive"]},
+        "effective_join": {"type": "boolean"},
+        "composition": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "result": {"enum": ["supported", "not-supported", "indeterminate", "evidence-incomplete", "outside-threat-model"]},
+    "executed": {"type": "boolean"},
+    "unsupported_inference": {"type": "array", "items": {"type": "string"}},
+    "residual_uncertainty": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
