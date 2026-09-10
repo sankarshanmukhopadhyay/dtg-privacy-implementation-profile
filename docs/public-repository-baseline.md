@@ -5,7 +5,7 @@ This record captures the repository-owned controls reviewed under issue #176. It
 | Control | State | Evidence | Residual risk |
 |---|---|---|---|
 | Purpose, maturity, adopter paths and authority boundaries | PASS | `README.md`, `docs/`, `readiness/v0.1.yaml` | None identified in this baseline pass. |
-| Explicit repository license | EVIDENCE REQUIRED | no `LICENSE` file and no repository license statement located in the reviewed source | License selection is a human authority decision; tracked separately rather than guessed. |
+| Explicit repository license | PASS | `LICENSE`, README `License` section | Apache-2.0 applies repository-wide to repository-owned artifacts; separately identified third-party material retains its original terms. |
 | Security reporting and supported versions | PASS | `SECURITY.md` | GitHub private-vulnerability-reporting enablement remains hosted setting evidence. |
 | Contribution/community/support guidance | PASS | `CONTRIBUTING.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, issue + PR templates | None identified. |
 | Dependency update management | PASS | `.github/dependabot.yml` | Hosted Dependabot enablement remains platform evidence. |
@@ -17,4 +17,4 @@ This record captures the repository-owned controls reviewed under issue #176. It
 
 ## Completion boundary
 
-Repository-owned governance/community-health gaps are closed by the associated remediation PR. The missing explicit license is not repaired by guessing an intent; it is tracked as a separate human-judgment issue.
+Repository-owned governance/community-health gaps identified by issue #176 are now closed. The licensing residual is resolved by the repository-wide Apache-2.0 decision recorded under issue #201; this PASS is repository evidence, not external certification or a claim about separately licensed third-party material.
