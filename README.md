@@ -50,3 +50,9 @@ Data Rooms remain a separate evidence boundary. [`docs/data-room-observability.m
 The current unreleased development line is aimed at **v0.2.0** and includes attributable runtime evidence handling and the Data Rooms observability contract. The next release is intentionally being held while the corresponding RAHP residuals reach stable dispositions; no unreleased work should be read as changing the v0.1.0 release claim.
 
 See [`readiness/v0.1.yaml`](readiness/v0.1.yaml) and [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
+
+## License
+
+DPIP is licensed under the [Apache License 2.0](LICENSE). The license applies repository-wide to repository-owned source code, specifications and documentation, schemas and contracts, fixtures and examples, evidence artifacts, and generated/publication artifacts unless a file or bundled third-party work carries a separate explicit notice.
+
+Third-party material retains its original copyright and licensing terms where separately identified. The repository-wide license does not relicense independently sourced material.
