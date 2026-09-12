@@ -1,4 +1,4 @@
-version: 3
+version: 4
 purpose: >-
   Stable evidence-requirement identifiers for deterministic RAHP-originated DPIP examinations.
   These requirements describe evidence classes and observation contracts; they do not
@@ -79,3 +79,76 @@ requirements:
     required_surfaces: [device_install_display_metadata, heartbeat_payload, retained_presence_record]
     producer_capability: composed-unlinkability-v1
     source_pin_policy: immutable-component-pins-required
+
+  ER-VETTING-DISCOVERY-AB:
+    title: Pre-admission identity and manifest-discovery observations
+    summary: >-
+      Capture attributable A/B observations showing whether manifest discovery requires
+      or reuses a stable applicant/persona identifier across community contexts before admission.
+    interactions: [C4]
+    source_lineage: ["DPIP #250", "DPIP #251", "RAHP #640"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [active_persona_identifier, target_community, discovery_request_envelope, discovery_timestamp]
+    producer_capability: vetted-admission-observability-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: Two unrelated community/application contexts using the same person-controlled client with observer-visible request metadata captured separately.
+    required_fields: [context_id, target_community, applicant_identifier_or_privacy_safe_fingerprint, request_envelope_metadata, observed_at, implementation_revision]
+    privacy_safe_capture_rule: Store privacy-safe fingerprints or scoped labels instead of raw personal identifiers unless the raw value is strictly necessary to establish reuse.
+    sufficiency_criterion: Evidence must establish whether the same applicant identifier or equivalent stable binder is observable and joinable across at least two unrelated pre-admission discovery contexts.
+    rerun_trigger: New pinned vetted-admission examination after attributable A/B evidence exists.
+
+  ER-VETTER-DIRECTORY-AB:
+    title: Vetter directory/profile cross-context observations
+    summary: >-
+      Capture attributable A/B directory observations showing whether vetter identifiers,
+      profile metadata, filters or result state become joinable beyond the intended community purpose.
+    interactions: [C3, C4]
+    source_lineage: ["DPIP #250", "DPIP #251", "RAHP #640"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [vetter_identifier, directory_filters, profile_metadata_classes, result_context, retained_directory_state]
+    producer_capability: vetted-admission-observability-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: At least two community/application contexts with equivalent directory queries and explicit observer scopes.
+    required_fields: [context_id, community_id, vetter_identifier_or_privacy_safe_fingerprint, filter_classes, returned_metadata_classes, retention_observation, observed_at, implementation_revision]
+    privacy_safe_capture_rule: Record metadata classes and privacy-safe fingerprints; do not collect location/contact values unless needed to prove unintended reuse or disclosure.
+    sufficiency_criterion: Evidence must show whether directory identifiers/profile metadata or query state can be joined across unrelated contexts and whether retention exceeds the declared discovery purpose.
+    rerun_trigger: New pinned vetted-admission examination after attributable A/B evidence exists.
+
+  ER-VETTING-TICKET-AB:
+    title: Vetting ticket observability and reuse observations
+    summary: >-
+      Capture attributable observations of vetting-ticket handling across contexts to determine
+      whether ticket identifiers, links or derived binders are observable, reusable or retained
+      beyond the intended admission transaction.
+    interactions: [C3]
+    source_lineage: ["DPIP #250", "DPIP #251", "RAHP #640"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [ticket_identifier, ticket_link_fingerprint, community_scope, observer_scope, retention_state, replay_result]
+    producer_capability: vetted-admission-observability-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: Separate admission contexts including correct-community, wrong-community and replay attempts.
+    required_fields: [context_id, community_id, ticket_identifier_or_fingerprint, observer_scope, retention_observation, replay_or_cross_scope_result, observed_at, implementation_revision]
+    privacy_safe_capture_rule: Never persist raw ticket secrets in the evidence package; use one-way fingerprints sufficient to establish equality or reuse.
+    sufficiency_criterion: Evidence must determine whether a ticket can be correlated, replayed or retained across contexts beyond its declared community/transaction scope without exposing the ticket secret itself.
+    rerun_trigger: New pinned vetted-admission examination after attributable ticket evidence exists.
+
+  ER-VETTING-RETENTION-AB:
+    title: Retained vetted-admission state observations
+    summary: >-
+      Capture attributable A/B observations of persisted application, profile, response/refusal
+      and related vetting state to determine whether retained records create a durable cross-context join surface.
+    interactions: [C3, C5]
+    source_lineage: ["DPIP #250", "DPIP #251", "RAHP #640"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [application_state, last_sent_profile, response_or_refusal_state, retained_identifier, retention_boundary]
+    producer_capability: vetted-admission-observability-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: Two unrelated vetting/application contexts plus post-completion or expiry inspection of retained client/community state.
+    required_fields: [context_id, retained_record_class, identifier_or_privacy_safe_fingerprint, retention_state, lifecycle_state, observer_scope, observed_at, implementation_revision]
+    privacy_safe_capture_rule: Prefer record classes, lifecycle states and fingerprints over raw profile/application content; exclude unrelated subject data.
+    sufficiency_criterion: Evidence must show whether retained vetting records contain stable identifiers or metadata that remain joinable across unrelated contexts after the operational need has ended.
+    rerun_trigger: New pinned vetted-admission examination after attributable retention evidence exists.
