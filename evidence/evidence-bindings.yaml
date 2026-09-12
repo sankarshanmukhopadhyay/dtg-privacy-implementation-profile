@@ -44,3 +44,24 @@ bindings:
       - ER-TASK-AB
       - ER-VERIFIER-AB
       - ER-CREDENTIAL-ID-AB
+
+  - id: vetted-admission-privacy
+    match:
+      interactions_any: [C3, C4, C5]
+      claims_any: [C4-PC-1, C4-PC-2, C3-PC-2, C3-PC-4, C3-PC-5, C5-PC-2, C5-PC-4]
+      surfaces_any:
+        - active persona DID
+        - vetter DID
+        - published profile metadata
+        - language/country/region/city/event/contact
+        - credentialStatus endpoint
+        - ticket identifiers/secrets
+        - QR/link handling
+        - persisted last-sent vetter profile
+        - application state
+    evidence_requirement_ids:
+      - ER-VETTING-DISCOVERY-AB
+      - ER-VETTER-DIRECTORY-AB
+      - ER-STATUS-AB
+      - ER-VETTING-TICKET-AB
+      - ER-VETTING-RETENTION-AB
