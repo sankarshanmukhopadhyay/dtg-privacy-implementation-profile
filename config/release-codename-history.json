@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "releases": [
-    {"version":"v0.1.0","codename":"Khajjiar Lake","status":"candidate"}
+    {"version":"v0.1.0","codename":"Khajjiar Lake","status":"published"},
+    {"version":"v0.2.0","codename":"Prashar Lake","status":"candidate"}
   ]
 }

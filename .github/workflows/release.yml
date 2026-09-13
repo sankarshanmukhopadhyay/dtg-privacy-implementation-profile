@@ -1,54 +1,25 @@
 # DPIP governed release workflow
-#
-# Purpose:
-#   Validate an explicitly governed release request, bind its persisted codename, run
-#   the full repository validation suite, and optionally publish the exact approved SHA.
-#
-# Side effects:
-#   In non-dry-run mode, creates a GitHub release/tag for the approved target revision.
-#
-# Boundary:
-#   Release publication records a capability boundary. It does NOT convert unresolved,
-#   failed, constrained, or indeterminate privacy propositions into PASS.
-#
+# Publication records a bounded capability boundary; it never converts unresolved privacy propositions into PASS.
 name: Cut governed DPIP release
 
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: Semantic release tag (vX.Y.Z)
-        required: true
-        type: string
-      release_notes:
-        description: Human release judgment / notable changes
-        required: true
-        type: string
-      dry_run:
-        description: Validate release without creating tag/release
-        required: true
-        default: true
-        type: boolean
+      version: {description: Semantic release tag (vX.Y.Z), required: true, type: string}
+      release_notes: {description: Human release judgment / notable changes, required: true, type: string}
+      dry_run: {description: Validate release without creating tag/release, required: true, default: true, type: boolean}
   push:
     branches: [main]
-    paths:
-      - 'release/requests/*.yaml'
-
-permissions:
-  contents: write
-
+    paths: ['release/requests/*.yaml']
+permissions: {contents: write}
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+        with: {fetch-depth: 0}
       - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: requirements-dev.txt
+        with: {python-version: '3.12', cache: pip, cache-dependency-path: requirements-dev.txt}
       - run: pip install -r requirements-dev.txt
       - name: Resolve governed release request
         id: request
@@ -61,67 +32,31 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import os
-          import subprocess
+          import os, subprocess
           from pathlib import Path
           import yaml
-
-          event = os.environ['EVENT_NAME']
-          if event == 'workflow_dispatch':
-              version = os.environ['DISPATCH_VERSION'].strip()
-              notes = os.environ['DISPATCH_RELEASE_NOTES'].strip()
-              dry_run = os.environ.get('DISPATCH_DRY_RUN', 'true').lower()
-              target_sha = os.environ['GITHUB_SHA']
-              source = 'workflow_dispatch'
-          elif event == 'push':
-              before = os.environ.get('EVENT_BEFORE', '').strip()
-              if before and set(before) != {'0'}:
-                  changed = subprocess.check_output(
-                      ['git', 'diff', '--name-only', before, os.environ['GITHUB_SHA']],
-                      text=True,
-                  ).splitlines()
-              else:
-                  changed = [str(p) for p in Path('release/requests').glob('*.yaml')]
-              candidates = [Path(p) for p in changed if p.startswith('release/requests/') and p.endswith('.yaml')]
-              if len(candidates) != 1:
-                  raise SystemExit(f'expected exactly one changed release request, found {len(candidates)}')
-              path = candidates[0]
-              data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
-              if data.get('status') != 'approved' or data.get('publish') is not True:
-                  raise SystemExit(f'{path} is not an approved publication request')
-              version = str(data.get('version', '')).strip()
-              notes = str(data.get('release_notes', '')).strip()
-              dry_run = 'false'
-              target_sha = str(data.get('target_sha', '')).strip()
-              source = str(path)
-          else:
-              raise SystemExit(f'unsupported event: {event}')
-
-          if not version.startswith('v') or not notes or not target_sha:
-              raise SystemExit('release request requires version, release_notes and target_sha')
-          if dry_run not in {'true', 'false'}:
-              raise SystemExit('dry_run must be true or false')
-
-          out = Path(os.environ['GITHUB_OUTPUT'])
-          with out.open('a', encoding='utf-8') as fh:
-              fh.write(f'version={version}\n')
-              fh.write(f'dry_run={dry_run}\n')
-              fh.write(f'target_sha={target_sha}\n')
-              fh.write(f'source={source}\n')
-              fh.write('release_notes<<DPIP_RELEASE_NOTES\n')
-              fh.write(notes + '\n')
-              fh.write('DPIP_RELEASE_NOTES\n')
+          event=os.environ['EVENT_NAME']
+          if event=='workflow_dispatch':
+              version=os.environ['DISPATCH_VERSION'].strip(); notes=os.environ['DISPATCH_RELEASE_NOTES'].strip(); dry_run=os.environ.get('DISPATCH_DRY_RUN','true').lower(); target_sha=os.environ['GITHUB_SHA']; source='workflow_dispatch'
+          elif event=='push':
+              before=os.environ.get('EVENT_BEFORE','').strip()
+              changed=subprocess.check_output(['git','diff','--name-only',before,os.environ['GITHUB_SHA']],text=True).splitlines() if before and set(before)!={'0'} else [str(p) for p in Path('release/requests').glob('*.yaml')]
+              candidates=[Path(p) for p in changed if p.startswith('release/requests/') and p.endswith('.yaml')]
+              if len(candidates)!=1: raise SystemExit(f'expected exactly one changed release request, found {len(candidates)}')
+              path=candidates[0]; data=yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+              if data.get('status')!='approved' or data.get('publish') is not True: raise SystemExit(f'{path} is not an approved publication request')
+              version=str(data.get('version','')).strip(); notes=str(data.get('release_notes','')).strip(); dry_run='false'; target_sha=str(data.get('target_sha','')).strip(); source=str(path)
+          else: raise SystemExit(f'unsupported event: {event}')
+          if not version.startswith('v') or not notes or not target_sha: raise SystemExit('release request requires version, release_notes and target_sha')
+          out=Path(os.environ['GITHUB_OUTPUT'])
+          with out.open('a',encoding='utf-8') as fh:
+              fh.write(f'version={version}\n'); fh.write(f'dry_run={dry_run}\n'); fh.write(f'target_sha={target_sha}\n'); fh.write(f'source={source}\n'); fh.write('release_notes<<DPIP_RELEASE_NOTES\n'); fh.write(notes+'\n'); fh.write('DPIP_RELEASE_NOTES\n')
           PY
       - name: Validate approved target lineage
-        env:
-          TARGET_SHA: ${{ steps.request.outputs.target_sha }}
-        shell: bash
+        env: {TARGET_SHA: '${{ steps.request.outputs.target_sha }}'}
         run: |
           git cat-file -e "${TARGET_SHA}^{commit}"
-          git merge-base --is-ancestor "$TARGET_SHA" HEAD || {
-            echo "Approved release target is not an ancestor of current main: $TARGET_SHA" >&2
-            exit 1
-          }
+          git merge-base --is-ancestor "$TARGET_SHA" HEAD
       - name: Validate release governance
         run: |
           python scripts/release_governance.py validate --version '${{ steps.request.outputs.version }}'
@@ -130,7 +65,6 @@ jobs:
         id: lake
         run: python scripts/release_governance.py binding --version '${{ steps.request.outputs.version }}'
       - name: Run full DPIP validation
-        shell: bash
         run: |
           python scripts/validate_profiles.py
           python scripts/validate_observations.py
@@ -147,12 +81,8 @@ jobs:
           python scripts/examination_execute.py --self-test
           python scripts/rahp_return.py --self-test
       - name: Refuse existing tag
-        shell: bash
         run: |
-          if git rev-parse '${{ steps.request.outputs.version }}' >/dev/null 2>&1; then
-            echo 'Tag already exists: ${{ steps.request.outputs.version }}' >&2
-            exit 1
-          fi
+          if git rev-parse '${{ steps.request.outputs.version }}' >/dev/null 2>&1; then exit 1; fi
     outputs:
       codename: ${{ steps.lake.outputs.codename }}
       version: ${{ steps.request.outputs.version }}
@@ -160,25 +90,17 @@ jobs:
       dry_run: ${{ steps.request.outputs.dry_run }}
       target_sha: ${{ steps.request.outputs.target_sha }}
       request_source: ${{ steps.request.outputs.source }}
-
   release:
     needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+        with: {fetch-depth: 0}
       - name: Refuse existing GitHub release
         if: ${{ needs.validate.outputs.dry_run == 'false' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.validate.outputs.version }}
-        shell: bash
+        env: {GH_TOKEN: '${{ github.token }}', VERSION: '${{ needs.validate.outputs.version }}'}
         run: |
-          if gh release view "$VERSION" >/dev/null 2>&1; then
-            echo "Release already exists: $VERSION" >&2
-            exit 1
-          fi
+          if gh release view "$VERSION" >/dev/null 2>&1; then exit 1; fi
       - name: Prepare release notes
         env:
           VERSION: ${{ needs.validate.outputs.version }}
@@ -186,15 +108,13 @@ jobs:
           RELEASE_NOTES: ${{ needs.validate.outputs.release_notes }}
           TARGET_SHA: ${{ needs.validate.outputs.target_sha }}
           REQUEST_SOURCE: ${{ needs.validate.outputs.request_source }}
-        shell: bash
         run: |
           cat > /tmp/release-notes.md <<EOF
           ## DPIP ${VERSION} — ${CODENAME}
 
-          **Target SHA:** \`${TARGET_SHA}\`
-          **Validation:** full repository validation passed in this workflow.
+          **Target SHA:** \`${TARGET_SHA}\`  
+          **Validation:** full repository validation passed in this workflow.  
           **Publication authority:** \`${REQUEST_SOURCE}\`.
-          **Codename source:** persisted repository binding backed by pinned \`release/lake-codenames.txt\` and \`config/release-codename-policy.json\`.
 
           ### Human release judgment
 
@@ -202,14 +122,11 @@ jobs:
 
           ### Governance boundary
 
-          The semantic version is authoritative. The lake codename is memorable release metadata and does not alter conformance or assurance semantics. A release publication does not convert unresolved or indeterminate privacy propositions into PASS.
+          The semantic version is authoritative. The lake codename is presentation metadata. Release publication does not convert unresolved or indeterminate privacy propositions into PASS.
           EOF
       - name: Dry-run summary
         if: ${{ needs.validate.outputs.dry_run == 'true' }}
-        run: |
-          echo 'Validated ${{ needs.validate.outputs.version }}'
-          echo 'Persisted codename: ${{ needs.validate.outputs.codename }}'
-          cat /tmp/release-notes.md
+        run: cat /tmp/release-notes.md
       - name: Create GitHub release
         if: ${{ needs.validate.outputs.dry_run == 'false' }}
         env:
@@ -217,9 +134,5 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
           CODENAME: ${{ needs.validate.outputs.codename }}
           TARGET_SHA: ${{ needs.validate.outputs.target_sha }}
-        shell: bash
         run: |
-          gh release create "$VERSION" \
-            --target "$TARGET_SHA" \
-            --title "$VERSION — $CODENAME" \
-            --notes-file /tmp/release-notes.md
+          gh release create "$VERSION" --target "$TARGET_SHA" --title "$VERSION — $CODENAME" --notes-file /tmp/release-notes.md --latest

@@ -1,20 +1,36 @@
 # DTG Privacy-Preserving Implementation Profile
 
-**DPIP evaluates whether a composed interaction preserves its intended privacy properties.** A privacy-capable credential, proof, identifier or Trust Task can still participate in a composition that exposes reusable identifiers, graph relationships, lookup keys, telemetry or other correlation surfaces.
+**Current stable release: v0.2.0 — Prashar Lake**
 
-DPIP v0.1 also operates as a portable autonomous privacy-assurance specialist for compatible assurance controllers: it accepts source-pinned examinations, evaluates admissible evidence, produces finite portable results, and returns them through durable retryable outbox semantics.
+DPIP evaluates whether a composed interaction preserves its intended privacy properties. A privacy-capable credential, proof, identifier or Trust Task can still participate in a composition that exposes reusable identifiers, graph relationships, lookup keys, telemetry or other correlation surfaces.
+
+DPIP v0.2.0 operates as a portable privacy-assurance specialist for compatible assurance controllers: it accepts source-pinned examinations, evaluates admissible evidence, produces finite portable results, and returns them through durable retryable outbox semantics.
 
 ## Start here
 
 Use [`docs/understanding-dpip.md`](docs/understanding-dpip.md) for the conceptual model and outcome semantics. Implementers/deployers should use [`docs/deployment-guide/`](docs/deployment-guide/); reviewers should use [`spec/dpip-v0.1-draft.md`](spec/dpip-v0.1-draft.md), [`examples/`](examples/) and [`results/`](results/); integration authors should use [`schema/`](schema/), [`evidence/`](evidence/), [`scripts/`](scripts/) and [`docs/rahp-return-operations.md`](docs/rahp-return-operations.md).
 
-[`readiness/v0.1.yaml`](readiness/v0.1.yaml) is the authoritative v0.1 release gate.
+## What v0.2.0 adds
 
-## Current capability boundary
+v0.2.0 packages the post-v0.1 evidence tranche into a stable boundary:
 
-The v0.1 baseline includes canonical C1-C6 privacy interactions and RF-001-RF-004 composed reference flows; scoped declared/observable/effective correlation semantics; machine-readable profile, evidence, finding, result and change-impact contracts; positive, negative and adversarial tests; source-pinned evidence packages; explicit provenance classes; deterministic evidence planning/acquisition; finite evidence-ready, evidence-required and model-gap paths; portable `rahp-assessor-result/v1` results; durable specialist-return/outbox semantics; and shared producer/consumer fixtures with RAHP.
+- attributable runtime evidence handling across composed privacy examinations;
+- bounded A/B correlation analysis for relationship/verifier, status, Trust Task and policy-discovery surfaces;
+- explicit distinction between intentional common service surfaces and evidence of subject correlation;
+- Data Rooms E1-E6 observability contracts and private-tier evidence boundaries;
+- durable transfer of privacy-specific residuals from RAHP into DPIP-owned examination issues;
+- evidence-required outcomes when realistic deployment/observer evidence is absent rather than inferred privacy PASS;
+- continued portable `rahp-assessor-result/v1` returns and deterministic evidence planning/acquisition.
 
-A successful cryptographic operation, component test or repository workflow is never promoted into a composed privacy PASS unless the exact proposition has sufficient admissible evidence. The detailed outcome vocabulary and reading guidance live in [`docs/understanding-dpip.md`](docs/understanding-dpip.md).
+## Current capability and evidence boundary
+
+The canonical C1-C6 privacy interactions and RF-001-RF-004 composed reference flows remain the baseline. DPIP models declared, observable and effective correlation semantics; machine-readable profile/evidence/finding/result/change-impact contracts; source-pinned evidence packages; provenance classes; positive, negative and adversarial tests; deterministic evidence planning/acquisition; and finite evidence-ready, evidence-required and model-gap paths.
+
+The 2026-09-08 RAHP-triggered relationship-correlation rerun consumed attributable OpenVTC A/B evidence produced by the Trust Protocol Interop Lab. Within that exact pinned runtime boundary, DPIP reached **SATISFIED** for the exercised relationship/verifier, status, Trust Task and policy-discovery surfaces. That result is deliberately bounded: it does not establish deployment-wide unlinkability, network/device unlinkability or universal privacy across unexercised transports and implementations.
+
+Data Rooms remain a separate evidence boundary. [`docs/data-room-observability.md`](docs/data-room-observability.md) defines the E1-E6 observability contract. Private-room runtime execution remains unavailable where same-subject/common-control ZK support or deployment evidence does not exist; those propositions remain `EVIDENCE_REQUIRED` rather than being promoted by architectural intent.
+
+Issuer-side credential enumeration is likewise treated as a privacy/governance question in its own right: body minimization and successful authorization do not, by themselves, prove that historical holder metadata is appropriately minimized or non-correlating for a real deployment role.
 
 ## What DPIP owns — and does not own
 
@@ -33,26 +49,18 @@ DPIP is not version-locked to a particular RAHP release. Interoperability is gov
 
 ## Evidence discipline
 
-Specification/source evidence establishes what a conforming system is required, permitted or expected to expose; it cannot establish what two actual runtime contexts observed. Synthetic/calibration fixtures test evaluator behavior; attributable runtime observations test implementation behavior. Evidence must satisfy the provenance class and immutable source identity required by the named `ER-*` obligation. Missing evidence is useful information but is never PASS.
+Specification/source evidence establishes what a conforming system is required, permitted or expected to expose; it cannot establish what two actual runtime contexts observed. Synthetic/calibration fixtures test evaluator behavior; attributable runtime observations test implementation behavior. Evidence must satisfy the provenance class and immutable source identity required by the named obligation. Missing evidence is useful information but is never PASS.
 
-## Current post-v0.1 evidence state
+## Coordinated release context
 
-The 2026-09-08 RAHP-triggered relationship-correlation privacy rerun (DPIP #218) consumed attributable OpenVTC A/B evidence produced by the Trust Protocol Interop Lab for relationship identifiers, verifier transcripts, status, Trust Tasks and policy discovery. Within that exact pinned runtime boundary, the examination reached **SATISFIED**: no unintended subject join was observed across the exercised relationship/verifier surfaces; Trust Task identifiers/evidence and policy discovery were fresh across A/B contexts; and the shared status endpoint/handle was treated as an intentional common service surface rather than, by itself, evidence of subject correlation.
-
-That result is deliberately bounded. It does **not** establish deployment-wide unlinkability, network/device unlinkability, or universal privacy across unexercised transports and implementations. The distinction is the DPIP contract in action: attributable runtime evidence can retire a named evidence obligation without becoming a broader privacy claim.
-
-Data Rooms remain a separate evidence boundary. [`docs/data-room-observability.md`](docs/data-room-observability.md) defines the E1-E6 observability contract used by RAHP #481. Current private-room runtime execution remains unavailable pending same-subject/common-control ZK support, so the private-tier membership and invitation/key-establishment propositions remain `EVIDENCE_REQUIRED / evidence-incomplete` until that runtime exists and can be observed.
+v0.2.0 is the DPIP member of the September 2026 coordinated RAHP / DPIP / Trust Protocol Interop Lab release tranche. The three repositories remain independently versioned and governed. RAHP owns assurance state and orchestration; DPIP owns composed privacy examination; the Lab owns bounded executable evidence. Cross-repository conclusions remain source-pinned and proposition-scoped.
 
 ## Release status
 
-**v0.1.0 — Khajjiar Lake** is the first governed DPIP release, published on 2026-08-31. The historical RF-001 Trust Task binding blocker is no longer an unhandled semantic dead end: DPIP models the correlation surface, mechanically pressure-tests prohibited thread/envelope reuse, and deterministically returns evidence-required when authoritative runtime observations are absent.
+**v0.2.0 — Prashar Lake** is the current stable release. It supersedes v0.1.0 **Khajjiar Lake** as the default GitHub release while preserving the v0.1.0 record unchanged.
 
-The current unreleased development line is aimed at **v0.2.0** and includes attributable runtime evidence handling and the Data Rooms observability contract. The next release is intentionally being held while the corresponding RAHP residuals reach stable dispositions; no unreleased work should be read as changing the v0.1.0 release claim.
-
-See [`readiness/v0.1.yaml`](readiness/v0.1.yaml) and [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
+See [`docs/releases/v0.2.0.md`](docs/releases/v0.2.0.md), [`ROADMAP.md`](ROADMAP.md), and the repository evidence/results surfaces for the detailed bounded claims.
 
 ## License
 
-DPIP is licensed under the [Apache License 2.0](LICENSE). The license applies repository-wide to repository-owned source code, specifications and documentation, schemas and contracts, fixtures and examples, evidence artifacts, and generated/publication artifacts unless a file or bundled third-party work carries a separate explicit notice.
-
-Third-party material retains its original copyright and licensing terms where separately identified. The repository-wide license does not relicense independently sourced material.
+DPIP is licensed under the [Apache License 2.0](LICENSE). Third-party material retains its original copyright and licensing terms where separately identified.
