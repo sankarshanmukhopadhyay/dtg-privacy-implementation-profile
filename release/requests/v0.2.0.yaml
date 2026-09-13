@@ -1,0 +1,18 @@
+version: v0.2.0
+status: approved
+publish: true
+target_sha: f4e60f459832e036f12ac5d0b87e94c92f11f9fc
+release_notes: |-
+  DPIP v0.2.0 — Prashar Lake packages the post-v0.1 privacy-evidence tranche as a stable, source-pinned specialist release.
+
+  The release advances attributable runtime evidence handling for composed privacy examinations; bounded A/B analysis for relationship/verifier, status, Trust Task and policy-discovery surfaces; explicit separation of common service surfaces from evidence of subject correlation; the Data Rooms E1-E6 observability contract; and durable transfer of privacy-specific residuals from RAHP into DPIP-owned examinations without losing proposition text, source pins or return semantics.
+
+  The exercised relationship-correlation examination reaches SATISFIED only for the exact attributable runtime boundary evaluated. This is not a deployment-wide unlinkability claim, a network/device unlinkability claim, or evidence for unexercised transports and implementations. Private-room execution, same-subject/common-control semantics, deployment-level observer evidence and other unavailable runtime propositions remain EVIDENCE_REQUIRED rather than being inferred from architecture or successful cryptography.
+
+  The release also makes issuer-side credential enumeration a first-class privacy/governance surface: successful management authorization and body minimization are relevant controls, but do not by themselves settle holder-graph correlation, temporal metadata exposure, free-text revocation reason, retention or legitimate-purpose questions.
+
+  DPIP continues to distinguish specification/source evidence, synthetic/calibration fixtures and attributable runtime observations. Missing required evidence never becomes PASS. Component capability does not imply composition privacy.
+
+  v0.2.0 is coordinated with RAHP v2.3.0 and Trust Protocol Interop Lab v0.6.0. The repositories remain independently versioned and governed: the Lab produces bounded executable evidence, DPIP evaluates privacy-specific propositions over admissible evidence, and RAHP owns the broader assurance lifecycle and residual reconciliation.
+
+  README, ROADMAP and detailed release notes are synchronized to this exact baseline SHA. v0.1.0 Khajjiar Lake remains an immutable historical release.
