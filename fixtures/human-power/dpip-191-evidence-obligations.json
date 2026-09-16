@@ -1,0 +1,53 @@
+{
+  "schema": "dpip-evidence-obligation-register-input/v1",
+  "obligations": [
+    {
+      "schema": "dpip-evidence-obligation/v1",
+      "id": "DPIP-EG-0191-001",
+      "source": {"dpip_issue": 191},
+      "proposition": {"statement": "Observable trust metadata maps, for the nominated observer, to the claimed sensitive or social characteristic.", "privacy_dimensions": ["observability", "inference"]},
+      "materiality": "material",
+      "target": null,
+      "observer": {"role": "target decision observer", "vantage_point": "decision-input feature mapping"},
+      "supplier": {"role": "TARGET_OPERATOR", "evidence_source_class": "WHITE_BOX_RUNTIME"},
+      "required_observations": ["observer-bound metadata-to-characteristic mapping", "mapping provenance"],
+      "falsification": {"condition": "No mapping from the observed trust metadata to the claimed sensitive or social characteristic exists for the nominated observer."},
+      "evidence_maturity": {"minimum_required": "E3"},
+      "access": {"status": "BLOCKED", "blocker": "NO_TARGET"},
+      "state": "BLOCKED",
+      "downstream_consumer": "RAHP proxy-inference proposition #179"
+    },
+    {
+      "schema": "dpip-evidence-obligation/v1",
+      "id": "DPIP-EG-0191-002",
+      "source": {"dpip_issue": 191},
+      "proposition": {"statement": "The trust metadata or derived inference is reused or linkable across contexts beyond the bounded decision.", "privacy_dimensions": ["linkability", "correlation"]},
+      "materiality": "material",
+      "target": null,
+      "observer": {"role": "cross-context verifier or operator", "vantage_point": "repeated-context identifier and inference surface"},
+      "supplier": {"role": "TARGET_OPERATOR", "evidence_source_class": "WHITE_BOX_RUNTIME"},
+      "required_observations": ["context-A observation", "context-B observation", "cross-context linkage or absence thereof"],
+      "falsification": {"condition": "Controlled observations show no reusable mapping, identifier, or inference linking the subject across the nominated contexts."},
+      "evidence_maturity": {"minimum_required": "E3"},
+      "access": {"status": "BLOCKED", "blocker": "NO_TARGET"},
+      "state": "BLOCKED",
+      "downstream_consumer": "RAHP proxy-inference proposition #179"
+    },
+    {
+      "schema": "dpip-evidence-obligation/v1",
+      "id": "DPIP-EG-0191-003",
+      "source": {"dpip_issue": 191},
+      "proposition": {"statement": "The nominated trust-metadata feature materially influences a consequential target decision.", "privacy_dimensions": ["inference", "decision-feature observability"]},
+      "materiality": "material",
+      "target": null,
+      "observer": {"role": "target decision observer", "vantage_point": "controlled decision feature and outcome trace"},
+      "supplier": {"role": "TARGET_OPERATOR", "evidence_source_class": "WHITE_BOX_RUNTIME"},
+      "required_observations": ["baseline decision trace", "treatment decision trace", "controlled feature difference", "decision outcome"],
+      "falsification": {"condition": "With all other controlled inputs held invariant, changing or removing the nominated metadata feature does not materially change the consequential decision."},
+      "evidence_maturity": {"minimum_required": "E3"},
+      "access": {"status": "BLOCKED", "blocker": "NO_TARGET"},
+      "state": "BLOCKED",
+      "downstream_consumer": "RAHP proxy-inference proposition #179"
+    }
+  ]
+}
