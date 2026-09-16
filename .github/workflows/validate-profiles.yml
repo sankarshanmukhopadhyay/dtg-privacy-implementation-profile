@@ -40,6 +40,20 @@ jobs:
         run: python scripts/validate_observations.py --self-test
       - name: Validate reusable privacy observability contract and specialist return
         run: python -m unittest discover -s tests -p 'test_privacy_observability*.py'
+      - name: Validate human-power privacy evidence consumption
+        run: python -m unittest discover -s tests -p 'test_human_power_privacy.py' -v
+      - name: Execute bounded human-power privacy evaluation
+        run: >-
+          python scripts/human_power_privacy.py
+          --input fixtures/human-power/interop-121-evidence.json
+          --output "${{ runner.temp }}/dpip-human-power-privacy.json"
+          --check
+      - name: Upload bounded human-power privacy result
+        uses: actions/upload-artifact@v7
+        with:
+          name: dpip-human-power-privacy
+          path: ${{ runner.temp }}/dpip-human-power-privacy.json
+          if-no-files-found: error
       - name: Pressure-test C3/C5 executable join boundaries
         run: python scripts/evaluate_interaction.py --self-test
       - name: Validate supplemental executable evidence calibration
