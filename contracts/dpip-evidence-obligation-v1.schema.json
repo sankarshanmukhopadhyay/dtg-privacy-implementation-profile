@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dpip-evidence-obligation-v1.schema.json",
+  "title": "DPIP Evidence Obligation v1",
+  "type": "object",
+  "required": ["schema", "id", "source", "proposition", "materiality", "observer", "supplier", "required_observations", "falsification", "evidence_maturity", "access", "state", "downstream_consumer"],
+  "properties": {
+    "schema": {"const": "dpip-evidence-obligation/v1"},
+    "id": {"type": "string", "pattern": "^DPIP-EG-[0-9]{4}-[0-9]{3}$"},
+    "source": {"type": "object", "required": ["dpip_issue"], "properties": {"dpip_issue": {"type": "integer", "minimum": 1}}},
+    "proposition": {"type": "object", "required": ["statement", "privacy_dimensions"], "properties": {"statement": {"type": "string", "minLength": 1}, "privacy_dimensions": {"type": "array", "minItems": 1, "items": {"type": "string"}}}},
+    "materiality": {"enum": ["material", "non-material"]},
+    "target": {"type": ["object", "null"]},
+    "observer": {"type": "object", "required": ["role", "vantage_point"], "properties": {"role": {"type": "string"}, "vantage_point": {"type": "string"}}},
+    "supplier": {"type": "object", "required": ["role", "evidence_source_class"], "properties": {"role": {"enum": ["TARGET_MAINTAINER", "TARGET_OPERATOR", "INDEPENDENT_ASSESSOR", "INTEROP_LAB", "GOVERNANCE_AUTHORITY", "DATA_CONTROLLER", "THIRD_PARTY_PROCESSOR", "UNKNOWN"]}, "evidence_source_class": {"enum": ["DECLARATIVE", "STATIC_IMPLEMENTATION", "BLACK_BOX_RUNTIME", "WHITE_BOX_RUNTIME", "GOVERNANCE", "DEPLOYMENT", "LONGITUDINAL"]}}},
+    "required_observations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "falsification": {"type": "object", "required": ["condition"], "properties": {"condition": {"type": "string", "minLength": 1}}},
+    "evidence_maturity": {"type": "object", "required": ["minimum_required"], "properties": {"minimum_required": {"enum": ["E0", "E1", "E2", "E3", "E4", "E5"]}}},
+    "access": {"type": "object", "required": ["status", "blocker"], "properties": {"status": {"enum": ["AVAILABLE", "BLOCKED", "PARTIAL"]}, "blocker": {"enum": ["NONE", "NO_TARGET", "NO_OBSERVATION_SURFACE", "OPERATOR_ACCESS_REQUIRED", "GOVERNANCE_AUTHORITY_REQUIRED", "SENSITIVE_EVIDENCE", "NO_INSTRUMENTATION", "NON_REPRODUCIBLE", "VERSION_UNBOUND", "COST_DISPROPORTIONATE", "AUTHORITY_UNCLEAR"]}}},
+    "state": {"enum": ["IDENTIFIED", "QUALIFIED", "EXPERIMENT_DESIGNED", "EVIDENCE_ACQUIRED", "REEVALUATED", "SATISFIED", "FALSIFIED", "INDETERMINATE", "ACCEPTED_RESIDUAL_RISK", "SUPERSEDED", "BLOCKED"]},
+    "downstream_consumer": {"type": "string", "minLength": 1},
+    "residual_risk_acceptance": {"type": ["object", "null"]}
+  },
+  "additionalProperties": true
+}
