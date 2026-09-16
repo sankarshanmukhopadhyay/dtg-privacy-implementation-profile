@@ -2,7 +2,7 @@
 #
 # Purpose:
 #   Validate schemas, profiles, fixtures, executable calibration cases, result bounds,
-#   RAHP transport contracts, and release-governance invariants on repository changes.
+#   RAHP transport contracts, evidence obligations, and release-governance invariants.
 #
 # Boundary:
 #   Green validation proves repository artefacts are internally consistent with these
@@ -53,6 +53,20 @@ jobs:
         with:
           name: dpip-human-power-privacy
           path: ${{ runner.temp }}/dpip-human-power-privacy.json
+          if-no-files-found: error
+      - name: Validate executable evidence obligations
+        run: python -m unittest discover -s tests -p 'test_evidence_obligations.py' -v
+      - name: Execute DPIP 191 evidence-obligation register
+        run: >-
+          python scripts/evidence_obligations.py
+          --input fixtures/human-power/dpip-191-evidence-obligations.json
+          --output "${{ runner.temp }}/dpip-191-evidence-obligations.json"
+          --check
+      - name: Upload DPIP 191 evidence-obligation register
+        uses: actions/upload-artifact@v7
+        with:
+          name: dpip-191-evidence-obligations
+          path: ${{ runner.temp }}/dpip-191-evidence-obligations.json
           if-no-files-found: error
       - name: Pressure-test C3/C5 executable join boundaries
         run: python scripts/evaluate_interaction.py --self-test
