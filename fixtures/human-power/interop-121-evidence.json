@@ -1,0 +1,130 @@
+{
+  "schema": "interop-human-power-evidence-package/v1",
+  "producer_revision": "1c3d3367329313cc0b7eb4a3bc972e221e4bc4d9",
+  "case_count": 13,
+  "evidence_required_count": 0,
+  "source_artifact": {
+    "workflow_run": "35049810013",
+    "name": "human-power-pressure-evidence",
+    "sha256": "df03e239254f786108ba41ba1c84c8d3f57197a480ec22c15587271b90638a07"
+  },
+  "results": [
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DISCLOSURE_MINIMAL", "family": "disclosure", "comparison_group": "disclosure-adult-eligibility", "variant": "minimal"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"disclosure": {"available_minimal": ["age_over_18"], "requested": ["age_over_18"], "disclosed": ["age_over_18"], "purpose_bound": true}},
+      "derived_signals": {"disclosed_beyond_available_minimal": [], "requested_beyond_available_minimal": []},
+      "provenance": {"fixture_sha256": "pinned-DISCLOSURE_MINIMAL"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DISCLOSURE_EXPANDED", "family": "disclosure", "comparison_group": "disclosure-adult-eligibility", "variant": "expanded"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"disclosure": {"available_minimal": ["age_over_18"], "requested": ["age_over_18", "date_of_birth", "full_name", "home_address"], "disclosed": ["age_over_18", "date_of_birth", "full_name", "home_address"], "purpose_bound": false}},
+      "derived_signals": {"disclosed_beyond_available_minimal": ["date_of_birth", "full_name", "home_address"], "requested_beyond_available_minimal": ["date_of_birth", "full_name", "home_address"]},
+      "provenance": {"fixture_sha256": "pinned-DISCLOSURE_EXPANDED"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DISCLOSURE_ENHANCED_ASSURANCE", "family": "disclosure", "comparison_group": "disclosure-adult-eligibility", "variant": "governed-enhanced-assurance"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"disclosure": {"available_minimal": ["age_over_18"], "requested": ["age_over_18", "legal_name"], "disclosed": ["age_over_18", "legal_name"], "purpose_bound": true, "governance_basis": "regulated account recovery requires name match"}},
+      "derived_signals": {"disclosed_beyond_available_minimal": ["legal_name"], "requested_beyond_available_minimal": ["legal_name"]},
+      "provenance": {"fixture_sha256": "pinned-DISCLOSURE_ENHANCED_ASSURANCE"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "CORRELATION_SCOPED", "family": "correlation", "comparison_group": "correlation-service-session", "variant": "scoped"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"correlation": {"declared_scope": "pairwise", "requested_scope": "pairwise", "presented_scope": "pairwise", "retained_scope": "session", "effective_scope": "pairwise", "observer_evidence": {"cross_session_linkable": false, "cross_context_linkable": false}}},
+      "derived_signals": {"declared_scope": "pairwise", "requested_scope": "pairwise", "effective_scope": "pairwise", "scope_changed_from_declared": false},
+      "provenance": {"fixture_sha256": "pinned-CORRELATION_SCOPED"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "CORRELATION_STABLE_DEMAND", "family": "correlation", "comparison_group": "correlation-service-session", "variant": "stable-demand"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"correlation": {"declared_scope": "pairwise", "requested_scope": "stable-account", "presented_scope": "stable-account", "retained_scope": "cross-session", "effective_scope": "cross-session-stable", "observer_evidence": {"cross_session_linkable": true, "cross_context_linkable": false}}},
+      "derived_signals": {"declared_scope": "pairwise", "requested_scope": "stable-account", "effective_scope": "cross-session-stable", "scope_changed_from_declared": true},
+      "provenance": {"fixture_sha256": "pinned-CORRELATION_STABLE_DEMAND"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "CORRELATION_CROSS_SESSION", "family": "correlation", "comparison_group": "correlation-service-session", "variant": "cross-session-observed"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"correlation": {"declared_scope": "pairwise", "requested_scope": "pairwise", "presented_scope": "pairwise", "retained_scope": "cross-session", "effective_scope": "cross-session-stable", "observer_evidence": {"cross_session_linkable": true, "cross_context_linkable": false, "mechanism": "server-side retained mapping"}}},
+      "derived_signals": {"declared_scope": "pairwise", "requested_scope": "pairwise", "effective_scope": "cross-session-stable", "scope_changed_from_declared": true},
+      "provenance": {"fixture_sha256": "pinned-CORRELATION_CROSS_SESSION"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "CORRELATION_GOVERNED_STABLE", "family": "correlation", "comparison_group": "correlation-service-session", "variant": "governed-stable"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"correlation": {"declared_scope": "account", "requested_scope": "account", "presented_scope": "account", "retained_scope": "account-lifecycle", "effective_scope": "account", "purpose_bound": true, "observer_evidence": {"cross_session_linkable": true, "cross_context_linkable": false}}},
+      "derived_signals": {"declared_scope": "account", "requested_scope": "account", "effective_scope": "account", "scope_changed_from_declared": false},
+      "provenance": {"fixture_sha256": "pinned-CORRELATION_GOVERNED_STABLE"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "REFUSAL_HIGH_DEPENDENCY_DENIAL", "family": "refusal", "comparison_group": "refusal-high-dependency", "variant": "service-denial"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"refusal": {"available": true, "consequence": "service-denied", "continuation_path": "none"}, "interaction": {"bundled_authorization": false, "default_state": "unselected", "prompt_count_after_refusal": 0, "reversible": false, "purpose_specific": false}},
+      "derived_signals": {"refusal_available": true, "refusal_consequence": "service-denied", "continuation_path": "none"},
+      "provenance": {"fixture_sha256": "pinned-REFUSAL_HIGH_DEPENDENCY_DENIAL"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DECISION_FEATURE_PRIMARY_ONLY", "family": "decision-feature", "comparison_group": "decision-feature-access", "variant": "primary-only"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"decision": {"declared_features": ["eligibility"], "evaluated_features": {"eligibility": true}, "outcome": "permit"}},
+      "derived_signals": {"undeclared_evaluated_features": [], "declared_but_not_evaluated_features": [], "outcome": "permit"},
+      "provenance": {"fixture_sha256": "pinned-DECISION_FEATURE_PRIMARY_ONLY"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DECISION_FEATURE_HIDDEN_COMMUNITY", "family": "decision-feature", "comparison_group": "decision-feature-access", "variant": "hidden-community"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"decision": {"declared_features": ["eligibility"], "evaluated_features": {"eligibility": true, "community_membership": "community-A"}, "outcome": "deny"}},
+      "derived_signals": {"undeclared_evaluated_features": ["community_membership"], "declared_but_not_evaluated_features": [], "outcome": "deny"},
+      "provenance": {"fixture_sha256": "pinned-DECISION_FEATURE_HIDDEN_COMMUNITY"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "DECISION_FEATURE_GOVERNED_RISK", "family": "decision-feature", "comparison_group": "decision-feature-access", "variant": "governed-relevant-feature"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"decision": {"declared_features": ["eligibility", "service_region"], "evaluated_features": {"eligibility": true, "service_region": "in-area"}, "outcome": "permit", "purpose_bound": true, "governance_basis": "service legally limited to covered region"}},
+      "derived_signals": {"undeclared_evaluated_features": [], "declared_but_not_evaluated_features": [], "outcome": "permit"},
+      "provenance": {"fixture_sha256": "pinned-DECISION_FEATURE_GOVERNED_RISK"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "REFUSAL_PROPORTIONATE", "family": "refusal", "comparison_group": "refusal-high-dependency", "variant": "proportionate"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"refusal": {"available": true, "consequence": "continue-with-minimal-path", "continuation_path": "manual-review"}},
+      "derived_signals": {"refusal_available": true, "refusal_consequence": "continue-with-minimal-path"},
+      "provenance": {"fixture_sha256": "pinned-REFUSAL_PROPORTIONATE"}
+    },
+    {
+      "schema": "interop-human-power-observation-evidence/v1",
+      "case": {"id": "REFUSAL_INFORMED_COUNTERCASE", "family": "refusal", "comparison_group": "refusal-high-dependency", "variant": "informed-reversible"},
+      "source": {"kind": "synthetic-pressure-test", "revision": "fixture-v1"},
+      "evidence_state": "COMPLETE", "missing_observations": [],
+      "observations": {"refusal": {"available": true, "consequence": "continue-with-limited-function", "continuation_path": "limited-service"}},
+      "derived_signals": {"refusal_available": true, "refusal_consequence": "continue-with-limited-function"},
+      "provenance": {"fixture_sha256": "pinned-REFUSAL_INFORMED_COUNTERCASE"}
+    }
+  ]
+}
