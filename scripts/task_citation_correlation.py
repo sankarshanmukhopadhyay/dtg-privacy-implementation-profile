@@ -134,7 +134,7 @@ def to_privacy_observability(package: dict[str, Any]) -> dict[str, Any]:
             "reproducibility": "source-pinned",
             "source_issue": 271,
             "interop_issue": 233,
-            "ra hp_coordination_issue".replace(" ", ""): 690,
+            "rahp_coordination_issue": 690,
         },
         "observer_planes": [
             {
