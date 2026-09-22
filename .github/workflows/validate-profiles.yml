@@ -40,6 +40,9 @@ jobs:
         run: python scripts/validate_observations.py --self-test
       - name: Validate reusable privacy observability contract and specialist return
         run: python -m unittest discover -s tests -p 'test_privacy_observability*.py'
+
+      - name: Validate task-citation correlation evidence mapping
+        run: python -m unittest tests/test_task_citation_correlation.py -v
       - name: Validate human-power privacy evidence consumption
         run: python -m unittest discover -s tests -p 'test_human_power_privacy.py' -v
       - name: Execute bounded human-power privacy evaluation
