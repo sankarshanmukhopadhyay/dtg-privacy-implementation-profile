@@ -1,0 +1,175 @@
+dpip_version: "0.2.0"
+interaction:
+  id: C9
+  version: "0.1"
+  title: Minimum-disclosure authority at material commitment
+  purpose: >-
+    Evaluate whether a relying party can establish that an actor has current,
+    action-specific authority for a material commitment without receiving
+    unrelated delegation topology, organizational hierarchy, commercial limits,
+    counterparties, or durable cross-context identifiers.
+  target_profile: PP-4
+  invariants: [P1, P2, P3, P4, P5, P8]
+  construction_neutral: true
+
+actors:
+  - id: principal
+    role: authority source represented by the mandate evidence
+  - id: actor
+    role: agent attempting the material commitment
+  - id: verifier
+    role: counterparty or relying system evaluating commitment authority
+  - id: authority_resolver
+    role: optional status or revocation evidence source
+
+components:
+  - area: Authority semantics
+    specification: GAAM/TSMM authority-at-commitment profile
+    responsibility: Define the propositions that must be established without defining the proof construction.
+  - area: Portable evidence
+    specification: TIS authority-at-commitment contract
+    responsibility: Carry bounded authority, action binding, approval and evidence references.
+  - area: Selective disclosure
+    specification: Construction selected by deployment
+    responsibility: Prove required predicates without disclosing unrelated mandate state.
+
+privacy_claims:
+  - id: C9-PC-1
+    property: authority-proof-minimization
+    subject: presentation
+    scope: verifier observation at material commitment
+    expected_status: PASS
+    rationale: The verifier needs proof of sufficient authority, not the principal's complete authority topology.
+    invariants: [P1, P3, P5]
+  - id: C9-PC-2
+    property: commitment-context-unlinkability
+    subject: contextual-graph
+    scope: multiple unrelated commitment contexts
+    expected_status: CONSTRAINED
+    rationale: Exact-action and audit binding can be necessary while durable mandate identifiers can create avoidable cross-context correlation.
+    invariants: [P2, P4, P8]
+  - id: C9-PC-3
+    property: approval-minimization
+    subject: presentation
+    scope: exact-action approval evidence
+    expected_status: PASS
+    rationale: A verifier should establish that required approval covers the exact action without receiving unrelated approval history.
+    invariants: [P1, P3, P5]
+
+requirements:
+  - id: C9-R1
+    normative_strength: MUST
+    statement: Authority evidence disclosed to the verifier is limited to propositions required to evaluate the exact commitment under the declared policy.
+    invariants: [P1, P3]
+  - id: C9-R2
+    normative_strength: MUST NOT
+    statement: A proof disclose unrelated counterparties, unrelated authority scopes, organizational hierarchy, aggregate budget limits, or unrelated approval history solely to establish commitment authority.
+    invariants: [P1, P3, P5]
+  - id: C9-R3
+    normative_strength: MUST
+    statement: Exact-action binding remains verifiable without requiring a durable subject or mandate identifier to be reused across unrelated contexts when the selected construction permits scoped identifiers.
+    invariants: [P2, P4]
+  - id: C9-R4
+    normative_strength: MUST
+    statement: Status or revocation checking discloses no more subject, counterparty, purpose, or action information than the resolver requires to answer the status question.
+    invariants: [P1, P2, P5]
+  - id: C9-R5
+    normative_strength: MUST
+    statement: Missing implementation evidence for minimum disclosure or correlation behavior remains INDETERMINATE rather than PASS.
+    invariants: [P3, P8]
+
+correlation_surfaces:
+  - id: C9-CS-1
+    class: authority-evidence
+    value: durable_mandate_identifier
+    observers: [verifier, authority_resolver]
+    scope: authority relationship
+    correlation_scope:
+      declared_scope: one commitment decision
+      observable_scope: any presentation or status lookup reusing the mandate identifier
+      effective_scope: potentially cross-counterparty and cross-purpose when the identifier is durable and shared
+      scope_basis: repeated stable identifier
+    stability: durable
+    joinability: Direct equality can join otherwise separate commitments.
+    necessity: not inherently required when a scoped proof or reference can establish the same proposition
+    mitigation: use scoped references, selective disclosure, or proof predicates where supported
+    residual_risk: operational audit requirements may require bounded linkability within an authorized context
+    invariants: [P2, P4, P8]
+  - id: C9-CS-2
+    class: approval-evidence
+    value: approval_history_or_approver_identifier
+    observers: [verifier]
+    scope: organizational approval process
+    correlation_scope:
+      declared_scope: exact commitment approval
+      observable_scope: approval artifacts disclosed to verifier
+      effective_scope: potentially organizational workflow history if stable approver or sequence identifiers are reused
+      scope_basis: reusable approval metadata
+    stability: durable
+    joinability: Stable approval metadata can expose internal decision topology across commitments.
+    necessity: only evidence that the exact action received required approval is necessary
+    mitigation: disclose bounded approval assertion or proof rather than approval history
+    residual_risk: some governance regimes may require named approver disclosure
+    invariants: [P1, P2, P5]
+
+tests:
+  - id: C9-T1
+    type: positive
+    description: Verifier establishes current in-scope authority and exact-action approval from bounded proof predicates without receiving unrelated mandate fields.
+    requirements: [C9-R1, C9-R2, C9-R3]
+    invariants: [P1, P2, P3, P4, P5]
+    claims: [C9-PC-1, C9-PC-3]
+    expected: Minimum disclosure claims are supported for the supplied implementation evidence.
+  - id: C9-T2
+    type: negative
+    description: Verifier receives the complete delegation chain, unrelated counterparties and aggregate authority limits even though only an action-specific predicate is required.
+    requirements: [C9-R1, C9-R2]
+    invariants: [P1, P3, P5]
+    claims: [C9-PC-1]
+    expected: Authority proof may be valid while the minimum-disclosure privacy claim fails.
+  - id: C9-T3
+    type: adversarial
+    description: A durable mandate identifier is reused across unrelated verifier contexts to join otherwise separate commitments.
+    requirements: [C9-R3]
+    invariants: [P2, P4, P8]
+    claims: [C9-PC-2]
+    expected: Cross-context linkage is surfaced as constrained or failed according to observed joinability; it is not hidden by cryptographic validity.
+  - id: C9-T4
+    type: adversarial
+    description: No runtime trace establishes what authority fields or status-query metadata are visible to verifier and resolver.
+    requirements: [C9-R5]
+    invariants: [P3, P8]
+    claims: [C9-PC-1, C9-PC-2]
+    expected: Relevant privacy claims remain INDETERMINATE rather than being inferred from specification intent.
+  - id: C9-T5
+    type: negative
+    description: A status or revocation resolver receives full subject, counterparty and action context even though a narrower status query would establish the required authority proposition.
+    requirements: [C9-R4]
+    invariants: [P1, P2, P5]
+    claims: [C9-PC-1, C9-PC-2]
+    expected: Excess resolver disclosure fails or constrains the relevant privacy claims even when the authority status result is cryptographically valid.
+
+exceptions: []
+
+executable_evaluation:
+  evidence_version: "0.1"
+  claims:
+    C9-PC-1:
+      rule: forbidden_disclosures
+      fields:
+        - unrelated_counterparties
+        - unrelated_authority_scopes
+        - organizational_hierarchy
+        - aggregate_budget_limit
+        - unrelated_approval_history
+    C9-PC-2:
+      rule: correlation_surface_review
+      fields:
+        - durable_mandate_identifier
+        - durable_actor_identifier
+        - durable_approval_identifier
+    C9-PC-3:
+      rule: forbidden_disclosures
+      fields:
+        - unrelated_approval_history
+        - unrelated_approver_graph
