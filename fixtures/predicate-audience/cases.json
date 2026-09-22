@@ -1,0 +1,53 @@
+{
+  "schema": "dpip-predicate-audience-fixture/v1",
+  "source_kind": "synthetic-pressure-test",
+  "cases": [
+    {
+      "id": "PA-RAW-MEMBERSHIP-CORRELATION",
+      "audience_kind": "predicate-bounded",
+      "evidence_state": "COMPLETE",
+      "observations": {
+        "raw_membership_disclosed": true,
+        "stable_identifier_scope": "global",
+        "required_scope": "audience",
+        "predicate_details_disclosed": true
+      },
+      "expected_outcome": "FAIL",
+      "expected_materiality": "warranted"
+    },
+    {
+      "id": "PA-SCOPED-PROOF",
+      "audience_kind": "predicate-bounded",
+      "evidence_state": "COMPLETE",
+      "observations": {
+        "raw_membership_disclosed": false,
+        "stable_identifier_scope": "audience",
+        "required_scope": "audience",
+        "predicate_details_disclosed": false
+      },
+      "expected_outcome": "PASS",
+      "expected_materiality": "warranted"
+    },
+    {
+      "id": "PA-OBSERVABILITY-MISSING",
+      "audience_kind": "predicate-bounded",
+      "evidence_state": "EVIDENCE_REQUIRED",
+      "observations": {},
+      "expected_outcome": "INDETERMINATE",
+      "expected_materiality": "warranted"
+    },
+    {
+      "id": "PA-COLLECTIVE-AUTHORITY-ONLY",
+      "audience_kind": "none",
+      "evidence_state": "COMPLETE",
+      "observations": {
+        "raw_membership_disclosed": false,
+        "stable_identifier_scope": "none",
+        "required_scope": "none",
+        "predicate_details_disclosed": false
+      },
+      "expected_outcome": "NOT_APPLICABLE",
+      "expected_materiality": "not-automatic"
+    }
+  ]
+}
