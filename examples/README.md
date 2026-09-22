@@ -11,3 +11,5 @@ The initial examples will cover:
 Each worked example should identify actors, purpose, component specifications, information flows, privacy invariants, correlation surfaces, expected positive behavior, negative/adversarial cases, justified exceptions, and conformance evidence.
 
 The examples are intended to pressure-test the profile itself. If an interaction cannot be described without relying on unstated component behavior, that is evidence of either a missing DPIP composition requirement or a missing interface requirement in an underlying component specification.
+
+- `c9-authority-at-commitment.yaml` — minimum-disclosure, correlation-bounded evidence for action-specific authority at a material commitment boundary.
