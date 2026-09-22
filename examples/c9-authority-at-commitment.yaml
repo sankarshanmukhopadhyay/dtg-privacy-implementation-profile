@@ -141,6 +141,13 @@ tests:
     invariants: [P3, P8]
     claims: [C9-PC-1, C9-PC-2]
     expected: Relevant privacy claims remain INDETERMINATE rather than being inferred from specification intent.
+  - id: C9-T5
+    type: negative
+    description: A status or revocation resolver receives full subject, counterparty and action context even though a narrower status query would establish the required authority proposition.
+    requirements: [C9-R4]
+    invariants: [P1, P2, P5]
+    claims: [C9-PC-1, C9-PC-2]
+    expected: Excess resolver disclosure fails or constrains the relevant privacy claims even when the authority status result is cryptographically valid.
 
 exceptions: []
 
