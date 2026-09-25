@@ -1,36 +1,34 @@
 # DTG Privacy-Preserving Implementation Profile
 
-**Current stable release: v0.2.0 — Prashar Lake**
+**Current stable release: v0.3.0 — Manasbal Lake**
 
 DPIP evaluates whether a composed interaction preserves its intended privacy properties. A privacy-capable credential, proof, identifier or Trust Task can still participate in a composition that exposes reusable identifiers, graph relationships, lookup keys, telemetry or other correlation surfaces.
 
-DPIP v0.2.0 operates as a portable privacy-assurance specialist for compatible assurance controllers: it accepts source-pinned examinations, evaluates admissible evidence, produces finite portable results, and returns them through durable retryable outbox semantics.
+DPIP v0.3.0 operates as a portable privacy-assurance specialist for compatible assurance controllers: it accepts source-pinned examinations, evaluates admissible evidence, expresses executable evidence obligations, consumes bounded Interop Lab evidence conservatively, and returns finite portable results through durable retryable outbox semantics.
 
 ## Start here
 
 Use [`docs/understanding-dpip.md`](docs/understanding-dpip.md) for the conceptual model and outcome semantics. Implementers/deployers should use [`docs/deployment-guide/`](docs/deployment-guide/); reviewers should use [`spec/dpip-v0.1-draft.md`](spec/dpip-v0.1-draft.md), [`examples/`](examples/) and [`results/`](results/); integration authors should use [`schema/`](schema/), [`evidence/`](evidence/), [`scripts/`](scripts/) and [`docs/rahp-return-operations.md`](docs/rahp-return-operations.md).
 
-## What v0.2.0 adds
+## What v0.3.0 adds
 
-v0.2.0 packages the post-v0.1 evidence tranche into a stable boundary:
+v0.3.0 packages the post-v0.2 tranche into a stable executable privacy-evidence boundary:
 
-- attributable runtime evidence handling across composed privacy examinations;
-- bounded A/B correlation analysis for relationship/verifier, status, Trust Task and policy-discovery surfaces;
-- explicit distinction between intentional common service surfaces and evidence of subject correlation;
-- Data Rooms E1-E6 observability contracts and private-tier evidence boundaries;
-- durable transfer of privacy-specific residuals from RAHP into DPIP-owned examination issues;
-- evidence-required outcomes when realistic deployment/observer evidence is absent rather than inferred privacy PASS;
-- continued portable `rahp-assessor-result/v1` returns and deterministic evidence planning/acquisition.
+- machine-verifiable `dpip-evidence-obligation/v1` work objects with explicit supplier, observer, target, maturity, assurability and residual-risk authority fields;
+- deterministic admission/consumption rules that preserve `BLOCKED`, `EVIDENCE_REQUIRED` and `INDETERMINATE` when the named target or observation surface is unavailable;
+- bounded consumption of Interop Lab human-power pressure evidence without promoting synthetic observations into deployment claims;
+- conservative task-citation correlation evaluation that separates specification intent, source characterization, fixture evidence and target-runtime observation;
+- C9 minimum-disclosure authority-proof semantics at material commitment, including durable mandate/approval identifiers as correlation surfaces;
+- predicate-defined audience pressure tests for raw membership disclosure, correlation scope, minimized proof and missing observability;
+- source-pinned persona reach/usage/timeline examination results with external-observer correlation retained as an explicit evidence obligation.
 
 ## Current capability and evidence boundary
 
-The canonical C1-C6 privacy interactions and RF-001-RF-004 composed reference flows remain the baseline. DPIP models declared, observable and effective correlation semantics; machine-readable profile/evidence/finding/result/change-impact contracts; source-pinned evidence packages; provenance classes; positive, negative and adversarial tests; deterministic evidence planning/acquisition; and finite evidence-ready, evidence-required and model-gap paths.
+The canonical C1-C6 interactions and RF-001-RF-004 reference flows remain valid. v0.3.0 adds C9 and broadens executable evidence-obligation and evidence-consumption machinery without changing the rule that privacy conclusions remain proposition-scoped.
 
-The 2026-09-08 RAHP-triggered relationship-correlation rerun consumed attributable OpenVTC A/B evidence produced by the Trust Protocol Interop Lab. Within that exact pinned runtime boundary, DPIP reached **SATISFIED** for the exercised relationship/verifier, status, Trust Task and policy-discovery surfaces. That result is deliberately bounded: it does not establish deployment-wide unlinkability, network/device unlinkability or universal privacy across unexercised transports and implementations.
+DPIP distinguishes what a producer says, what a verifier or audit plane can observe, what a target runtime actually exposes, and what a privacy evaluator may conclude from that evidence. Fixture success, proof validity, authority success or a green workflow cannot substitute for missing privacy evidence.
 
-Data Rooms remain a separate evidence boundary. [`docs/data-room-observability.md`](docs/data-room-observability.md) defines the E1-E6 observability contract. Private-room runtime execution remains unavailable where same-subject/common-control ZK support or deployment evidence does not exist; those propositions remain `EVIDENCE_REQUIRED` rather than being promoted by architectural intent.
-
-Issuer-side credential enumeration is likewise treated as a privacy/governance question in its own right: body minimization and successful authorization do not, by themselves, prove that historical holder metadata is appropriately minimized or non-correlating for a real deployment role.
+The current persona examination credits implemented reach/minimisation/access controls and the intentional holder-side cross-context join while preserving external-observer/runtime correlation as `EVIDENCE_REQUIRED` until attributable A/B evidence exists.
 
 ## What DPIP owns — and does not own
 
@@ -51,15 +49,17 @@ DPIP is not version-locked to a particular RAHP release. Interoperability is gov
 
 Specification/source evidence establishes what a conforming system is required, permitted or expected to expose; it cannot establish what two actual runtime contexts observed. Synthetic/calibration fixtures test evaluator behavior; attributable runtime observations test implementation behavior. Evidence must satisfy the provenance class and immutable source identity required by the named obligation. Missing evidence is useful information but is never PASS.
 
-## Coordinated release context
+v0.3.0 additionally makes the evidence obligation itself machine-verifiable: absence of a target, observer surface, required maturity or assurability precondition is preserved as an explicit lifecycle state rather than silently repaired by the evaluator.
 
-v0.2.0 is the DPIP member of the September 2026 coordinated RAHP / DPIP / Trust Protocol Interop Lab release tranche. The three repositories remain independently versioned and governed. RAHP owns assurance state and orchestration; DPIP owns composed privacy examination; the Lab owns bounded executable evidence. Cross-repository conclusions remain source-pinned and proposition-scoped.
+## Release context
+
+v0.3.0 is independently versioned from RAHP and the Trust Protocol Interop Lab. The Lab may produce bounded executable observations; DPIP evaluates privacy propositions over admissible evidence; RAHP owns broader assurance state and residual reconciliation. Cross-repository conclusions remain source-pinned and proposition-scoped.
 
 ## Release status
 
-**v0.2.0 — Prashar Lake** is the current stable release. It supersedes v0.1.0 **Khajjiar Lake** as the default GitHub release while preserving the v0.1.0 record unchanged.
+**v0.3.0 — Manasbal Lake** is the current stable release. It supersedes v0.2.0 **Prashar Lake** as the default GitHub release while preserving prior release records unchanged.
 
-See [`docs/releases/v0.2.0.md`](docs/releases/v0.2.0.md), [`ROADMAP.md`](ROADMAP.md), and the repository evidence/results surfaces for the detailed bounded claims.
+See [`docs/releases/v0.3.0.md`](docs/releases/v0.3.0.md), [`ROADMAP.md`](ROADMAP.md), and the repository evidence/results surfaces for the detailed bounded claims.
 
 ## License
 
