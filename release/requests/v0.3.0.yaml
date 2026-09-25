@@ -1,0 +1,16 @@
+version: v0.3.0
+status: approved
+publish: true
+target_sha: 6d1f4f481a6e3f38b5601c74d3fa89fa1b0383fe
+release_notes: |-
+  DPIP v0.3.0 — Manasbal Lake packages the post-v0.2 privacy-evidence tranche as a stable executable evidence boundary.
+
+  The release introduces machine-verifiable privacy evidence obligations; bounded consumption of Interop Lab human-power evidence; conservative task-citation/correlation handling that preserves source, fixture, runtime and observer distinctions; C9 minimum-disclosure authority-proof semantics at material commitment; predicate-defined audience pressure testing; and the current source-pinned persona reach/usage/timeline examination.
+
+  DPIP now treats the evidence obligation itself as governed, portable work: target revision, observer scope, required maturity, supplier, blocker state and claim boundary can be validated before evidence is accepted. Targetless E3+ obligations remain blocked, synthetic evidence does not become deployment evidence, and unavailable runtime surfaces remain EVIDENCE_REQUIRED or INDETERMINATE rather than inferred PASS.
+
+  The release preserves strict authority boundaries. DPIP evaluates composition privacy; it does not decide whether authority exists, issue harm/legitimacy/discrimination judgments, or create whole-portfolio assurance outcomes. Proof validity and successful authorization do not establish privacy minimisation.
+
+  The current persona examination credits implemented reach/minimisation/access controls and the intentional holder-side cross-context join while retaining external-observer/runtime correlation as an explicit future A/B evidence trigger.
+
+  v0.3.0 remains independently versioned from RAHP and the Trust Protocol Interop Lab. Cross-repository evidence is proposition-scoped and source-pinned. Prior releases remain immutable historical baselines.
