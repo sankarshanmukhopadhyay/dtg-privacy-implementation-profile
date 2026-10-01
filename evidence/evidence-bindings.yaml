@@ -65,3 +65,15 @@ bindings:
       - ER-STATUS-AB
       - ER-VETTING-TICKET-AB
       - ER-VETTING-RETENTION-AB
+
+  - id: hidden-vetter-correlation-retention
+    match:
+      surfaces_any:
+        - applicant-scoped masked vetter tags
+        - community masking-key derivation material
+        - applicant DID retained alongside decision/facts state
+        - enrolment table
+        - spent-token ledger
+        - redacted hidden-vetting submission digest
+    evidence_requirement_ids:
+      - ER-HIDDEN-VETTER-CORRELATION-AB
