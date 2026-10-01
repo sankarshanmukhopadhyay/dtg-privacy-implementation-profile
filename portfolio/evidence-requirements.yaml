@@ -135,6 +135,37 @@ requirements:
     sufficiency_criterion: Evidence must determine whether a ticket can be correlated, replayed or retained across contexts beyond its declared community/transaction scope without exposing the ticket secret itself.
     rerun_trigger: New pinned vetted-admission examination after attributable ticket evidence exists.
 
+  ER-HIDDEN-VETTER-CORRELATION-AB:
+    title: Hidden-vetter correlation and retention observations
+    summary: >-
+      Capture attributable A/B VTI runtime observations showing whether applicant-scoped
+      masked vetter representations, community-held derivation material, retained applicant
+      identity, enrolment/spent-token state, or redacted decision evidence permit a stable
+      or recoverable join beyond the declared hidden-vetter privacy boundary.
+    interactions: [C3, C4, C5]
+    source_lineage: ["DPIP #292", "RAHP #888", "RAHP #889"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [masked_vetter_tag, masking_derivation_material, retained_applicant_identity, enrolment_state, spent_token_state, redacted_hidden_vetting_evidence]
+    producer_capability: vti-hidden-vetter-runtime-observer
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: >-
+      Compare at least two unrelated applicant/submission contexts and distinguish the
+      community observer holding authorized masking derivation material from observers
+      that do not hold that material. Where available, include a later retained-state
+      observation after the admission decision.
+    required_fields: [context_id, observer_scope, community_scope, applicant_identifier_or_privacy_safe_fingerprint, masked_vetter_tag_or_fingerprint, derivation_material_available, retained_record_classes, join_result, observed_at, implementation_revision]
+    privacy_safe_capture_rule: >-
+      Use scoped labels or one-way fingerprints for applicant/vetter identifiers and masked
+      values. Do not persist masking keys, predicate credential secrets, raw hidden-vetter
+      proof material, or unrelated applicant data in the evidence package.
+    sufficiency_criterion: >-
+      Evidence must establish whether a stable or recoverable join emerges across the
+      tested contexts, identify which observer capability makes that join possible, and
+      preserve whether the join is confined to the authorized community derivation boundary
+      or becomes observable to another retained-data consumer or unrelated context.
+    rerun_trigger: New pinned hidden-vetter DPIP examination after attributable VTI runtime A/B evidence exists.
+
   ER-VETTING-RETENTION-AB:
     title: Retained vetted-admission state observations
     summary: >-

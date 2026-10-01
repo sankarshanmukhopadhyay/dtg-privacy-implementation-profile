@@ -324,9 +324,31 @@ requested_examination:
     assert cred["evidence_requirement_ids"] == ["ER-CREDENTIAL-ID-AB"], cred
     assert cred["evidence_status"] == "evidence-required"
 
+    hidden_vetter = f"""```yaml
+source:
+  system: RAHP
+  changed_artifact: {{repository: OpenVTC/verifiable-trust-infrastructure, revision: {'b'*40}}}
+```
+```yaml
+requested_examination:
+  invariants:
+    - no-unnecessary-cross-context-correlation
+  suspected_surfaces:
+    - applicant-scoped masked vetter tags
+    - community masking-key derivation material
+    - applicant DID retained alongside decision/facts state
+    - enrolment table
+    - spent-token ledger
+    - redacted hidden-vetting submission digest
+  question: can hidden-vetter state create a stable or recoverable join?
+```"""
+    hidden = build_setup(292, hidden_vetter, registry, catalog, glossary)["examination_setup"]
+    assert hidden["evidence_requirement_ids"] == ["ER-HIDDEN-VETTER-CORRELATION-AB"], hidden
+    assert hidden["evidence_status"] == "evidence-required"
+    assert hidden["status"] == "ready", hidden
     replay = build_setup(999, relationship, registry, catalog, glossary)["examination_setup"]
     assert replay["evidence_requirement_ids"] == setup["evidence_requirement_ids"]
-    print("PASS examination_setup semantic evidence binding regressions (#149/#168)")
+    print("PASS examination_setup semantic evidence binding regressions (#149/#168/#292)")
     return 0
 
 

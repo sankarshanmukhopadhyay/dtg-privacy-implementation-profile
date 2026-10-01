@@ -94,6 +94,43 @@ surface_rules:
     retention_stage: retained-presence-record
     falsification_purpose: Determine whether retained presence metadata is reused or exposed across contexts beyond its operational purpose.
 
+  "applicant-scoped masked vetter tags":
+    component: VTI hidden-vetter admission
+    observer: community-or-retained-data-consumer
+    collector: vti-hidden-vetter-runtime
+    retention_stage: admission-and-retained-facts
+    falsification_purpose: Determine whether masked vetter representations remain bounded to one applicant/community context or create a reusable join.
+  "community masking-key derivation material":
+    component: VTI hidden-vetter masking
+    observer: community
+    collector: vti-hidden-vetter-runtime
+    retention_stage: community-key-retention
+    falsification_purpose: Determine whether authorized derivation material plus retained identity permits vetter re-identification or correlation beyond the declared boundary.
+  "applicant DID retained alongside decision/facts state":
+    component: VTI hidden-vetter retained facts
+    observer: community-or-retained-data-consumer
+    collector: vti-hidden-vetter-runtime
+    retention_stage: post-decision-retained
+    falsification_purpose: Determine whether retained applicant identity composes with masked or derived vetter state into a stable join.
+  "enrolment table":
+    component: VTI hidden-vetter enrolment
+    observer: community
+    collector: vti-hidden-vetter-runtime
+    retention_stage: enrolment-retained
+    falsification_purpose: Determine whether enrolment state exposes a stable vetter/applicant linkage across unrelated contexts.
+  "spent-token ledger":
+    component: VTI hidden-vetter token state
+    observer: community
+    collector: vti-hidden-vetter-runtime
+    retention_stage: post-token-spend
+    falsification_purpose: Determine whether spent-token records create an unintended durable linkage across submissions or applicants.
+  "redacted hidden-vetting submission digest":
+    component: VTI hidden-vetter decision evidence
+    observer: community-or-retained-data-consumer
+    collector: vti-hidden-vetter-runtime
+    retention_stage: post-decision-redacted
+    falsification_purpose: Determine whether retained redaction digests or adjacent facts preserve a reusable join after hidden proof material is removed.
+
 join_policy:
   contexts: [A, B]
   basis: Compare normalized observations for stable/reusable values or deterministic derivations across unrelated relying contexts.
