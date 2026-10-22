@@ -30,3 +30,12 @@ collectors:
     component: outcome/audit layer
     purpose: Observe retained outcome receipts and audit join keys.
     initial_mode: fixture-or-source-backed
+
+  composed-identifier-runtime:
+    component: Cross-context identifier composition
+    purpose: Observe privacy-safe fingerprints of scoped identifiers and local joins across independently instantiated contexts.
+    initial_mode: runtime-or-source-backed
+  retained-privacy-runtime:
+    component: Retained privacy evidence and operational metadata
+    purpose: Observe retention-stage record classes and privacy-safe fingerprints without collecting unrelated payload content.
+    initial_mode: runtime-or-source-backed
