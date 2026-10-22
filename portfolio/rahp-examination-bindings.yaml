@@ -14,6 +14,10 @@ invariant_aliases:
   pre-admission-discovery-does-not-require-unnecessary-stable-identity-disclosure: [P1, P2, P4, P5]
   directory-disclosure-is-bounded-to-purpose-and-policy: [P1, P2, P4, P5, P6]
   status-discovery-does-not-expand-correlation-scope: [P2, P4, P5]
+  holder-private-annotations-do-not-leave-holder-context: [P1, P2, P4, P5]
+  directory-nonvisibility-does-not-become-membership-or-relationship-oracle: [P1, P2, P4]
+  disclosure-purpose-and-audience-remain-bounded: [P1, P4, P5, P6]
+  retained-or-derived-metadata-does-not-defeat-local-only-annotation-boundary: [P2, P4, P5, P6]
 
 interaction_aliases:
   device-presence-and-metadata:
@@ -54,6 +58,38 @@ interaction_aliases:
       The ticket/request path participates in establishing the vetted relationship and may
       expose a reusable binder or contextual graph signal. C3 owns that scoped correlation
       proposition; ticket validity/authority remains outside DPIP.
+
+  vta-witness-member-link:
+    canonical: [C3, C5]
+    rationale: >-
+      A witnessed relationship composes relationship identity, third-party observation and
+      retained task/evidence state. C3 owns cross-context relationship correlation and C5
+      owns retained lifecycle/task metadata. Witness authority semantics remain outside DPIP.
+
+  holder-directory-composition:
+    canonical: [C3, C4]
+    rationale: >-
+      Client-local contact annotations joined to a community directory combine relationship
+      context and discovery/publication surfaces. C3 covers composed linkability; C4 covers
+      discovery and directory minimisation.
+
+  community-directory-discovery:
+    canonical: [C3, C4]
+    rationale: >-
+      Directory browse/search/show is both discovery and a possible cross-context identifier
+      surface. This mapping does not treat directory output as identity proof or authority.
+
+  directory-disclosure-manifest:
+    canonical: [C4]
+    rationale: >-
+      Pre-application disclosure is a discovery/publication interaction. C4 owns minimisation
+      and pre-establishment observability.
+
+  directory-admin-event-hints:
+    canonical: [C5]
+    rationale: >-
+      Administrator event hints are retained/operational metadata whose privacy question is
+      whether timing/topic or identifiers expand correlation scope.
 
   vetter-grant-status-check:
     canonical: [C5]
@@ -97,6 +133,35 @@ reference_flow_aliases:
       RF-001's composed relationship/proof boundary, while ticket authorization semantics
       remain owned by the source protocols.
 
+  "relationship credential -> witness/session -> member-linked presentation -> VWC -> retained evidence":
+    canonical: [RF-001, RF-003]
+    rationale: >-
+      RF-001 covers relationship establishment/proof composition and RF-003 covers retained
+      lifecycle evidence. The mapping is privacy-only and does not decide witness authority.
+
+  "private contact annotation -> directoryRef -> community directory entry -> client-local rendering":
+    canonical: [RF-002, RF-001]
+    rationale: >-
+      RF-002 covers directory/discovery metadata; RF-001 covers the relationship-context join
+      introduced by the local directory reference.
+
+  "member card visibility -> policy/ceiling projection -> directory viewer":
+    canonical: [RF-002]
+    rationale: >-
+      Directory projection is a discovery/publication flow whose privacy boundary is audience
+      minimisation and non-enumeration.
+
+  "directory configuration -> disclosure statement -> prospective applicant":
+    canonical: [RF-002]
+    rationale: >-
+      The disclosure statement is pre-establishment discovery metadata.
+
+  "directory/group change -> administrator hint -> authorized re-read":
+    canonical: [RF-003]
+    rationale: >-
+      The hint is operational/lifecycle metadata; the subsequent authorized re-read remains
+      under the source system's access-control authority.
+
   "verified vetter grant -> credentialStatus URL -> bounded HTTPS status fetch":
     canonical: [RF-003]
     rationale: >-
@@ -120,6 +185,24 @@ claim_aliases:
     canonical: [C3-PC-2, C3-PC-5, C5-PC-2, C5-PC-4]
   ticket-and-profile-state-do-not-expand-observer-or-retention-scope-beyond-the-declared-vetting-purpose:
     canonical: [C3-PC-4, C3-PC-5, C5-PC-4]
+
+  pairwise-relationship-DID-remains-bounded-to-declared-context:
+    canonical: [C3-PC-2, C5-PC-2]
+  optional-member-link-disclosure-is-explicit-and-proportionate:
+    canonical: [C3-PC-4, C3-PC-5]
+  retained-session-and-outcome-evidence-do-not-create-unintended-linkage:
+    canonical: [C3-PC-5, C5-PC-4]
+
+  directoryRef-remains-holder-local-and-does-not-create-community-visible-social-graph:
+    canonical: [C3-PC-2, C3-PC-4]
+  stable-entry-identifiers-do-not-enable-unintended-cross-context-linkage:
+    canonical: [C3-PC-2, C3-PC-5]
+  membership-identifiers-and-group-data-remain-within-declared-audiences:
+    canonical: [C3-PC-4, C4-PC-1, C4-PC-2]
+  public-disclosure-statement-does-not-reveal-person-specific-state:
+    canonical: [C4-PC-1, C4-PC-2]
+  administrator-hints-do-not-leak-record-or-member-identities:
+    canonical: [C5-PC-2, C5-PC-4]
 
 profile_derivation:
   from_interactions: true
