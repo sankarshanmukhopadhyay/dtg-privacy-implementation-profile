@@ -183,3 +183,56 @@ requirements:
     privacy_safe_capture_rule: Prefer record classes, lifecycle states and fingerprints over raw profile/application content; exclude unrelated subject data.
     sufficiency_criterion: Evidence must show whether retained vetting records contain stable identifiers or metadata that remain joinable across unrelated contexts after the operational need has ended.
     rerun_trigger: New pinned vetted-admission examination after attributable retention evidence exists.
+
+  ER-COMPOSED-IDENTIFIER-AB:
+    title: Composed identifier and local-join cross-context observations
+    summary: >-
+      Capture attributable A/B runtime observations showing whether identifiers or local joins
+      that are individually scoped to a relationship, community or holder context become stable,
+      reusable or derivably joinable across unrelated contexts.
+    interactions: [C3, C4, C5]
+    source_lineage: ["DPIP #300", "DPIP #301", "RAHP #1112", "RAHP #1114"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [scoped_identifier, local_join_reference, relationship_or_membership_identifier, observer_scope]
+    producer_capability: composed-privacy-runtime-observer-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: >-
+      At least two unrelated contexts with distinct authenticated principals and observer
+      boundaries. Observe only values needed to establish equality, derivation or non-join.
+    required_fields: [context_id, observer_scope, principal_scope, identifier_or_privacy_safe_fingerprint, derivation_relation, observed_at, implementation_revision]
+    privacy_safe_capture_rule: >-
+      Prefer one-way fingerprints, scoped labels and metadata classes. Do not retain raw
+      member/person identifiers unless strictly necessary to establish equality or derivation.
+    sufficiency_criterion: >-
+      Evidence must establish whether the same identifier or deterministic derivative is
+      observable and joinable across the unrelated contexts, using positive and negative
+      controls with the same detector.
+    rerun_trigger: New pinned DPIP examination after attributable A/B runtime evidence exists.
+
+  ER-COMPOSED-RETENTION-AB:
+    title: Composed retained-metadata and evidence cross-context observations
+    summary: >-
+      Capture attributable A/B runtime observations showing whether retained task, audit,
+      directory, disclosure, outcome or evidence metadata creates a durable join beyond its
+      declared purpose, audience or lifecycle boundary.
+    interactions: [C3, C4, C5]
+    source_lineage: ["DPIP #300", "DPIP #301", "RAHP #1112", "RAHP #1114"]
+    evidence_kind: runtime-ab-observation
+    accepted_evidence_classes: [runtime-upstream-observation]
+    required_surfaces: [retained_record_class, retained_identifier_or_fingerprint, retention_stage, observer_scope]
+    producer_capability: composed-privacy-runtime-observer-v1
+    source_pin_policy: immutable-component-pins-required
+    context_boundary: >-
+      At least two unrelated contexts plus a post-operation retention observation where the
+      proposition concerns retained evidence. Distinguish operational producer from later
+      retained-data consumer.
+    required_fields: [context_id, observer_scope, retained_record_class, identifier_or_privacy_safe_fingerprint, retention_stage, lifecycle_state, observed_at, implementation_revision]
+    privacy_safe_capture_rule: >-
+      Record record classes, scoped fingerprints and lifecycle state. Exclude payload content,
+      secrets and unrelated personal data unless indispensable to prove the asserted join.
+    sufficiency_criterion: >-
+      Evidence must determine whether retained metadata remains joinable across unrelated
+      contexts or by a later observer beyond the declared operational purpose, with explicit
+      positive and negative controls.
+    rerun_trigger: New pinned DPIP examination after attributable A/B retention evidence exists.
