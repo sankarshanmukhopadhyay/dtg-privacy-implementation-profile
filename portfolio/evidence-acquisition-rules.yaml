@@ -131,6 +131,110 @@ surface_rules:
     retention_stage: post-decision-redacted
     falsification_purpose: Determine whether retained redaction digests or adjacent facts preserve a reusable join after hidden proof material is removed.
 
+  "pairwise relationship DID":
+    component: Relationship / witness composition
+    observer: witness-or-relying-party
+    collector: composed-identifier-runtime
+    retention_stage: witness-exchange
+    falsification_purpose: Determine whether a pairwise relationship DID becomes a reusable join across unrelated contexts.
+  "member DID in memberPresentation":
+    component: Witness member-link presentation
+    observer: witness
+    collector: composed-identifier-runtime
+    retention_stage: witness-exchange
+    falsification_purpose: Determine whether optional member-link disclosure creates a stable cross-context join beyond the declared witness purpose.
+  "counterparty DID":
+    component: Relationship / witness composition
+    observer: witness-or-relying-party
+    collector: composed-identifier-runtime
+    retention_stage: witness-exchange
+    falsification_purpose: Determine whether counterparty identity becomes a reusable cross-context correlator.
+  "witness DID":
+    component: Witness selection
+    observer: relying-party-or-operator
+    collector: composed-identifier-runtime
+    retention_stage: witness-exchange
+    falsification_purpose: Determine whether witness selection metadata enables unintended context joining.
+  "session/thread identifier":
+    component: Witness session
+    observer: witness-or-operator
+    collector: composed-identifier-runtime
+    retention_stage: active-and-retained-session
+    falsification_purpose: Determine whether session/thread identifiers remain context-scoped across unrelated witness interactions.
+  "VWC and relationship-credential digests":
+    component: Witness credential/evidence
+    observer: witness-or-operator
+    collector: retained-privacy-runtime
+    retention_stage: accepted-evidence-retention
+    falsification_purpose: Determine whether retained digests create a durable cross-context join.
+  "retained witness:session and witness:outcome evidence":
+    component: Witness retained evidence
+    observer: operator-or-evidence-consumer
+    collector: retained-privacy-runtime
+    retention_stage: post-acceptance-retained
+    falsification_purpose: Determine whether retained witness evidence exceeds the declared correlation and purpose boundary.
+  "audit caller/context/session/witness fields":
+    component: Witness audit layer
+    observer: operator-or-auditor
+    collector: retained-privacy-runtime
+    retention_stage: audit-retention
+    falsification_purpose: Determine whether audit metadata creates a durable join across otherwise unrelated contexts.
+
+  "community-scoped directory entryId":
+    component: Community directory
+    observer: directory-viewer-or-client
+    collector: composed-identifier-runtime
+    retention_stage: directory-read
+    falsification_purpose: Determine whether entry identifiers become reusable outside the intended community/context scope.
+  "directoryRef vtcDid plus entryId":
+    component: Holder-local directory join
+    observer: holder-client
+    collector: composed-identifier-runtime
+    retention_stage: local-contact-rendering
+    falsification_purpose: Determine whether the local join reference escapes holder scope or enables cross-community joining.
+  "membership DID visibility":
+    component: Community directory
+    observer: directory-viewer
+    collector: composed-identifier-runtime
+    retention_stage: directory-read
+    falsification_purpose: Determine whether membership identifiers create unintended cross-context linkage.
+  "group identifiers and membership":
+    component: Community groups/directory
+    observer: group-or-directory-viewer
+    collector: composed-identifier-runtime
+    retention_stage: group-directory-read
+    falsification_purpose: Determine whether group metadata permits joining people or relationships beyond the declared audience.
+  "directory search, facets and enumeration behavior":
+    component: Community directory search
+    observer: directory-viewer
+    collector: composed-identifier-runtime
+    retention_stage: query-response
+    falsification_purpose: Determine whether search/facet behavior provides a membership or relationship oracle across contexts.
+  "statementDigest and join-manifest disclosure":
+    component: Pre-application disclosure
+    observer: prospective-applicant
+    collector: retained-privacy-runtime
+    retention_stage: pre-application-discovery
+    falsification_purpose: Determine whether disclosure metadata or digest creates a person-specific or cross-context join.
+  "external-card publication":
+    component: Directory external publication
+    observer: external-viewer
+    collector: retained-privacy-runtime
+    retention_stage: published-card
+    falsification_purpose: Determine whether external publication exceeds the declared purpose/audience boundary.
+  "admin-note existence":
+    component: Directory administration
+    observer: authorized-administrator
+    collector: retained-privacy-runtime
+    retention_stage: administrative-read
+    falsification_purpose: Determine whether note-existence metadata expands correlation or inference beyond the intended admin purpose.
+  "administrator event timing/topic metadata":
+    component: Directory/groups event hints
+    observer: authorized-administrator
+    collector: retained-privacy-runtime
+    retention_stage: event-stream
+    falsification_purpose: Determine whether hint timing/topic creates a durable person/group join despite identifier minimization.
+
 join_policy:
   contexts: [A, B]
   basis: Compare normalized observations for stable/reusable values or deterministic derivations across unrelated relying contexts.
