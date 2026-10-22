@@ -77,3 +77,28 @@ bindings:
         - redacted hidden-vetting submission digest
     evidence_requirement_ids:
       - ER-HIDDEN-VETTER-CORRELATION-AB
+
+  - id: composed-identifier-and-retention-privacy
+    match:
+      interactions_any: [C3, C4, C5]
+      claims_any: [C3-PC-2, C3-PC-4, C3-PC-5, C4-PC-1, C4-PC-2, C5-PC-2, C5-PC-4]
+      surfaces_any:
+        - pairwise relationship DID
+        - member DID in memberPresentation
+        - counterparty DID
+        - witness DID
+        - session/thread identifier
+        - VWC and relationship-credential digests
+        - retained witness:session and witness:outcome evidence
+        - community-scoped directory entryId
+        - directoryRef vtcDid plus entryId
+        - membership DID visibility
+        - group identifiers and membership
+        - directory search, facets and enumeration behavior
+        - statementDigest and join-manifest disclosure
+        - external-card publication
+        - admin-note existence
+        - administrator event timing/topic metadata
+    evidence_requirement_ids:
+      - ER-COMPOSED-IDENTIFIER-AB
+      - ER-COMPOSED-RETENTION-AB
