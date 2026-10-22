@@ -79,3 +79,17 @@ python scripts/evidence_obligations.py \
 ```
 
 A green run establishes contract consistency only. It does not establish any real-world proxy-inference, discrimination, legitimacy, or deployment claim.
+
+
+## Composed identifier and retention evidence
+
+DPIP examinations that ask whether individually scoped identifiers, local joins, disclosure metadata or retained evidence become correlatable in composition use two reusable requirements:
+
+- `ER-COMPOSED-IDENTIFIER-AB` for stable identifiers, deterministic derivatives and holder/client-local joins observed across unrelated contexts;
+- `ER-COMPOSED-RETENTION-AB` for durable task, audit, directory, disclosure, outcome or evidence metadata observed after the operational interaction.
+
+These requirements were introduced after DPIP #300 and #301 independently reached `model-gap` for different DTG propositions that shared the same missing evidence-contract shape. They are deliberately protocol-neutral.
+
+A valid terminal judgment still requires attributable runtime evidence. Source code, repository fixtures and specification text may define the observation surface or show expected controls, but they do not by themselves satisfy an A/B runtime requirement.
+
+For cross-context experiments, evidence should use privacy-safe fingerprints or scoped labels, instantiate distinct authenticated principals and observer boundaries, and include positive and negative controls using the same detector. Raw personal identifiers, credentials, secrets or unrelated payload content should not be retained merely to prove equality or non-equality.
